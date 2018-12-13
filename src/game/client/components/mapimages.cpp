@@ -12,6 +12,7 @@ CMapImages::CMapImages()
 {
 	m_Info[MAP_TYPE_GAME].m_Count = 0;
 	m_Info[MAP_TYPE_MENU].m_Count = 0;
+	// m_EntitesTextures = -1;
 }
 
 void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
@@ -60,6 +61,13 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 			pMap->UnloadData(pImg->m_ImageData);
 		}
 	}
+
+	// load game entities
+	Graphics()->UnloadTexture(&m_EntitiesTexture);
+	const char *pName = "editor/entities_clear.png";
+	m_EntitiesTexture = Graphics()->LoadTexture(pName, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	if(!m_EntitiesTexture.IsValid())
+		m_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 }
 
 void CMapImages::OnMapLoad()
@@ -79,6 +87,12 @@ IGraphics::CTextureHandle CMapImages::Get(int Index) const
 	if(Client()->State() == IClient::STATE_ONLINE || Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		return m_Info[MAP_TYPE_GAME].m_aTextures[clamp(Index, 0, m_Info[MAP_TYPE_GAME].m_Count)];
 	return m_Info[MAP_TYPE_MENU].m_aTextures[clamp(Index, 0, m_Info[MAP_TYPE_MENU].m_Count)];
+}
+
+
+IGraphics::CTextureHandle CMapImages::GetEntities() const
+{
+	return m_EntitiesTexture;
 }
 
 int CMapImages::Num() const

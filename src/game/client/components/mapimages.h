@@ -19,6 +19,7 @@ class CMapImages : public CComponent
 		IGraphics::CTextureHandle m_aTextures[MAX_TEXTURES];
 		int m_Count;
 	} m_Info[NUM_MAP_TYPES];
+	IGraphics::CTextureHandle m_EntitiesTexture;
 
 	void LoadMapImages(class IMap *pMap, class CLayers *pLayers, int MapType);
 
@@ -26,6 +27,7 @@ public:
 	CMapImages();
 
 	IGraphics::CTextureHandle Get(int Index) const;
+	IGraphics::CTextureHandle GetEntities() const;
 	int Num() const;
 
 	virtual void OnMapLoad();

@@ -278,6 +278,7 @@ void CMapLayers::OnRender()
 
 		RenderTools()->MapScreenToGroup(Center.x, Center.y, pGroup, m_pClient->m_pCamera->GetZoom());
 
+		int GameLayerId = -1;
 		for(int l = 0; l < pGroup->m_NumLayers; l++)
 		{
 			CMapItemLayer *pLayer = pLayers->GetLayer(pGroup->m_StartLayer+l);
@@ -288,6 +289,7 @@ void CMapLayers::OnRender()
 			{
 				IsGameLayer = true;
 				PassedGameLayer = 1;
+				GameLayerId = l;
 			}
 
 			// skip rendering if detail layers if not wanted
@@ -329,13 +331,18 @@ void CMapLayers::OnRender()
 				}
 			}
 
-			if(Render && !IsGameLayer)
+			if((Render && !IsGameLayer && g_Config.m_GfxGameTiles < 2) || (g_Config.m_GfxGameTiles && IsGameLayer))
 			{
 				if(pLayer->m_Type == LAYERTYPE_TILES)
 				{
 					CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 					if(pTMap->m_Image == -1)
-						Graphics()->TextureClear();
+					{
+						if(IsGameLayer) // show game tiles
+							Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
+						else
+							Graphics()->TextureClear();
+					}
 					else
 						Graphics()->TextureSet(m_pClient->m_pMapimages->Get(pTMap->m_Image));
 
@@ -364,6 +371,26 @@ void CMapLayers::OnRender()
 					RenderTools()->RenderQuads(pQuads, pQLayer->m_NumQuads, LAYERRENDERFLAG_TRANSPARENT, EnvelopeEval, this);
 				}
 			}
+		}
+		// render game tiles
+		if(g_Config.m_GfxGameTiles && GameLayerId > -1)
+		{
+			CMapItemLayer *pLayer = pLayers->GetLayer(pGroup->m_StartLayer+GameLayerId);
+			dbg_assert(pLayer->m_Type == LAYERTYPE_TILES, "not the game layer");
+
+			CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
+			dbg_assert(pTMap->m_Image == -1, "not game layer");
+
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
+
+			CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
+			Graphics()->BlendNone();
+			vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+			Graphics()->BlendNormal();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 		}
 		if(!g_Config.m_GfxNoclip)
 			Graphics()->ClipDisable();
