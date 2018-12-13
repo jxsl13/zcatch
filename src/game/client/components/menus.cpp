@@ -59,6 +59,7 @@ CMenus::CMenus()
 	m_SeekBarActivatedTime = 0;
 	m_SeekBarActive = true;
 	m_UseMouseButtons = true;
+	m_BrowsePageChosen = false;
 
 	SetMenuPage(PAGE_START);
 
@@ -1157,6 +1158,16 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		if(DoButton_MenuTabTop(&s_CallVoteButton, Localize("Call vote"), m_ActivePage == PAGE_CALLVOTE, &Button, Alpha, Alpha))
 			NewPage = PAGE_CALLVOTE;
 
+		Left.VSplitLeft(Spacing, 0, &Left); // little space
+		Left.VSplitLeft(ButtonWidth, &Button, &Left);
+		static CButtonContainer s_BrowseButton;
+		if(DoButton_SpriteID(&s_BrowseButton, IMAGE_SIDEBARICONS, m_ActivePage == PAGE_BROWSE ? SPRITE_SIDEBAR_REFRESH_B : SPRITE_SIDEBAR_REFRESH_A, m_ActivePage == PAGE_BROWSE, &Button, CUI::CORNER_ALL, 5.0f, true))
+		// if(DoButton_MenuTabTop(&s_BrowseButton, Localize("Browse"), m_ActivePage == PAGE_BROWSE, &Button, Alpha, Alpha))
+		{
+			NewPage = PAGE_BROWSE;
+			m_BrowsePageChosen = false;
+		}
+
 		static CButtonContainer s_SettingsButton;
 		if(DoButton_MenuTabTop(&s_SettingsButton, Localize("Settings"), m_GamePage == PAGE_SETTINGS, &Right))
 			NewPage = PAGE_SETTINGS;
@@ -1707,6 +1718,10 @@ int CMenus::Render()
 					RenderServerInfo(MainView);
 				else if(m_GamePage == PAGE_CALLVOTE)
 					RenderServerControl(MainView);
+				else if(m_GamePage == PAGE_BROWSE)
+				{
+					RenderServerBrowse(MainView);
+				}
 				else if(m_GamePage == PAGE_SETTINGS)
 					RenderSettings(MainView);
 			}

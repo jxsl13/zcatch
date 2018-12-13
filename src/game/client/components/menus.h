@@ -168,6 +168,7 @@ private:
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,
 		PAGE_START,
+		PAGE_BROWSE,
 
 		SETTINGS_GENERAL=0,
 		SETTINGS_PLAYER,
@@ -194,6 +195,7 @@ private:
 	vec2 m_PrevMousePos;
 	bool m_PopupActive;
 	int m_ActiveListBox;
+	bool m_BrowsePageChosen;
 
 	// images
 	struct CMenuImage
@@ -528,6 +530,7 @@ private:
 	void RenderServerControl(CUIRect MainView);
 	void RenderServerControlKick(CUIRect MainView, bool FilterSpectators);
 	void RenderServerControlServer(CUIRect MainView);
+	void RenderServerBrowse(CUIRect MainView);
 
 	// found in menus_browser.cpp
 	// int m_ScrollOffset;

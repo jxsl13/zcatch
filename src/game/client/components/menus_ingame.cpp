@@ -780,3 +780,48 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	}
 }
 
+void CMenus::RenderServerBrowse(CUIRect MainView)
+{
+	// static int s_HasChosen = 0;
+	if(m_BrowsePageChosen) // We already chose
+	{
+		if(m_ActivePage <= PAGE_INTERNET || m_ActivePage >= PAGE_LAN)
+			m_ActivePage = PAGE_INTERNET;
+		
+		CMenus::RenderServerbrowser(MainView);
+	}
+	else // We must ask the user what he wants to browse
+	{
+		CUIRect Button;
+		MainView.HSplitTop(45.0f, &MainView, 0);
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f+ms_BackgroundAlpha), CUI::CORNER_ALL, 10.0f);
+
+		MainView.HSplitTop(10.0f, 0, &MainView);
+		MainView.HSplitTop(25.0f, &MainView, 0);
+		MainView.VMargin(10.0f, &MainView);
+		
+		// static int s_InternetButton = 0;
+		MainView.VSplitLeft(30.0f, &Button, &MainView);
+		MainView.VSplitLeft(120.0f, &Button, &MainView);
+		static CButtonContainer s_InternetButton;
+		if(DoButton_Menu(&s_InternetButton, Localize("Internet"), 0, &Button))
+		{
+			m_ActivePage = PAGE_INTERNET;
+			// m_NewPage = PAGE_INTERNET;
+			ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
+			m_BrowsePageChosen = true;
+		}
+		
+		// static int s_LanButton = 0;
+		MainView.VSplitLeft(30.0f, &Button, &MainView);
+		MainView.VSplitLeft(120.0f, &Button, &MainView);	
+		static CButtonContainer s_LanButton;
+		if(DoButton_Menu(&s_LanButton, Localize("LAN"), 0, &Button))
+		{
+			m_ActivePage = PAGE_LAN;
+			// m_NewPage = PAGE_LAN;
+			ServerBrowser()->Refresh(IServerBrowser::TYPE_LAN);
+			m_BrowsePageChosen = true;
+		}
+	}	
+}
