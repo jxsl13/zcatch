@@ -373,9 +373,23 @@ void CHud::RenderWarmupTimer()
 			TextRender()->Text(0x0, 10, 54, 6, aBuf, -1);
 			TextRender()->TextColor(1, 1, 1, 1);
 		}
-	}
+		// gamer announcers
+		// if(!m_pClient->m_IsWarmupping && g_Config.m_ClGSound)
+		// {
+		// 	m_pClient->m_IsWarmupping = true;
+		// 	m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_PREPARETOFIGHT, 0, vec2(0,0));
+		// 	m_pClient->m_pAnnouncers->Announce("PREPARE TO FIGHT");
+		// }
+	}	
 	else if((m_pClient->m_Snap.m_pGameData->m_GameStateEndTick == 0 && m_pClient->m_Snap.m_NotReadyCount > 0) || m_pClient->m_Snap.m_pGameData->m_GameStateEndTick != 0)
 		m_WarmupHideTick = 0;
+
+	// if(!m_pClient->m_Snap.m_pGameData->m_GameStateFlags&GAMESTATEFLAG_WARMUP && m_pClient->m_IsWarmupping && g_Config.m_ClGSound) 
+	// {
+	// 	m_pClient->m_IsWarmupping = false;
+	// 	m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_PREPARETOKILL, 0, vec2(0,0));
+	// 	m_pClient->m_pAnnouncers->Announce("PREPARE TO KILL");
+	// }
 }
 
 void CHud::RenderFps()

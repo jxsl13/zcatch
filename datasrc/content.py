@@ -229,6 +229,22 @@ container.sounds.Add(SoundSet("ctf_grab_pl", ["audio/sfx_ctf_grab_pl.wv"]))
 container.sounds.Add(SoundSet("ctf_grab_en", ["audio/sfx_ctf_grab_en.wv"]))
 container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 
+#gamer sounds
+container.sounds.Add(SoundSet("spree_killing", ["audio/killingspree.wv"]))
+container.sounds.Add(SoundSet("spree_rampage", ["audio/rampage.wv"]))
+container.sounds.Add(SoundSet("spree_dominating", ["audio/dominating.wv"]))
+container.sounds.Add(SoundSet("spree_godlike", ["audio/godlike.wv"]))
+container.sounds.Add(SoundSet("spree_wickedsick", ["audio/wickedsick.wv"]))
+container.sounds.Add(SoundSet("spree_preparetofight", ["audio/preparetofight.wv"]))
+container.sounds.Add(SoundSet("spree_preparetokill", ["audio/preparetokill.wv"]))
+container.sounds.Add(SoundSet("spree_unstoppable", ["audio/unstoppable.wv"]))
+container.sounds.Add(SoundSet("spree_humiliation", ["audio/humiliation.wv"]))
+container.sounds.Add(SoundSet("spree_firstblood", ["audio/firstblood.wv"]))
+container.sounds.Add(SoundSet("spree_holyshit", ["audio/holyshit.wv"]))
+# container.sounds.Add(SoundSet("spree_multikill", ["audio/multikill.wv"]))
+# container.sounds.Add(SoundSet("spree_teamkiller", ["audio/teamkiller.wv"]))
+
+
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
 image_null = Image("null", "")
