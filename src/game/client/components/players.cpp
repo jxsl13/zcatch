@@ -428,8 +428,8 @@ void CPlayers::RenderPlayer(
 			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SHIELD].m_Id);
 			Graphics()->QuadsBegin();
 			Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*pi*2+Angle);
-			RenderTools()->SelectSprite(SPRITE_SHIELD);
-			RenderTools()->DrawSprite(Position.x, Position.y, 2*96);
+			IGraphics::CQuadItem Quad(Position.x-68, Position.y-68, 136, 136);
+			Graphics()->QuadsDrawTL(&Quad, 1);
 			Graphics()->QuadsEnd();
 		}
 	}
