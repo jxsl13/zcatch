@@ -4,6 +4,7 @@
 #include <engine/demo.h>
 #include <generated/protocol.h>
 #include <generated/client_data.h>
+#include <engine/shared/config.h>
 
 #include <game/client/gameclient.h>
 #include <game/client/ui.h>
@@ -98,6 +99,11 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 
 void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCurrent)
 {
+	if(g_Config.m_ClShieldDisplay && pCurrent->m_Type == PICKUP_ARMOR)
+	{
+		return;
+	}
+
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
 	vec2 Pos = mix(vec2(pPrev->m_X, pPrev->m_Y), vec2(pCurrent->m_X, pCurrent->m_Y), Client()->IntraGameTick());

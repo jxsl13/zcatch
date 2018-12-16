@@ -423,6 +423,15 @@ void CPlayers::RenderPlayer(
 			case WEAPON_GRENADE: RenderTools()->RenderTeeHand(&RenderInfo, p, Direction, -pi/2, vec2(-4, 7)); break;
 		}
 
+		if(g_Config.m_ClShieldDisplay && Player.m_Weapon == WEAPON_SHOTGUN)
+		{
+			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SHIELD].m_Id);
+			Graphics()->QuadsBegin();
+			Graphics()->QuadsSetRotation(State.GetAttach()->m_Angle*pi*2+Angle);
+			RenderTools()->SelectSprite(SPRITE_SHIELD);
+			RenderTools()->DrawSprite(Position.x, Position.y, 2*96);
+			Graphics()->QuadsEnd();
+		}
 	}
 
 	// render the "shadow" tee
