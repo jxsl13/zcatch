@@ -716,9 +716,9 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 void CHud::RenderSpectatorHud()
 {
 	// Gamer: spectator zoom
-	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyIsPressed(KEY_MOUSE_WHEEL_DOWN)) // zoom out
+	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN)) // zoom out
 		g_Config.m_GfxSpecZoom += (g_Config.m_GfxSpecZoom/100+1) * 10;
-	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyIsPressed(KEY_MOUSE_WHEEL_UP)) // zoom in
+	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyPress(KEY_MOUSE_WHEEL_UP)) // zoom in
 		g_Config.m_GfxSpecZoom -= (g_Config.m_GfxSpecZoom/50+2) * 5;
 		
 	// Zoom limit

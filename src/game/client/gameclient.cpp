@@ -367,6 +367,7 @@ void CGameClient::OnConnected()
 	}
 
 	m_ServerMode = SERVERMODE_PURE;
+	g_Config.m_GfxSpecZoom = 100;
 
 	// send the inital info
 	SendStartInfo();
@@ -413,6 +414,9 @@ void CGameClient::UpdatePositions()
 			vec2(m_Snap.m_pLocalPrevCharacter->m_X, m_Snap.m_pLocalPrevCharacter->m_Y),
 			vec2(m_Snap.m_pLocalCharacter->m_X, m_Snap.m_pLocalCharacter->m_Y), Client()->IntraGameTick());
 	}
+	
+	if(!m_Snap.m_SpecInfo.m_Active && g_Config.m_GfxSpecZoom != 100)
+		g_Config.m_GfxSpecZoom = 100;
 
 	// spectator position
 	if(m_Snap.m_SpecInfo.m_Active)

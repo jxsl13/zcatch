@@ -390,12 +390,12 @@ bool CConsole::ExecuteFile(const char *pFilename)
 	// make sure that this isn't being executed already
 	for(CExecFile *pCur = m_pFirstExec; pCur; pCur = pCur->m_pPrev)
 		if(str_comp(pFilename, pCur->m_pFilename) == 0)
-			return;
+			return false;
 
 	if(!m_pStorage)
 		m_pStorage = Kernel()->RequestInterface<IStorage>();
 	if(!m_pStorage)
-		return;
+		return false;
 
 	// push this one to the stack
 	CExecFile ThisFile;

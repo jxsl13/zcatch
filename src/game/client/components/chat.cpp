@@ -720,7 +720,7 @@ void CChat::OnRender()
 	}
 
 	float Begin = x;
-	float FontSize = 6.0f;
+	float FontSize = (float)g_Config.m_ClTextSize * 0.01f * 6.0f; // text size factor
 	CTextCursor Cursor;
 	int OffsetType = IsScoreboardActive ? 1 : 0;
 
