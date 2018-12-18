@@ -1808,6 +1808,7 @@ int CMenus::Render()
 			pTitle = Localize("Disconnected");
 			pExtraText = Client()->ErrorString();
 			pButtonText = Localize("Ok");
+			ExtraAlign = CUI::ALIGN_LEFT;
 		}
 		else if(m_Popup == POPUP_PURE)
 		{
@@ -1820,17 +1821,26 @@ int CMenus::Render()
 		{
 			pTitle = Localize("Delete demo");
 			pExtraText = Localize("Are you sure that you want to delete the demo?");
+			ExtraAlign = CUI::ALIGN_LEFT;
 		}
 		else if(m_Popup == POPUP_RENAME_DEMO)
 		{
 			pTitle = Localize("Rename demo");
 			pExtraText = Localize("Are you sure you want to rename the demo?");
 			NumOptions = 6;
+			ExtraAlign = CUI::ALIGN_LEFT;
 		}
 		else if(m_Popup == POPUP_REMOVE_FRIEND)
 		{
 			pTitle = Localize("Remove friend");
 			pExtraText = Localize("Are you sure that you want to remove the player from your friends list?");
+			ExtraAlign = CUI::ALIGN_LEFT;
+		}
+		else if(m_Popup == POPUP_REMOVE_FILTER)
+		{
+			pTitle = Localize("Remove filter");
+			pExtraText = Localize("Are you sure that you want to remove the filter from the server browser?");
+			ExtraAlign = CUI::ALIGN_LEFT;
 		}
 		else if(m_Popup == POPUP_SAVE_SKIN)
 		{
@@ -1843,6 +1853,7 @@ int CMenus::Render()
 		{
 			pTitle = Localize("Delete skin");
 			pExtraText = Localize("Are you sure that you want to delete the skin?");
+			ExtraAlign = CUI::ALIGN_LEFT;
 		}
 		else if(m_Popup == POPUP_SOUNDERROR)
 		{
@@ -2187,7 +2198,8 @@ int CMenus::Render()
 		{
 			CUIRect Yes, No;
 			Box.HSplitTop(27.0f, 0, &Box);
-			UI()->DoLabel(&Box, pExtraText, ButtonHeight*ms_FontmodHeight*0.8f, ExtraAlign);
+			Box.VMargin(5.0f, &Box);
+			UI()->DoLabel(&Box, pExtraText, ButtonHeight*ms_FontmodHeight*0.8f, ExtraAlign, Box.w);
 
 			// buttons
 			BottomBar.VSplitMid(&No, &Yes);
@@ -2205,10 +2217,37 @@ int CMenus::Render()
 				// remove friend
 				if(m_pDeleteFriend)
 				{
-					m_pClient->Friends()->RemoveFriend(m_pDeleteFriend->m_aName, m_pDeleteFriend->m_aClan);
+					m_pClient->Friends()->RemoveFriend(m_pDeleteFriend->m_FriendState == IFriends::FRIEND_PLAYER ? m_pDeleteFriend->m_aName : "", m_pDeleteFriend->m_aClan);
 					FriendlistOnUpdate();
 					Client()->ServerBrowserUpdate();
 					m_pDeleteFriend = 0;
+				}
+			}
+		}
+		else if(m_Popup == POPUP_REMOVE_FILTER)
+		{
+			CUIRect Yes, No;
+			Box.HSplitTop(27.0f, 0, &Box);
+			Box.VMargin(5.0f, &Box);
+			UI()->DoLabel(&Box, pExtraText, ButtonHeight*ms_FontmodHeight*0.8f, ExtraAlign, Box.w);
+
+			// buttons
+			BottomBar.VSplitMid(&No, &Yes);
+			No.VSplitRight(SpacingW / 2.0f, &No, 0);
+			Yes.VSplitLeft(SpacingW / 2.0f, 0, &Yes);
+
+			static CButtonContainer s_ButtonNo;
+			if(DoButton_Menu(&s_ButtonNo, Localize("No"), 0, &No) || m_EscapePressed)
+				m_Popup = POPUP_NONE;
+
+			static CButtonContainer s_ButtonYes;
+			if(DoButton_Menu(&s_ButtonYes, Localize("Yes"), 0, &Yes) || m_EnterPressed)
+			{
+				m_Popup = POPUP_NONE;
+				// remove filter
+				if(m_RemoveFilterIndex)
+				{
+					RemoveFilter(m_RemoveFilterIndex);
 				}
 			}
 		}
@@ -2309,8 +2348,8 @@ int CMenus::Render()
 		else
 		{
 			Box.HSplitTop(27.0f, 0, &Box);
-			Box.VMargin(10.0f, &Part);
-			UI()->DoLabel(&Part, pExtraText, ButtonHeight*ms_FontmodHeight*0.8f, ExtraAlign, -1);
+			Box.VMargin(5.0f, &Part);
+			UI()->DoLabel(&Part, pExtraText, ButtonHeight*ms_FontmodHeight*0.8f, ExtraAlign, ExtraAlign == CUI::ALIGN_CENTER ? -1 : Part.w);
 
 			// button
 			static CButtonContainer s_Button;

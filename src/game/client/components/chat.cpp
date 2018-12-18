@@ -552,7 +552,9 @@ void CChat::OnRender()
 	const CGameClient::CClientData& LocalClient = m_pClient->m_aClients[LocalCID];
 	const int LocalTteam = LocalClient.m_Team;
 
-	if(m_Mode != CHAT_NONE)
+	if(m_Mode == CHAT_WHISPER && !m_pClient->m_aClients[m_WhisperTarget].m_Active)
+		m_Mode = CHAT_NONE;
+	else if(m_Mode != CHAT_NONE)
 	{
 		// calculate category text size
 		// TODO: rework TextRender. Writing the same code twice to calculate a simple thing as width is ridiculus
@@ -912,9 +914,10 @@ void CChat::OnRender()
 			if(Line.m_Mode == CHAT_WHISPER && Line.m_ClientID == m_pClient->m_LocalClientID && Line.m_TargetID >= 0)
 				NameCID = Line.m_TargetID;
 
+			vec4 IdTextColor = vec4(0.1f*Blend, 0.1f*Blend, 0.1f*Blend, 1.0f*Blend);
 			vec4 BgIdColor = TextColor;
-			BgIdColor.a = 0.5f;
-			RenderTools()->DrawClientID(TextRender(), &Cursor, NameCID, BgIdColor);
+			BgIdColor.a = 0.5f*Blend;
+			RenderTools()->DrawClientID(TextRender(), &Cursor, NameCID, BgIdColor, IdTextColor);
 			str_format(aBuf, sizeof(aBuf), "%s: ", Line.m_aName);
 			TextRender()->TextShadowed(&Cursor, aBuf, -1, ShadowOffset, ShadowColor, TextColor);
 		}

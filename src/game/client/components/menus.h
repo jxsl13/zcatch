@@ -150,6 +150,7 @@ private:
 		POPUP_DELETE_DEMO,
 		POPUP_RENAME_DEMO,
 		POPUP_REMOVE_FRIEND,
+		POPUP_REMOVE_FILTER,
 		POPUP_SAVE_SKIN,
 		POPUP_DELETE_SKIN,
 		POPUP_SOUNDERROR,
@@ -337,15 +338,14 @@ private:
 	class CFriendItem
 	{
 	public:
-		const CFriendInfo *m_pFriendInfo;
 		const CServerInfo *m_pServerInfo;
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
+		int m_FriendState;
 		bool m_IsPlayer;
 
 		CFriendItem()
 		{
-			m_pFriendInfo = 0;
 			m_pServerInfo = 0;
 		}
 
@@ -423,6 +423,7 @@ private:
 	array<CBrowserFilter> m_lFilters;
 
 	int m_SelectedFilter;
+	int m_RemoveFilterIndex;
 
 	void LoadFilters();
 	void SaveFilters();
@@ -544,12 +545,12 @@ private:
 	void RenderServerbrowserInfoTab(CUIRect View);
 	void RenderServerbrowserFriendList(CUIRect View);
 	void RenderDetailInfo(CUIRect View, const CServerInfo *pInfo);
-	void RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int RowCount);
+	void RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int RowCount, vec4 TextColor = vec4(1,1,1,1));
 	void RenderServerbrowserServerDetail(CUIRect View, const CServerInfo *pInfo);
 	//void RenderServerbrowserFriends(CUIRect View);
 	void RenderServerbrowserBottomBox(CUIRect View);
 	void RenderServerbrowserOverlay();
-	bool RenderFilterHeader(CUIRect View, int FilterIndex);
+	void RenderFilterHeader(CUIRect View, int FilterIndex);
 	int DoBrowserEntry(const void *pID, CUIRect View, const CServerInfo *pEntry, const CBrowserFilter *pFilter, bool Selected);
 	void RenderServerbrowser(CUIRect MainView);
 	static void ConchainFriendlistUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
