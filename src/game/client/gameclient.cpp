@@ -321,6 +321,16 @@ void CGameClient::OnInit()
 
 void CGameClient::OnUpdate()
 {
+	CServerInfo CurrentServerInfo;
+	Client()->GetServerInfo(&CurrentServerInfo);
+	m_Instagib = (CurrentServerInfo.m_aGameType[0] && CurrentServerInfo.m_aGameType[0] == 'i' && (
+		   str_find_nocase(CurrentServerInfo.m_aGameType, "ictf")
+		|| str_find_nocase(CurrentServerInfo.m_aGameType, "idm")
+		|| str_find_nocase(CurrentServerInfo.m_aGameType, "itdm")
+		|| str_find_nocase(CurrentServerInfo.m_aGameType, "ilms")
+		|| str_find_nocase(CurrentServerInfo.m_aGameType, "ilts")
+		));
+
 	// handle mouse movement
 	float x = 0.0f, y = 0.0f;
 	Input()->MouseRelative(&x, &y);
@@ -819,7 +829,8 @@ void CGameClient::OnShutdown()
 	for(int i = 0; i < m_All.m_Num; i++)
 		m_All.m_paComponents[i]->OnShutdown();
 }
-void CGameClient::OnEnterGame() {}
+void CGameClient::OnEnterGame() {
+}
 
 void CGameClient::OnGameOver()
 {

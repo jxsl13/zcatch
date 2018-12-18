@@ -430,7 +430,8 @@ void CPlayers::RenderPlayer(
 			case WEAPON_GRENADE: RenderTools()->RenderTeeHand(&RenderInfo, p, Direction, -pi/2, vec2(-4, 7)); break;
 		}
 
-		if(g_Config.m_ClShieldDisplay && Player.m_Weapon == WEAPON_SHOTGUN)
+		if(g_Config.m_ClShieldDisplay && Player.m_Weapon == WEAPON_SHOTGUN &&
+			m_pClient->IsInstagib())
 		{
 			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SHIELD].m_Id);
 			Graphics()->QuadsBegin();

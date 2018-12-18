@@ -99,7 +99,8 @@ void CItems::RenderProjectile(const CNetObj_Projectile *pCurrent, int ItemID)
 
 void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCurrent)
 {
-	if(g_Config.m_ClShieldDisplay && pCurrent->m_Type == PICKUP_ARMOR)
+	if(g_Config.m_ClShieldDisplay && pCurrent->m_Type == PICKUP_ARMOR &&
+		m_pClient->IsInstagib())
 	{
 		return;
 	}

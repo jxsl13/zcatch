@@ -287,6 +287,8 @@ public:
 	// Gamer hooks
 	bool m_FirstBlood;
 	bool m_IsWarmupping;
+	bool m_Instagib;
+	virtual bool IsInstagib() const { return m_Instagib; }
 	// void RegisterStats();
 
 	virtual const char *GetItemName(int Type) const;

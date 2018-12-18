@@ -114,6 +114,9 @@ public:
 	// server info
 	virtual void GetServerInfo(class CServerInfo *pServerInfo) const = 0;
 
+	// gamer
+	// virtual bool IsInstagib() const = 0;
+
 	// snapshot interface
 
 	enum
