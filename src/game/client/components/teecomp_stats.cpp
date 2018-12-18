@@ -7,7 +7,10 @@
 #include <game/client/gameclient.h>
 // #include <game/client/animstate.h>
 #include <game/client/teecomp.h>
+#include <generated/client_data.h>
 #include "teecomp_stats.h"
+
+#define TCRENDER
 
 CTeecompStats::CTeecompStats()
 {
@@ -221,7 +224,7 @@ void CTeecompStats::OnRender()
 	// auto stat screenshot stuff
 	if(g_Config.m_TcStatScreenshot)
 	{
-		if(m_ScreenshotTime < 0 && m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_GAMEOVER)
+		if(m_ScreenshotTime < 0 && m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMESTATEFLAG_GAMEOVER)
 			m_ScreenshotTime = time_get()+time_freq()*3;
 
 		if(m_ScreenshotTime > -1 && m_ScreenshotTime < time_get())
@@ -287,7 +290,7 @@ void CTeecompStats::RenderGlobalStats()
 				w += 100;
 		}
 
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 		w += 100;
 
 	bool aDisplayWeapon[NUM_WEAPONS] = {false};
@@ -311,10 +314,12 @@ void CTeecompStats::RenderGlobalStats()
 	Graphics()->MapScreen(0, 0, Width, Height);
 
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(-1);
+	// Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0,0,0,0.5f);
-	RenderTools()->DrawRoundRect(x-10.f, y-10.f, w, h, 17.0f);
+	{
+		CUIRect Rect = {x-10.f, y-10.f, w, h};
+		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+	}
 	Graphics()->QuadsEnd();
 
 	float tw;
@@ -352,7 +357,7 @@ void CTeecompStats::RenderGlobalStats()
 		px += 40;
 	}
 
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 	{
 		px -= 40;
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
@@ -385,10 +390,12 @@ void CTeecompStats::RenderGlobalStats()
 		if(pInfo->m_Local)
 		{
 			// background so it's easy to find the local player
-			Graphics()->TextureSet(-1);
+			// Graphics()->TextureSet(-1);
 			Graphics()->QuadsBegin();
-			Graphics()->SetColor(1,1,1,0.25f);
-			RenderTools()->DrawRoundRect(x, y, w-20, LineHeight*0.95f, 17.0f);
+			{
+				CUIRect Rect = {x, y, w-20, LineHeight*0.95f};
+				RenderTools()->DrawRoundRect(&Rect, vec4(1,1,1,0.25f), 17.0f);
+			}
 			Graphics()->QuadsEnd();
 		}
 
@@ -472,7 +479,7 @@ void CTeecompStats::RenderGlobalStats()
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
-		if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGGRABS)
+		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGGRABS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagGrabs);
 			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
@@ -489,7 +496,7 @@ void CTeecompStats::RenderGlobalStats()
 			TextRender()->Text(0, x+px-tw/2, y, FontSize, aBuf, -1);
 			px += 80;
 		}
-		if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagCaptures);
 			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
@@ -524,10 +531,12 @@ void CTeecompStats::RenderIndividualStats()
 
 	// header with name and score
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(-1);
+	// Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0,0,0,0.5f);
-	RenderTools()->DrawRoundRect(x-10.f, y-10.f, w, 120.0f, 17.0f);
+	{
+		CUIRect Rect = {x-10.f, y-10.f, w, 120.0f};
+		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+	}
 	Graphics()->QuadsEnd();
 
 	CTeeRenderInfo Teeinfo = m_pClient->m_aClients[m_ClientID].m_RenderInfo;
@@ -552,10 +561,12 @@ void CTeecompStats::RenderIndividualStats()
 
 	// Frags, etc. stats
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(-1);
+	// Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0,0,0,0.5f);
-	RenderTools()->DrawRoundRect(x-10.f, y-10.f, w, 100.0f, 17.0f);
+	{
+		CUIRect Rect = {x-10.f, y-10.f, w, 100.0f};
+		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+	}
 	Graphics()->QuadsEnd();
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
@@ -603,10 +614,12 @@ void CTeecompStats::RenderIndividualStats()
 	if(NumWeaps)
 	{
 		Graphics()->BlendNormal();
-		Graphics()->TextureSet(-1);
+		// Graphics()->TextureSet(-1);
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0,0,0,0.5f);
-		RenderTools()->DrawRoundRect(x-10.f, y-10.f, w, LineHeight*(1+NumWeaps)+20.0f, 17.0f);
+		{
+			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*(1+NumWeaps)+20.0f};
+			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+		}
 		Graphics()->QuadsEnd();
 
 		TextRender()->Text(0, x+xo, y, FontSize, Localize("Frags"), -1);
@@ -634,13 +647,15 @@ void CTeecompStats::RenderIndividualStats()
 	}
 
 	// Flag stats
-	if(m_pClient->m_Snap.m_pGameInfoObj && m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_FLAGS)
+	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS)
 	{
 		Graphics()->BlendNormal();
-		Graphics()->TextureSet(-1);
+		// Graphics()->TextureSet(-1);
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0,0,0,0.5f);
-		RenderTools()->DrawRoundRect(x-10.f, y-10.f, w, LineHeight*5+20.0f, 17.0f);
+		{
+			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*5+20.0f};
+			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+		}
 		Graphics()->QuadsEnd();
 
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
