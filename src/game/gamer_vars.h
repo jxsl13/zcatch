@@ -26,6 +26,7 @@ MACRO_CONFIG_INT(ClNoAmmoWarning, cl_noammo_warning, 1, 0, 1, CFGFLAG_CLIENT|CFG
 // Sounds
 MACRO_CONFIG_INT(ClGSound, cl_gsound, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Gamer sounds")
 MACRO_CONFIG_INT(ClChatSound, cl_chat_sound, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable chat sounds")
+MACRO_CONFIG_INT(ClSwapChatSounds, cl_swap_chat_sounds, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Swap chat normal/highlight sounds")
 MACRO_CONFIG_INT(ClAnnouncers, cl_announcers, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Announcers")
 MACRO_CONFIG_INT(ClAnnouncersShadows, cl_announcers_shadows, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Announcers outline shadows")
 MACRO_CONFIG_INT(ClAnnouncersLegend, cl_announcers_legend, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Legend under the announcers")
@@ -33,7 +34,7 @@ MACRO_CONFIG_INT(ClAnnouncersLegend, cl_announcers_legend, 1, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClColorfulBrowser, cl_colorful_browser, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Colorful browser")
 
 // Chat
-// MACRO_CONFIG_INT(ClTextSize, cl_text_size, 100, 50, 200, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Chat size (%)")
+MACRO_CONFIG_INT(ClTextSize, cl_text_size, 100, 50, 200, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Chat size (%)")
 MACRO_CONFIG_INT(ClTextColors, cl_text_colors, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render text colors")
 // MACRO_CONFIG_INT(ClArrows, cl_arrows, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Arrows")
 // MACRO_CONFIG_INT(ClNoCustomForArrows, cl_no_custom_for_arrows, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Do not use custom team colors for arrows")
@@ -55,3 +56,6 @@ MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLA
 
 // LAN test button
 // MACRO_CONFIG_INT(ClShowLanTest, cl_show_lan_test, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show the LAN test button in the ingame menus")
+
+// instashield
+MACRO_CONFIG_INT(ClShieldDisplay, cl_shield_display, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display shields instead of armor pickups in iCTF)")

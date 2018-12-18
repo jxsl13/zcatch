@@ -749,8 +749,8 @@ const char *CClient::ErrorString() const
 
 void CClient::Render()
 {
-	if(g_Config.m_GfxClear)
-		Graphics()->Clear(1,1,0);
+	if(g_Config.m_GfxClear || g_Config.m_GfxGameTiles == 2)
+		Graphics()->Clear(0.4f,0.4f,0.7f);
 
 	GameClient()->OnRender();
 	DebugRender();

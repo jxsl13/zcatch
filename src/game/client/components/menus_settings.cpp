@@ -1992,6 +1992,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		RenderSettingsGraphics(MainView);
 	else if(g_Config.m_UiSettingsPage == SETTINGS_SOUND)
 		RenderSettingsSound(MainView);
+	else if(g_Config.m_UiSettingsPage == SETTINGS_GAMER)
+		RenderSettingsGamer(MainView);
 
 	MainView.HSplitBottom(60.0f, 0, &MainView);
 

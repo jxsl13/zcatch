@@ -61,6 +61,8 @@ private:
 	int DoButton_CheckBox_Common(const void *pID, const char *pText, const char *pBoxText, const CUIRect *pRect, bool Checked=false);
 	int DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_CheckBox_Number(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
+	// Gamer
+	void DoButton_BinaryCheckBox(int *pConfig, const char *pText, const CUIRect *pRect); // This automatically does Localize on pText
 
 	int DoButton_MouseOver(int ImageID, int SpriteID, const CUIRect *pRect);
 
@@ -176,6 +178,7 @@ private:
 		SETTINGS_CONTROLS,
 		SETTINGS_GRAPHICS,
 		SETTINGS_SOUND,
+		SETTINGS_GAMER,
 
 		ACTLB_NONE=0,
 		ACTLB_LANG,
@@ -572,6 +575,45 @@ private:
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
+
+	// Gamer
+	void RenderSettingsGamer(CUIRect MainView);
+	void RenderSettingsGamerGeneral(CUIRect MainView);
+	void RenderSettingsGamerStats(CUIRect MainView);
+
+	// Gamer utilities
+	void NewLine(CUIRect *pButton, CUIRect *pView);
+	void NewLine();
+	
+	CUIRect *pNewLineButton;
+	CUIRect *pNewLineView;
+
+	typedef struct 
+	{
+		int games;
+
+		int frags_with[6];
+		int deaths_from[6];
+		int frags;
+		int deaths;
+		int suicides;
+
+		int flag_grabs;
+		int flag_captures;
+		int carriers_killed;
+		int kills_carrying;
+		int deaths_carrying;
+		
+		int won;
+	} PersonalStats;
+
+	enum
+	{
+		NOT_LOADED=0,
+		FAILED_LOADING,
+		LOADED,	
+	};
+	// end Gamer
 
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);

@@ -233,7 +233,7 @@ int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Ch
 	Temp.HMargin((Temp.h*FontFactor)/2.0f, &Temp);
 	TextRender()->TextColor(1.0f-FadeVal, 1.0f-FadeVal, 1.0f-FadeVal, FontAlpha);
 	TextRender()->TextOutlineColor(0.0f+FadeVal, 0.0f+FadeVal, 0.0f+FadeVal, 0.25f*FontAlpha);
-	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight, CUI::ALIGN_CENTER);
+	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	return UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
@@ -246,7 +246,7 @@ void CMenus::DoButton_MenuTabTop_Dummy(const char *pText, int Checked, const CUI
 	pRect->HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Temp);
 	TextRender()->TextColor(0.15f, 0.15f, 0.15f, Alpha);
 	TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.25f*Alpha);
-	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight, CUI::ALIGN_CENTER);
+	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 }
@@ -330,6 +330,12 @@ int CMenus::DoButton_CheckBox_Common(const void *pID, const char *pText, const c
 int CMenus::DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
 {
 	return DoButton_CheckBox_Common(pID, pText, "", pRect, Checked);
+}
+
+void CMenus::DoButton_BinaryCheckBox(int *pConfig, const char *pText, const CUIRect *pRect)
+{
+	if(DoButton_CheckBox(pConfig, Localize(pText), *pConfig, pRect))
+		(*pConfig) ^= 1;
 }
 
 int CMenus::DoButton_CheckBox_Number(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
@@ -1120,7 +1126,7 @@ void CMenus::RenderMenubar(CUIRect Rect)
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
 		float Spacing = 3.0f;
-		float ButtonWidth = (Box.w / 6.0f) - (Spacing*5.0) / 6.0f;
+		float ButtonWidth = (Box.w/6.0f)-(Spacing*5.0)/6.0f;
 		float Alpha = 1.0f;
 		if(m_GamePage == PAGE_SETTINGS)
 			Alpha = InactiveAlpha;
@@ -1178,12 +1184,12 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 	if((Client()->State() == IClient::STATE_OFFLINE && m_MenuPage == PAGE_SETTINGS) || (Client()->State() == IClient::STATE_ONLINE && m_GamePage == PAGE_SETTINGS))
 	{
-		if(Client()->State() == IClient::STATE_ONLINE && (g_Config.m_UiSettingsPage == SETTINGS_PLAYER || g_Config.m_UiSettingsPage == SETTINGS_TEE))
-		{
-			g_Config.m_UiSettingsPage = SETTINGS_GENERAL;
-		}
+		// if(Client()->State() == IClient::STATE_ONLINE && (g_Config.m_UiSettingsPage == SETTINGS_PLAYER || g_Config.m_UiSettingsPage == SETTINGS_TEE))
+		// {
+		// 	g_Config.m_UiSettingsPage = SETTINGS_GENERAL;
+		// }
 		float Spacing = 3.0f;
-		float ButtonWidth = (Box.w/6.0f)-(Spacing*5.0)/6.0f;
+		float ButtonWidth = (Box.w/7.0f)-(Spacing*6.0)/7.0f;
 		float NotActiveAlpha = Client()->State() == IClient::STATE_ONLINE ? 0.5f : 1.0f;
 		int Corners = Client()->State() == IClient::STATE_ONLINE ? CUI::CORNER_T : CUI::CORNER_ALL;
 
@@ -1204,10 +1210,11 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 		Box.VSplitLeft(Spacing, 0, &Box); // little space
 		Box.VSplitLeft(ButtonWidth, &Button, &Box);
-		if(Client()->State() == IClient::STATE_OFFLINE)
+		// if(Client()->State() == IClient::STATE_OFFLINE)
 		{
 			static CButtonContainer s_PlayerButton;
-			if(DoButton_MenuTabTop(&s_PlayerButton, Localize("Player"), g_Config.m_UiSettingsPage == SETTINGS_PLAYER, &Button))
+			if(DoButton_MenuTabTop(&s_PlayerButton, Localize("Player"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage == SETTINGS_PLAYER, &Button,
+				g_Config.m_UiSettingsPage == SETTINGS_PLAYER ? 1.0f : NotActiveAlpha, 1.0f, Corners))
 			{
 				m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_PLAYER);
 				g_Config.m_UiSettingsPage = SETTINGS_PLAYER;
@@ -1216,10 +1223,11 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 		Box.VSplitLeft(Spacing, 0, &Box); // little space
 		Box.VSplitLeft(ButtonWidth, &Button, &Box);
-		if(Client()->State() == IClient::STATE_OFFLINE)
+		// if(Client()->State() == IClient::STATE_OFFLINE)
 		{
 			static CButtonContainer s_TeeButton;
-			if(DoButton_MenuTabTop(&s_TeeButton, Localize("Tee"), g_Config.m_UiSettingsPage == SETTINGS_TEE, &Button))
+			if(DoButton_MenuTabTop(&s_TeeButton, Localize("Tee"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage == SETTINGS_TEE, &Button,
+				g_Config.m_UiSettingsPage == SETTINGS_TEE ? 1.0f : NotActiveAlpha, 1.0f, Corners))
 			{
 				m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_TEE);
 				g_Config.m_UiSettingsPage = SETTINGS_TEE;
@@ -1254,6 +1262,16 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		{
 			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_SOUND);
 			g_Config.m_UiSettingsPage = SETTINGS_SOUND;
+		}
+
+		Box.VSplitLeft(Spacing, 0, &Box); // little space
+		Box.VSplitLeft(ButtonWidth, &Button, &Box);
+		static CButtonContainer s_GamerButton;
+		if(DoButton_MenuTabTop(&s_GamerButton, Localize("Gamer"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage==SETTINGS_GAMER, &Button,
+			g_Config.m_UiSettingsPage == SETTINGS_GAMER ? 1.0f : NotActiveAlpha, 1.0f, Corners))
+		{
+			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_SOUND);
+			g_Config.m_UiSettingsPage = SETTINGS_GAMER;
 		}
 	}
 	else if(Client()->State() == IClient::STATE_OFFLINE)
