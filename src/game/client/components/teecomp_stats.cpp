@@ -5,7 +5,7 @@
 #include <game/client/components/announcers.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
-// #include <game/client/animstate.h>
+#include <game/client/animstate.h>
 #include <game/client/teecomp.h>
 #include <generated/client_data.h>
 #include "teecomp_stats.h"
@@ -260,24 +260,34 @@ void CTeecompStats::RenderGlobalStats()
 	float w = 250.0f;
 	float h = 750.0f;
 
-	const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {0};
+	// const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {0};
+	int apPlayers[MAX_CLIENTS] = {0};
 	int NumPlayers = 0;
 	int i;
-	for(i=0; i<Client()->SnapNumItems(IClient::SNAP_CURRENT); i++)
+	// for(i=0; i<Client()->SnapNumItems(IClient::SNAP_CURRENT); i++)
+	// {
+	// 	IClient::CSnapItem Item;
+	// 	const void *pData = Client()->SnapGetItem(IClient::SNAP_CURRENT, i, &Item);
+
+	// 	if(Item.m_Type == NETOBJTYPE_PLAYERINFO)
+	// 	{
+	// 		const CNetObj_PlayerInfo *pInfo = (const CNetObj_PlayerInfo *)pData;
+
+	// 		if(!m_pClient->m_aStats[pInfo->m_ClientID].m_Active)
+	// 			continue;
+
+	// 		apPlayers[NumPlayers] = pInfo;
+	// 		NumPlayers++;
+	// 	}
+	// }
+	for(i=0; i<MAX_CLIENTS; i++)
 	{
-		IClient::CSnapItem Item;
-		const void *pData = Client()->SnapGetItem(IClient::SNAP_CURRENT, i, &Item);
+		// if(!m_pClient->m_aStats[i].m_Active)
+		if(!m_pClient->m_aClients[i].m_Active)
+			continue;
 
-		if(Item.m_Type == NETOBJTYPE_PLAYERINFO)
-		{
-			const CNetObj_PlayerInfo *pInfo = (const CNetObj_PlayerInfo *)pData;
-
-			if(!m_pClient->m_aStats[pInfo->m_ClientID].m_Active)
-				continue;
-
-			apPlayers[NumPlayers] = pInfo;
-			NumPlayers++;
-		}
+		apPlayers[NumPlayers] = i;
+		NumPlayers++;
 	}
 	// Dunedune: the game ALWAYS detects numplayers=0 FFS WHY?
 
@@ -290,7 +300,7 @@ void CTeecompStats::RenderGlobalStats()
 				w += 100;
 		}
 
-	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(/*m_pClient->m_Snap.m_pGameData && */m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 		w += 100;
 
 	bool aDisplayWeapon[NUM_WEAPONS] = {false};
@@ -299,7 +309,8 @@ void CTeecompStats::RenderGlobalStats()
 		w += 10;
 		for(i=0; i<NumPlayers; i++)
 		{
-			const CGameClient::CClientStats pStats = m_pClient->m_aStats[apPlayers[i]->m_ClientID];
+			// const CGameClient::CClientStats pStats = m_pClient->m_aStats[apPlayers[i]->m_ClientID];
+			const CGameClient::CClientStats pStats = m_pClient->m_aStats[apPlayers[i]];
 			for(int j=0; j<NUM_WEAPONS; j++)
 				aDisplayWeapon[j] = aDisplayWeapon[j] || pStats.m_aFragsWith[j] || pStats.m_aDeathsFrom[j];
 		}
@@ -314,13 +325,10 @@ void CTeecompStats::RenderGlobalStats()
 	Graphics()->MapScreen(0, 0, Width, Height);
 
 	Graphics()->BlendNormal();
-	// Graphics()->TextureSet(-1);
-	Graphics()->QuadsBegin();
 	{
 		CUIRect Rect = {x-10.f, y-10.f, w, h};
 		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
 	}
-	Graphics()->QuadsEnd();
 
 	float tw;
 	int px = 325;
@@ -384,38 +392,38 @@ void CTeecompStats::RenderGlobalStats()
 	}
 	for(int j=0; j<NumPlayers; j++)
 	{
-		const CNetObj_PlayerInfo *pInfo = apPlayers[j];
-		const CGameClient::CClientStats Stats = m_pClient->m_aStats[pInfo->m_ClientID];
+		// const CNetObj_PlayerInfo *pInfo = apPlayers[j];
+		// const CGameClient::CClientStats Stats = m_pClient->m_aStats[pInfo->m_ClientID];
+		const CGameClient::CClientStats Stats = m_pClient->m_aStats[apPlayers[j]];		
 
-		if(pInfo->m_Local)
+		// if(pInfo->m_Local)
+		if(apPlayers[j] == m_pClient->m_LocalClientID)
 		{
 			// background so it's easy to find the local player
 			// Graphics()->TextureSet(-1);
-			Graphics()->QuadsBegin();
 			{
 				CUIRect Rect = {x, y, w-20, LineHeight*0.95f};
 				RenderTools()->DrawRoundRect(&Rect, vec4(1,1,1,0.25f), 17.0f);
 			}
-			Graphics()->QuadsEnd();
 		}
 
-		CTeeRenderInfo Teeinfo = m_pClient->m_aClients[pInfo->m_ClientID].m_RenderInfo;
+		CTeeRenderInfo Teeinfo = m_pClient->m_aClients[apPlayers[j]].m_RenderInfo;
 		Teeinfo.m_Size *= TeeSizemod;
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &Teeinfo, EMOTE_NORMAL, vec2(1,0), vec2(x+28, y+28+TeeOffset));
 
 		char aBuf[128];
 		if(g_Config.m_TcStatId)
 		{
-			str_format(aBuf, sizeof(aBuf), "%d", pInfo->m_ClientID);
+			str_format(aBuf, sizeof(aBuf), "%d", apPlayers[j]);
 			TextRender()->Text(0, x, y, FontSize, aBuf, -1);
 		}
 
 		CTextCursor Cursor;
-		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[pInfo->m_ClientID].m_aName, -1);
+		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
 		TextRender()->SetCursor(&Cursor, x+64, y, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 220;
-		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[pInfo->m_ClientID].m_aName, -1);
-		//TextRender()->Text(0, x+64, y, FontSize, m_pClient->m_aClients[pInfo->m_ClientID].m_aName, -1);
+		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
+		//TextRender()->Text(0, x+64, y, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
 
 		px = 325;
 		if(g_Config.m_TcStatboardInfos & TC_STATS_FRAGS)
@@ -532,12 +540,10 @@ void CTeecompStats::RenderIndividualStats()
 	// header with name and score
 	Graphics()->BlendNormal();
 	// Graphics()->TextureSet(-1);
-	Graphics()->QuadsBegin();
 	{
 		CUIRect Rect = {x-10.f, y-10.f, w, 120.0f};
 		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
 	}
-	Graphics()->QuadsEnd();
 
 	CTeeRenderInfo Teeinfo = m_pClient->m_aClients[m_ClientID].m_RenderInfo;
 	Teeinfo.m_Size *= 1.5f;
@@ -562,12 +568,10 @@ void CTeecompStats::RenderIndividualStats()
 	// Frags, etc. stats
 	Graphics()->BlendNormal();
 	// Graphics()->TextureSet(-1);
-	Graphics()->QuadsBegin();
 	{
 		CUIRect Rect = {x-10.f, y-10.f, w, 100.0f};
 		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
 	}
-	Graphics()->QuadsEnd();
 
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
 	Graphics()->QuadsBegin();
@@ -615,12 +619,10 @@ void CTeecompStats::RenderIndividualStats()
 	{
 		Graphics()->BlendNormal();
 		// Graphics()->TextureSet(-1);
-		Graphics()->QuadsBegin();
 		{
 			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*(1+NumWeaps)+20.0f};
 			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
 		}
-		Graphics()->QuadsEnd();
 
 		TextRender()->Text(0, x+xo, y, FontSize, Localize("Frags"), -1);
 		TextRender()->Text(0, x+xo+200.0f, y, FontSize, Localize("Deaths"), -1);
@@ -651,12 +653,10 @@ void CTeecompStats::RenderIndividualStats()
 	{
 		Graphics()->BlendNormal();
 		// Graphics()->TextureSet(-1);
-		Graphics()->QuadsBegin();
 		{
 			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*5+20.0f};
 			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
 		}
-		Graphics()->QuadsEnd();
 
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 		Graphics()->QuadsBegin();

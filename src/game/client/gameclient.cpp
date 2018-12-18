@@ -19,6 +19,7 @@
 #include <game/version.h>
 #include "localization.h"
 #include "render.h"
+#include "teecomp.h"
 
 #include "gameclient.h"
 
@@ -188,11 +189,11 @@ void CGameClient::OnConsoleInit()
 	m_pMapimages = &::gs_MapImages;
 	m_pVoting = &::gs_Voting;
 	// m_pHud = &::gs_Hud; // for announcers
+	m_pTeecompStats = &::gs_TeecompStats;
 	m_pScoreboard = &::gs_Scoreboard;
 	m_pItems = &::gs_Items;
 	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
 	m_pMapLayersForeGround = &::gs_MapLayersForeGround;
-	m_pTeecompStats = &::gs_TeecompStats;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
