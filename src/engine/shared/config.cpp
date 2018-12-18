@@ -104,7 +104,7 @@ public:
 			return;
 		
 		if(!pFilename)
-			pFilename = "settings.cfg";
+			pFilename = "settings_gamer7.cfg";
 		m_ConfigFile = m_pStorage->OpenFile(pFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 		if(!m_ConfigFile)

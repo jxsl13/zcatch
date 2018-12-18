@@ -385,7 +385,7 @@ void CConsole::ExecuteLineFlag(const char *pStr, int FlagMask)
 }
 
 
-void CConsole::ExecuteFile(const char *pFilename)
+bool CConsole::ExecuteFile(const char *pFilename)
 {
 	// make sure that this isn't being executed already
 	for(CExecFile *pCur = m_pFirstExec; pCur; pCur = pCur->m_pPrev)
@@ -429,6 +429,7 @@ void CConsole::ExecuteFile(const char *pFilename)
 	}
 
 	m_pFirstExec = pPrev;
+	return (bool)File;
 }
 
 void CConsole::Con_Echo(IResult *pResult, void *pUserData)
