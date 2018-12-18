@@ -4,6 +4,7 @@
 #include <engine/engine.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
+#include <engine/textrender.h>
 #include <generated/protocol.h>
 #include <generated/client_data.h>
 
@@ -19,6 +20,12 @@
 #include <game/client/components/controls.h>
 
 #include "players.h"
+
+// Gamer
+vec3 vec3_factor(float f, vec3 u)
+{
+	return vec3(f*u.r, f*u.g, f*u.b);
+}
 
 inline float NormalizeAngular(float f)
 {
@@ -445,6 +452,118 @@ void CPlayers::RenderPlayer(
 	}
 
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position);
+
+	// gamer: render health bar
+	if(m_pClient->m_LocalClientID == ClientID && g_Config.m_GfxHealthBar)
+	{
+		int hp = m_pClient->m_Snap.m_pLocalCharacter->m_Health;
+		
+		vec3 red = vec3(0.9f,0.1f,0.1f), orange = vec3(0.9f,0.45f,0.1f), yellow = vec3(0.9f, 0.9f, 0.1f), green = vec3(0.1f,0.8f,0.1f);
+		vec3 color;
+		// 1 = RED ... 5 = ORANGE ... 10 = GREEN
+		if(hp > 10) hp = 10;
+		
+		if(hp <= 4)
+			color = vec3_factor((float)(hp-1)/3.f,orange) + vec3_factor((float)(4-hp)/3.f,red);
+		else if(hp < 6)
+			color = vec3_factor((float)(hp-4)/2.f,yellow) + vec3_factor((float)(6-hp)/2.f,orange);
+		else if(hp == 6)
+			color = vec3(0.85f, 0.85f, 0.1f);
+		else color = vec3_factor((float)(hp-6)/4.f,green) + vec3_factor((float)(10-hp)/4.f,yellow);
+		
+		CUIRect r;
+		r.w = 70;
+		r.h = 5;
+		r.x = Position.x-r.w/2;
+		r.y = Position.y-30-r.h;
+		
+		const int Scale = 1;
+		
+		
+		// Draw a black round rect (ugly way)
+		{
+			vec4 c = vec4(color.r/2,color.g/2,color.b/2, 1.0f);
+			CUIRect q;
+			q.w = r.w + 2*Scale;
+			q.h = Scale;
+			q.x = r.x - Scale;
+			q.y = r.y + r.h;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			q.y = g_Config.m_GfxHealthBar == 1 ? r.y - r.h - 2 * Scale : r.y - r.h - Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			q.w = Scale;
+			q.h = 2*r.h + 2*Scale;
+			q.x = r.x - Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			q.x = r.x + r.w;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			if(g_Config.m_GfxHealthBar == 1)
+			{
+				q.w = r.w + 2*Scale;
+				q.h = Scale;
+				q.x = r.x - Scale;
+				q.y = r.y - Scale;
+				RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			}
+		}
+		
+		
+		int armor = m_pClient->m_Snap.m_pLocalCharacter->m_Armor;
+		if(armor > 10) armor = 10;
+		if(!g_Config.m_GfxArmorUnderHealth)
+		{
+			// Render health bar
+			r.w = 70.0f * (float)hp/10.f;
+			RenderTools()->DrawUIRect(&r, vec4(color.r, color.g, color.b, 0.9f), 0, 5.0f);
+				
+			// Render armor bar
+			if(armor)
+			{
+				r.w = 70 * (float)armor/10;
+				r.y -= g_Config.m_GfxHealthBar == 1 ? r.h + Scale : r.h;
+				color = vec3(0.9f, 0.6f, 0.1f);
+				RenderTools()->DrawUIRect(&r, vec4(color.r, color.g, color.b, 0.9f), 0, 5.0f);
+			}
+		}
+		else
+		{
+			// Render armor bar
+			if(armor)
+			{
+				r.w = 70.0f * (float)armor/10;
+				RenderTools()->DrawUIRect(&r, vec4(0.9f, 0.6f, 0.1f, 0.9f), 0, 5.0f);
+			}
+			r.y -= g_Config.m_GfxHealthBar == 1 ? r.h + Scale : r.h;
+			
+			// Render health bar
+			r.w = 70.0f * (float)hp/10.f;
+			RenderTools()->DrawUIRect(&r, vec4(color.r, color.g, color.b, 0.9f), 0, 5.0f);
+		}
+		r.x -= 5;
+			
+		// Rendering numbers next to the bar
+		if(g_Config.m_GfxHealthBarNumbers)
+		{
+			CTextCursor Cursor;
+			char Text[32];
+			r.y += g_Config.m_GfxArmorUnderHealth ? (3.0f) :(-3.0f);
+			
+			str_format(Text, sizeof(Text), "%d", hp);
+			int w = TextRender()->TextWidth(0, 9, Text, -1);
+			TextRender()->SetCursor(&Cursor, r.x-w, r.y-g_Config.m_GfxArmorUnderHealth*8, 9.0f, TEXTFLAG_RENDER);
+			TextRender()->TextEx(&Cursor, Text, -1);
+			
+			str_format(Text, sizeof(Text), "%d", armor);
+			w = TextRender()->TextWidth(0, 9, Text, -1);
+			TextRender()->SetCursor(&Cursor, r.x-w, r.y-(1-g_Config.m_GfxArmorUnderHealth)*8, 9.0f, TEXTFLAG_RENDER);
+			TextRender()->TextEx(&Cursor, Text, -1);
+		}
+	}
+	// end gamer
 
 	if(pInfo.m_PlayerFlags&PLAYERFLAG_CHATTING)
 	{

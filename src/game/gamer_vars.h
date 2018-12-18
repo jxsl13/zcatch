@@ -11,16 +11,15 @@ MACRO_CONFIG_INT(ClGcolor, cl_gcolor, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Gam
 MACRO_CONFIG_INT(ClGhud, cl_ghud, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Gamer HUD")
 MACRO_CONFIG_INT(ClNoHud, cl_nohud, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Remove HUD")
 MACRO_CONFIG_INT(ClNoAmmoWarning, cl_noammo_warning, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Prints a red and yellow warning when you use all your ammo")
-MACRO_CONFIG_INT(ClBroadcastSize, cl_broadcast_size, 100, 10, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Broadcast size factor")
 
 // Positions
-MACRO_CONFIG_STR(ClRedbaseMsg, cl_redbase_msg, 64, "I am at the RED BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the red base")
-MACRO_CONFIG_STR(ClBluebaseMsg, cl_bluebase_msg, 64, "I am at the BLUE BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the blue base")
-MACRO_CONFIG_STR(ClMiddleMsg, cl_middle_msg, 64, "I am at the MIDDLE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the middle")
+// MACRO_CONFIG_STR(ClRedbaseMsg, cl_redbase_msg, 64, "I am at the RED BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the red base")
+// MACRO_CONFIG_STR(ClBluebaseMsg, cl_bluebase_msg, 64, "I am at the BLUE BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the blue base")
+// MACRO_CONFIG_STR(ClMiddleMsg, cl_middle_msg, 64, "I am at the MIDDLE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the middle")
 
-MACRO_CONFIG_INT(ClLocalPortLimit, cl_local_port_limit, 8320, 8304, 8400, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Maximum port the client is listening to when searching LAN servers")
+// MACRO_CONFIG_INT(ClLocalPortLimit, cl_local_port_limit, 8320, 8304, 8400, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Maximum port the client is listening to when searching LAN servers")
 
-// Race - this is useless now, should be removed
+// Race - old comment: this is useless now, should be removed
 // MACRO_CONFIG_INT(ClRace, cl_race, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable race mode when a time broadcast is detected")
 // MACRO_CONFIG_INT(ClRaceTextsize, cl_race_textsize, 100, 25, 400, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Race clock size")
 
@@ -47,8 +46,8 @@ MACRO_CONFIG_INT(ClTextColors, cl_text_colors, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_S
 // MACRO_CONFIG_INT(ClSendClientInfo, cl_sendclientinfo, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Give other players the ability to see you are using the gamer")
 // MACRO_CONFIG_INT(ClCountGamers, cl_count_gamers, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "")
 
-// Spectating
-// MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Spectator zoom")
+// 	Spectating
+MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Spectator zoom")
 
 // Stats
 // MACRO_CONFIG_INT(ClRegisterStats, cl_register_stats, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Record statistics")

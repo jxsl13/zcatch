@@ -541,6 +541,13 @@ void CRenderTools::MapScreenToWorld(float CenterX, float CenterY, float Parallax
 	float OffsetX, float OffsetY, float Aspect, float Zoom, float aPoints[4])
 {
 	float Width, Height;
+
+	// Gamer: spec zoom and minimap
+	// if(g_Config.m_ShowMM) //\\ +minimap
+	// 	Zoom *= 8;
+	// else
+		Zoom *= g_Config.m_GfxSpecZoom / 100.0f;
+	
 	CalcScreenParams(1150*1000, 1500, 1050, Aspect, &Width, &Height);
 	CenterX *= ParallaxX;
 	CenterY *= ParallaxY;

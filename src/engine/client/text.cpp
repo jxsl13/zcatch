@@ -4,6 +4,7 @@
 #include <base/math.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
+#include <engine/shared/config.h>
 
 #ifdef CONF_FAMILY_WINDOWS
 	#include <windows.h>
@@ -849,6 +850,7 @@ public:
 			{
 				int NewLine = 0;
 				const char *pBatchEnd = pEnd;
+				bool SkipNext = false; // Gamer
 				if(pCursor->m_LineWidth > 0 && !(pCursor->m_Flags&TEXTFLAG_STOP_AT_END))
 				{
 					int Wlen = min(WordLength((char *)pCurrent), (int)(pEnd-pCurrent));
@@ -904,6 +906,78 @@ public:
 						if(pCursor->m_MaxLines > 0 && LineCount > pCursor->m_MaxLines)
 							break;
 						continue;
+					}
+
+					// Gamer
+					if(g_Config.m_ClTextColors)
+					{
+						if(SkipNext)
+						{
+							SkipNext = false;
+							continue;
+						}
+						if(Character == '^')
+						{
+							switch(NextCharacter)
+							{
+								/*
+									^r: Red
+									^b: Blue
+									^y: Yellow
+									^p: Purple
+									^k: Pink
+									^g: Green
+									^h: Orange
+									^d: Dark
+									^w: White
+								*/
+								case 'r': // Red
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.9f, 0.1f, 0.1f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'b': // Blue
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.45f, 0.45f, 1.0f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'y': // Yellow
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.95f, 0.9f, 0.25f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'p': // Purple
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.85f, 0.4f, 1.0f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'k': // Pink
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(1.0f, 0.5f, 0.9f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'g': // Green
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.55f, 0.95f, 0.4f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'h': // Orange
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(1.0f, 0.6f, 0.05f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'd': // Dark
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(0.15f, 0.15f, 0.15f, 1.0f);
+									SkipNext = true;
+									continue;
+								case 'w':
+									if(pCursor->m_Flags&TEXTFLAG_RENDER && i)
+										Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+									SkipNext = true;
+									continue;
+							}
+						}
 					}
 
 					CFontChar *pChr = GetChar(pFont, pSizeData, Character);

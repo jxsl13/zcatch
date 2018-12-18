@@ -566,6 +566,9 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 	if(!pCharacter)
 		return;
 
+	if(g_Config.m_ClNoHud) // No Health and Ammo rendering
+		return;
+
 	float x = 5;
 	float y = 5;
 	int i;
@@ -587,7 +590,13 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 	else
 	{
 		RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[pCharacter->m_Weapon%NUM_WEAPONS].m_pSpriteProj);
-		if(pCharacter->m_Weapon == WEAPON_GRENADE)
+
+		if(g_Config.m_ClGhud)
+		{
+			Array[0] = IGraphics::CQuadItem(x, y+24, 10, 10);
+			i = 1;
+		}
+		else if(pCharacter->m_Weapon == WEAPON_GRENADE)
 		{
 			for(i = 0; i < min(pCharacter->m_AmmoCount, 10); i++)
 				Array[i] = IGraphics::CQuadItem(x+1+i*12, y+24, 10, 10);
@@ -600,38 +609,116 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 		Graphics()->QuadsDrawTL(Array, i);
 	}
 
-	int h = 0;
+	if(!g_Config.m_ClGhud)
+	{
+		int h = 0;
 
-	// render health
-	RenderTools()->SelectSprite(SPRITE_HEALTH_FULL);
-	for(; h < min(pCharacter->m_Health, 10); h++)
-		Array[h] = IGraphics::CQuadItem(x+h*12,y,12,12);
-	Graphics()->QuadsDrawTL(Array, h);
+		// render health
+		RenderTools()->SelectSprite(SPRITE_HEALTH_FULL);
+		for(; h < min(pCharacter->m_Health, 10); h++)
+			Array[h] = IGraphics::CQuadItem(x+h*12,y,12,12);
+		Graphics()->QuadsDrawTL(Array, h);
 
-	i = 0;
-	RenderTools()->SelectSprite(SPRITE_HEALTH_EMPTY);
-	for(; h < 10; h++)
-		Array[i++] = IGraphics::CQuadItem(x+h*12,y,12,12);
-	Graphics()->QuadsDrawTL(Array, i);
+		i = 0;
+		RenderTools()->SelectSprite(SPRITE_HEALTH_EMPTY);
+		for(; h < 10; h++)
+			Array[i++] = IGraphics::CQuadItem(x+h*12,y,12,12);
+		Graphics()->QuadsDrawTL(Array, i);
 
-	// render armor meter
-	h = 0;
-	RenderTools()->SelectSprite(SPRITE_ARMOR_FULL);
-	for(; h < min(pCharacter->m_Armor, 10); h++)
-		Array[h] = IGraphics::CQuadItem(x+h*12,y+12,12,12);
-	Graphics()->QuadsDrawTL(Array, h);
+		// render armor meter
+		h = 0;
+		RenderTools()->SelectSprite(SPRITE_ARMOR_FULL);
+		for(; h < min(pCharacter->m_Armor, 10); h++)
+			Array[h] = IGraphics::CQuadItem(x+h*12,y+12,12,12);
+		Graphics()->QuadsDrawTL(Array, h);
 
-	i = 0;
-	RenderTools()->SelectSprite(SPRITE_ARMOR_EMPTY);
-	for(; h < 10; h++)
-		Array[i++] = IGraphics::CQuadItem(x+h*12,y+12,12,12);
-	Graphics()->QuadsDrawTL(Array, i);
-	Graphics()->QuadsEnd();
-	Graphics()->WrapNormal();
+		i = 0;
+		RenderTools()->SelectSprite(SPRITE_ARMOR_EMPTY);
+		for(; h < 10; h++)
+			Array[i++] = IGraphics::CQuadItem(x+h*12,y+12,12,12);
+		Graphics()->QuadsDrawTL(Array, i);
+		Graphics()->QuadsEnd();
+		Graphics()->WrapNormal();
+	}
+	else
+	{	
+		// Gamer HUD
+		char Text[512];
+		CTextCursor Cursor;
+		float w;
+		
+		// gfx_mapscreen(0, 0, 300*gfx_screenaspect(), 300);
+		// Graphics()->MapScreen(0,0,100,100); (example)
+		
+		// render health
+		int nbItems = pCharacter->m_Health;
+		if(nbItems > 3)
+			RenderTools()->SelectSprite(SPRITE_HEALTH_FULL);
+		else RenderTools()->SelectSprite(SPRITE_HEALTH_EMPTY);
+		Array[0] = IGraphics::CQuadItem(x,y,10,10);
+		Graphics()->QuadsDrawTL(Array, 1);
+		
+		// render armor
+		nbItems = pCharacter->m_Armor;
+		if(nbItems > 0)
+			RenderTools()->SelectSprite(SPRITE_ARMOR_FULL);
+		else RenderTools()->SelectSprite(SPRITE_ARMOR_EMPTY);
+		Array[0] = IGraphics::CQuadItem(x,y+12,10,10);
+		Graphics()->QuadsDrawTL(Array, 1);
+		
+		Graphics()->QuadsEnd();
+		Graphics()->WrapNormal();
+		
+		// Dunedune
+		str_format(Text, sizeof(Text), "%d", pCharacter->m_Health);
+		w = TextRender()->TextWidth(0, 8, Text, -1);
+		TextRender()->SetCursor(&Cursor, x+16-w/2, y, 8.0f, TEXTFLAG_RENDER);
+		TextRender()->TextEx(&Cursor, Text, -1);
+		
+		str_format(Text, sizeof(Text), "%d", pCharacter->m_Armor);
+		w = TextRender()->TextWidth(0, 8, Text, -1);
+		TextRender()->SetCursor(&Cursor, x+16-w/2, y+12.0f, 8.0f, TEXTFLAG_RENDER);
+		TextRender()->TextEx(&Cursor, Text, -1);
+		
+		if(pCharacter->m_Weapon%NUM_WEAPONS && pCharacter->m_Weapon%NUM_WEAPONS!=5)
+		{
+			str_format(Text, sizeof(Text), "%d", pCharacter->m_AmmoCount);
+			w = TextRender()->TextWidth(0, 8, Text, -1);
+			if(!pCharacter->m_AmmoCount && pCharacter->m_Weapon%NUM_WEAPONS!=4)
+			{
+				if(g_Config.m_ClNoAmmoWarning)
+				{
+					if(time_get()/(time_freq()/2)%2 == 0)
+						TextRender()->TextColor(1,1,0.5f,1);
+					else
+						TextRender()->TextColor(1,0.2f,0.2f,1.0f);
+				}
+				TextRender()->SetCursor(&Cursor, x+16-w/2, y+24.0f, 8.0f, TEXTFLAG_RENDER);
+				TextRender()->TextEx(&Cursor, Text, -1);
+				TextRender()->TextColor(1,1,1,1);
+			}
+			else
+			{
+				TextRender()->SetCursor(&Cursor, x+16-w/2, y+24.0f, 8.0f, TEXTFLAG_RENDER);
+				TextRender()->TextEx(&Cursor, Text, -1);
+			}
+		}
+	}
 }
 
 void CHud::RenderSpectatorHud()
 {
+	// Gamer: spectator zoom
+	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyIsPressed(KEY_MOUSE_WHEEL_DOWN)) // zoom out
+		g_Config.m_GfxSpecZoom += (g_Config.m_GfxSpecZoom/100+1) * 10;
+	if((Input()->KeyIsPressed(KEY_LCTRL) || Input()->KeyIsPressed(KEY_RCTRL)) && Input()->KeyIsPressed(KEY_MOUSE_WHEEL_UP)) // zoom in
+		g_Config.m_GfxSpecZoom -= (g_Config.m_GfxSpecZoom/50+2) * 5;
+		
+	// Zoom limit
+	if(g_Config.m_GfxSpecZoom > 500) g_Config.m_GfxSpecZoom = 500;
+	if(g_Config.m_GfxSpecZoom < 100 && g_Config.m_GfxSpecZoom > 85) g_Config.m_GfxSpecZoom = 100;
+	if(g_Config.m_GfxSpecZoom < 50) g_Config.m_GfxSpecZoom = 50;
+
 	// draw the box
 	const float Width = m_Width * 0.25f - 2.0f;
 	CUIRect Rect = {m_Width-Width, m_Height-15.0f, Width, 15.0f};
@@ -642,12 +729,16 @@ void CHud::RenderSpectatorHud()
 	const int SpecID = m_pClient->m_Snap.m_SpecInfo.m_SpectatorID;
 	const int SpecMode = m_pClient->m_Snap.m_SpecInfo.m_SpecMode;
 	str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorID].m_aName : "");
-	char aBuf[128];
+	char aBuf[256];
 
 	CTextCursor Cursor;
 	TextRender()->SetCursor(&Cursor, m_Width-Width+6.0f, m_Height-13.0f, 8.0f, TEXTFLAG_RENDER);
 
-	str_format(aBuf, sizeof(aBuf), "%s: ", Localize("Spectate"));
+
+	if(g_Config.m_GfxSpecZoom == 100)
+		str_format(aBuf, sizeof(aBuf), "%s: ", Localize("Spectate"));
+	else
+		str_format(aBuf, sizeof(aBuf), "%s (%d%%): ", Localize("Spectate"), g_Config.m_GfxSpecZoom);
 	TextRender()->TextEx(&Cursor, aBuf, -1);
 
 	switch(SpecMode)
@@ -669,6 +760,7 @@ void CHud::RenderSpectatorHud()
 			str_format(aBuf, sizeof(aBuf), "%s", aFlag);
 		break;
 	}
+	
 
 	if(SpecMode == SPEC_PLAYER || SpecID != -1)
 		RenderTools()->DrawClientID(TextRender(), &Cursor, SpecID);
