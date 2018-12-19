@@ -225,7 +225,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 }
 
 
-void CEffects::Explosion(vec2 Pos)
+void CEffects::Explosion(vec2 Pos, bool IsLaserType)
 {
 	// add to flow
 	for(int y = -8; y <= 8; y++)
@@ -241,7 +241,7 @@ void CEffects::Explosion(vec2 Pos)
 	// add the explosion
 	CParticle p;
 	p.SetDefault();
-	p.m_Spr = SPRITE_PART_EXPL01;
+	p.m_Spr = IsLaserType ? SPRITE_PART_EXPL02 : SPRITE_PART_EXPL01;
 	p.m_Pos = Pos;
 	p.m_LifeSpan = 0.4f;
 	p.m_StartSize = 150.0f;

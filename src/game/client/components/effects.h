@@ -19,7 +19,7 @@ public:
 	void BulletTrail(vec2 Pos);
 	void SmokeTrail(vec2 Pos, vec2 Vel);
 	void SkidTrail(vec2 Pos, vec2 Vel);
-	void Explosion(vec2 Pos);
+	void Explosion(vec2 Pos, bool IsLaserType);
 	void HammerHit(vec2 Pos);
 	void AirJump(vec2 Pos);
 	void DamageIndicator(vec2 Pos, int Amount);
