@@ -42,6 +42,7 @@ static CKeyInfo gs_aKeys[] =
 	{ "Remote console", "toggle_remote_console", 0, 0},
 	{ "Screenshot", "screenshot", 0, 0},
 	{ "Scoreboard", "+scoreboard", 0, 0},
+	{ "Statboard (Teecomp)", "+stats 1", 0, 0},
 	{ "Respawn", "kill", 0, 0},
 	{ "Ready", "ready_change", 0, 0},
 	{ "Add demo marker", "add_demomarker", 0, 0},
@@ -289,7 +290,7 @@ float CMenus::RenderSettingsControlsMisc(CUIRect View, void *pUser)
 		}
 	}
 
-	int NumOptions = 11;
+	int NumOptions = 12;
 	int StartOption = 18;
 	float ButtonHeight = 20.0f;
 	float Spaceing = 2.0f;
