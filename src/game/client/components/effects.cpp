@@ -173,6 +173,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 		p.m_Gravity = frandom()*-400.0f;
 		p.m_Friction = 0.7f;
 		p.m_Color = vec4(0xb5/255.0f, 0x50/255.0f, 0xcb/255.0f, 1.0f);
+		p.m_Color2 = p.m_Color;
 		m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 
 	}
@@ -220,6 +221,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 		p.m_Friction = 0.8f;
 		vec3 c = BloodColor * (0.75f + frandom()*0.25f);
 		p.m_Color = vec4(c.r, c.g, c.b, 0.75f);
+		p.m_Color2 = p.m_Color;
 		m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 	}
 }
@@ -262,7 +264,16 @@ void CEffects::Explosion(vec2 Pos, bool IsLaserType)
 		p.m_EndSize = 0;
 		p.m_Gravity = frandom()*-800.0f;
 		p.m_Friction = 0.4f;
-		p.m_Color = mix(vec4(0.75f,0.75f,0.75f,1.0f), vec4(0.5f,0.5f,0.5f,1.0f), frandom());
+		if(IsLaserType)
+		{
+			p.m_Color = mix(vec4(0.44, 0.5, 1.0, 1.0), vec4(0.54, 0.6, 1.0, 1.0), frandom());
+			p.m_Color2 = mix(vec4(1.0, 1.0, 1.0, 1.0), vec4(0.75, 0.75, 0.75, 1.0), frandom());
+		}
+		else
+		{
+			p.m_Color = mix(vec4(0.75f,0.75f,0.75f,1.0f), vec4(0.5f,0.5f,0.5f,1.0f), frandom());
+			p.m_Color = p.m_Color2;
+		}
 		m_pClient->m_pParticles->Add(CParticles::GROUP_GENERAL, &p);
 	}
 }

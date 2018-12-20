@@ -169,14 +169,15 @@ void CParticles::RenderGroup(int Group)
 		float a = m_aParticles[i].m_Life / m_aParticles[i].m_LifeSpan;
 		vec2 p = m_aParticles[i].m_Pos;
 		float Size = mix(m_aParticles[i].m_StartSize, m_aParticles[i].m_EndSize, a);
+		vec4 Color = mix(m_aParticles[i].m_Color, m_aParticles[i].m_Color2, a);
 
 		Graphics()->QuadsSetRotation(m_aParticles[i].m_Rot);
 
 		Graphics()->SetColor(
-			m_aParticles[i].m_Color.r,
-			m_aParticles[i].m_Color.g,
-			m_aParticles[i].m_Color.b,
-			m_aParticles[i].m_Color.a); // pow(a, 0.75f) *
+			Color.r,
+			Color.g,
+			Color.b,
+			Color.a); // pow(a, 0.75f) *
 
 		IGraphics::CQuadItem QuadItem(p.x, p.y, Size, Size);
 		Graphics()->QuadsDraw(&QuadItem, 1);
