@@ -20,6 +20,7 @@ struct CParticle
 		m_Friction = 0;
 		m_FlowAffected = 1.0f;
 		m_Color = vec4(1,1,1,1);
+		m_Color2 = m_Color;
 	}
 
 	vec2 m_Pos;
@@ -41,6 +42,7 @@ struct CParticle
 	float m_Friction;
 
 	vec4 m_Color;
+	vec4 m_Color2;
 
 	// set by the particle system
 	float m_Life;
