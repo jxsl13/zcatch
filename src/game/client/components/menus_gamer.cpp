@@ -329,8 +329,8 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	
 	if(g_Config.m_ClAnnouncers)
 	{
-		NewLine();
-		DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersShadows, "Render shadows around the announcers", &Button);
+		// NewLine();
+		// DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersShadows, "Render shadows around the announcers", &Button);
 		
 		NewLine();
 		DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersLegend, "Render a legend under the announcers", &Button);

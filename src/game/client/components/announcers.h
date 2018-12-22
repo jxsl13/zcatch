@@ -9,7 +9,8 @@ class CAnnouncers : public CComponent
 	// broadcasts
 	char m_aAnnouncerText[1024];
 	char m_aAnnouncerLegend[128];
-	int64 m_AnnouncerTime;
+	// int64 m_AnnouncerTime;
+	float m_AnnouncerTime;
 	float m_AnnouncerRenderOffset;
 	float m_AnnouncerDelay;
 	float m_AnnouncerSpeed;

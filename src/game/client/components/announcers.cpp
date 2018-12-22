@@ -12,18 +12,16 @@
 
 void CAnnouncers::OnReset()
 {
-	m_AnnouncerTime = 0;
+	m_AnnouncerTime = 0.f;
 	m_AnnouncerDelay = 2.5f;
 	m_AnnouncerSpeed = 4.0f;
 }
 
-	
 void CAnnouncers::Announce(const char* Message, const char* Legend, float AnnouncerSpeed)
 {
 	if(!g_Config.m_ClAnnouncers)
 		return;
-	
-	dbg_msg("gamer", "call");	
+		
 	CTextCursor Cursor;
 	
 	str_copy(m_aAnnouncerText, Message, sizeof(m_aAnnouncerText));
@@ -32,7 +30,7 @@ void CAnnouncers::Announce(const char* Message, const char* Legend, float Announ
 	Cursor.m_LineWidth = 300*Graphics()->ScreenAspect();
 	TextRender()->TextEx(&Cursor, m_aAnnouncerText, -1);
 	m_AnnouncerRenderOffset = 150*Graphics()->ScreenAspect()-Cursor.m_X/2;
-	m_AnnouncerTime = time_get()+time_freq()*m_AnnouncerDelay;
+	m_AnnouncerTime = Client()->LocalTime()+m_AnnouncerDelay;
 	m_AnnouncerSpeed = AnnouncerSpeed;
 }
 
@@ -40,12 +38,9 @@ void CAnnouncers::OnRender()
 {
 	Graphics()->MapScreen(0, 0, 300*Graphics()->ScreenAspect(), 300);
 		
-	if(time_get() < m_AnnouncerTime)
+	if(Client()->LocalTime() < m_AnnouncerTime)
 	{
-		dbg_msg("gamer", "time_get() - m_AnnouncerTime: %f", time_get() - m_AnnouncerTime);
-		CTextCursor Cursor;
-		float Factor = (float)((time_get()+time_freq()*m_AnnouncerDelay) - m_AnnouncerTime) / (time_freq()*0.3f);
-		int ClTextColors = g_Config.m_ClTextColors;
+		float Factor = ((Client()->LocalTime()+m_AnnouncerDelay) - m_AnnouncerTime) / 0.3f;
 		int txtSize = 20.0f*min(1.0f, Factor) + 45.0f*(1.0f-min(1.0f, Factor));
 		char Text[1024];
 		str_copy(Text, m_aAnnouncerText, sizeof(Text));
@@ -66,17 +61,22 @@ void CAnnouncers::OnRender()
 			str_format(Text, sizeof(Text), "%s^h%c^r%s", FirstPart, Letter, SecondPart);
 		}
 		
+		int ClTextColors = g_Config.m_ClTextColors;
 		g_Config.m_ClTextColors = 1;
 		
 		float w = TextRender()->TextWidth(0, txtSize, Text, -1);
 		
 		if(!g_Config.m_ClAnnouncersShadows)
 			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+
+		CTextCursor Cursor;
+		TextRender()->SetCursor(&Cursor, 0, 0, 12.0f, TEXTFLAG_STOP_AT_END);
 		TextRender()->SetCursor(&Cursor, m_AnnouncerRenderOffset, 40.0f, txtSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 300*Graphics()->ScreenAspect()-m_AnnouncerRenderOffset;
 
 		// Draw the shadows
-		if(0&&g_Config.m_ClAnnouncersShadows)
+		if(false && g_Config.m_ClAnnouncersShadows)
 		{
 			TextRender()->TextColor(0.5f, 0.05f, 0.05f, 1.0f);
 			TextRender()->Text(0, 150*Graphics()->ScreenAspect() - w/2, Cursor.m_Y, txtSize, m_aAnnouncerText, -1);
