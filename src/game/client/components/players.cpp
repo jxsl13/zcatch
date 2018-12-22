@@ -510,8 +510,17 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 	hp = clamp(hp, 0, 10);
 	armor = clamp(armor, 0, 10);
 	int nb = 2;
-	if(g_Config.m_GfxHealthBarDamagedOnly && hp == 10) nb--;
-	if(g_Config.m_GfxHealthBarDamagedOnly && armor == 10) nb--;
+	bool HealthIsBot = !g_Config.m_GfxArmorUnderHealth;
+	if(g_Config.m_GfxHealthBarDamagedOnly && hp == 10)
+	{
+		nb--;
+		HealthIsBot = false;
+	}
+	if(g_Config.m_GfxHealthBarDamagedOnly && armor == 10)
+	{
+		nb--;
+		HealthIsBot = true;
+	}
 	if(!nb) return;
 
 	vec3 color,
@@ -530,7 +539,7 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 	else // hp > 6
 		color = vec3_factor((float)(hp-6)/4.f,green) + vec3_factor((float)(10-hp)/4.f,yellow);
 	
-	CUIRect r = {70, 5, Position.x-r.w/2, Position.y-30-r.h};
+	CUIRect r = {Position.x-r.w/2, Position.y-30-r.h, 70, 5};
 	const int Scale = 1;
 
 	
@@ -547,7 +556,7 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		
 		// draw top border
-		q.y = r.y - r.h - 2 * Scale;
+		q.y = g_Config.m_GfxHealthBar == 1 ? r.y - r.h - 2 * Scale : r.y - r.h - Scale;
 		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		
 		// draw left border
@@ -561,11 +570,14 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		
 		// draw middle border
-		q.w = r.w + 2*Scale;
-		q.h = Scale;
-		q.x = r.x - Scale;
-		q.y = r.y - Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+		if(g_Config.m_GfxHealthBar == 1)
+		{
+			q.w = r.w + 2*Scale;
+			q.h = Scale;
+			q.x = r.x - Scale;
+			q.y = r.y - Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+		}
 	}
 	else // nb = 1
 	{
@@ -597,36 +609,34 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 	}
 	
-	if(!g_Config.m_GfxArmorUnderHealth)
+
+	const vec4 HealthColor = vec4(color.r, color.g, color.b, 0.9f);
+	const vec4 ArmorColor = vec4(0.9f, 0.6f, 0.1f, 0.9f);
+	// draw the below bar
+	if(true)
 	{
-		// Render health bar
-		r.w = 70.0f * (float)hp/10.f;
-		RenderTools()->DrawUIRect(&r, vec4(color.r, color.g, color.b, 0.9f), 0, 5.0f);
-			
-		// Render armor bar
-		if(armor)
+		const bool isHealth = HealthIsBot;
+		const int x = isHealth ? hp : armor;
+		if(x)
 		{
-			r.w = 70.f * armor/10.f;
-			r.y -= r.h + Scale;
-			RenderTools()->DrawUIRect(&r, vec4(0.9f, 0.6f, 0.1f, 0.9f), 0, 5.0f);
+			r.w = 70.0f * x/10.f;
+			RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, 0, 5.0f);
 		}
 	}
-	else
+	// draw the above bar
+	if(nb == 2)
 	{
-		// Render armor bar
-		if(armor)
+		bool isHealth = !HealthIsBot;
+		const int x = isHealth ? hp : armor;
+		if(x)
 		{
-			r.w = 70.f * armor/10.f;
-			RenderTools()->DrawUIRect(&r, vec4(0.9f, 0.6f, 0.1f, 0.9f), 0, 5.0f);
+			r.y -= g_Config.m_GfxHealthBar == 1 ? (r.h + Scale) : r.h;
+			r.w = 70.0f * x/10.f;
+			RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, 0, 5.0f);
 		}
-		r.y -= r.h + Scale;
+	}
 		
-		// Render health bar
-		r.w = 70.0f * (float)hp/10.f;
-		RenderTools()->DrawUIRect(&r, vec4(color.r, color.g, color.b, 0.9f), 0, 5.0f);
-	}
 	r.x -= 5;
-		
 	// Rendering numbers next to the bar
 	if(g_Config.m_GfxHealthBarNumbers)
 	{

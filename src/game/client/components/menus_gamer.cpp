@@ -111,11 +111,17 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBar, "Display healthbar", &Button);
 	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_GfxArmorUnderHealth, "Render armor under health for the healthbar", &Button);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBarNumbers, "Render numbers next to the healthbar", &Button);
+	if(g_Config.m_GfxHealthBar)
+	{
+		NewLine();
+		DoButton_BinaryCheckBox(&g_Config.m_GfxArmorUnderHealth, "Only display damaged attributes", &Button);
+
+		NewLine();
+		DoButton_BinaryCheckBox(&g_Config.m_GfxArmorUnderHealth, "Render armor under health for the healthbar", &Button);
+		
+		NewLine();
+		DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBarNumbers, "Render numbers next to the healthbar", &Button);
+	}
 	
 	// NewLine();
 	// DoButton_BinaryCheckBox(&g_Config.m_ClGcolor, "Use Gamer colors", &Button);
