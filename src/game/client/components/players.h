@@ -21,6 +21,7 @@ class CPlayers : public CComponent
 		const CNetObj_PlayerInfo *pPlayerInfo,
 		int ClientID
 	);
+	void RenderHealthBar(vec2 Position, int hp, int armor);
 
 public:
 	virtual void OnRender();

@@ -3,6 +3,7 @@ MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 2, CFGFLAG_CLIENT|CFGFLAG_S
 
 // Healthbar
 MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
+MACRO_CONFIG_INT(GfxHealthBarDamagedOnly, gfx_healthbar_damaged_only, 1, 0, 0, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
 MACRO_CONFIG_INT(GfxArmorUnderHealth, gfx_armor_under_health, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render the armor bar under the health")
 MACRO_CONFIG_INT(GfxHealthBarNumbers, gfx_healthbar_numbers, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render numbers next to the healthbar")
 
