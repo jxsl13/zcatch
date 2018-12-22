@@ -92,8 +92,10 @@ void CTeecompStats::OnMessage(int MsgType, void *pRawMsg)
 		// HolyShit sound
 		if(g_Config.m_ClGSound && m_pClient->m_LocalClientID == pMsg->m_Victim && pStats[pMsg->m_Victim].m_CurrentSpree >= 5)
 		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "Ended (%d kills)", pStats[pMsg->m_Victim].m_CurrentSpree);
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_HOLYSHIT, 0);
-					m_pClient->m_pAnnouncers->Announce("HOLY SHIT", "Ended", 2.0f);
+					m_pClient->m_pAnnouncers->Announce("HOLY SHIT", aBuf, 2.0f);
 		}			
 			
 		// Humiliation is not about selfkilling
