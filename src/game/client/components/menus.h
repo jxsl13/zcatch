@@ -73,6 +73,7 @@ private:
 	*/
 
 	int DoIcon(int ImageId, int SpriteId, const CUIRect *pRect);
+	void DoIconColor(int ImageId, int SpriteId, const CUIRect *pRect, const vec4& Color);
 	int DoButton_GridHeader(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_GridHeaderIcon(CButtonContainer *pBC, int ImageID, int SpriteID, const CUIRect *pRect, int Corners);
 
@@ -274,6 +275,8 @@ private:
 	static float ms_BackgroundAlpha;
 
 	// for settings
+	bool m_NeedRestartPlayer;
+	bool m_NeedRestartTee;
 	bool m_NeedRestartGraphics;
 	bool m_NeedRestartSound;
 	int m_TeePartSelected;

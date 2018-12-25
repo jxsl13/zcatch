@@ -184,11 +184,11 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		}
 	}
 
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Browser"), 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClColorfulBrowser, "Use colored icons", &Button);
+	// NewLine();
+	// NewLine();
+	// UI()->DoLabel(&Button, Localize("Browser"), 14.0f, CUI::ALIGN_LEFT);
+	// NewLine();
+	// DoButton_BinaryCheckBox(&g_Config.m_ClColorfulBrowser, "Use colored icons", &Button);
 
 	NewLine();
 	NewLine();

@@ -419,11 +419,7 @@ int CMenus::DoBrowserEntry(const void *pID, CUIRect View, const CServerInfo *pEn
 			Icon.Margin(2.0f, &Icon);
 			int Level = pEntry->m_ServerLevel;
 
-			DoIcon(IMAGE_LEVELICONS, Level==0 ? 
-				(g_Config.m_ClColorfulBrowser?SPRITE_LEVEL_A_ON: (Selected ? SPRITE_LEVEL_A_B : SPRITE_LEVEL_A_A))
-				: Level==1 ? 
-					(g_Config.m_ClColorfulBrowser?SPRITE_LEVEL_B_ON:(Selected ? SPRITE_LEVEL_B_B : SPRITE_LEVEL_B_A)) 
-					: (g_Config.m_ClColorfulBrowser?SPRITE_LEVEL_C_ON:(Selected ? SPRITE_LEVEL_C_B : SPRITE_LEVEL_C_A)), &Icon);
+			DoIcon(IMAGE_LEVELICONS, Level==0 ? SPRITE_LEVEL_A_ON : Level==1 ? SPRITE_LEVEL_B_ON : SPRITE_LEVEL_C_ON, &Icon);
 
 			Rect.VSplitLeft(Rect.h, &Icon, &Rect);
 			Icon.Margin(2.0f, &Icon);
@@ -579,7 +575,7 @@ int CMenus::DoBrowserEntry(const void *pID, CUIRect View, const CServerInfo *pEn
 			CUIRect Icon;
 			Button.VSplitLeft(Button.h, &Icon, &Button);
 			Icon.y -= 0.5f;
-			DoGameIcon(pEntry->m_aGameType, &Icon, g_Config.m_ClColorfulBrowser ? CGameIcon::GAMEICON_FULL : (Selected ? CGameIcon::GAMEICON_OFF : CGameIcon::GAMEICON_ON));
+			DoGameIcon(pEntry->m_aGameType, &Icon, CGameIcon::GAMEICON_FULL);
 
 			// gametype text
 			CTextCursor Cursor;
