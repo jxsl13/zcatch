@@ -539,7 +539,11 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 	else // hp > 6
 		color = vec3_factor((float)(hp-6)/4.f,green) + vec3_factor((float)(10-hp)/4.f,yellow);
 	
-	CUIRect r = {Position.x-r.w/2, Position.y-30-r.h, 70, 5};
+	CUIRect r;
+	r.w = 70;
+	r.h = 5;
+	r.x = Position.x-r.w/2;
+	r.y = Position.y-30-r.h;
 	const int Scale = 1;
 
 	
