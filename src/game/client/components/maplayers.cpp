@@ -31,6 +31,7 @@ CMapLayers::CMapLayers(int t)
 	m_pMenuLayers = 0;
 	m_OnlineStartTime = 0;
 	m_pTilesetPainter = 0;
+	m_pAutoTiles = 0;
 }
 
 void CMapLayers::OnStateChange(int NewState, int OldState)
@@ -89,7 +90,7 @@ void CMapLayers::OnMapLoad()
 {
 	if(Layers())
 		LoadEnvPoints(Layers(), m_lEnvPoints);
-	PreLoadTilesetPainter(Layers());
+	LoadTilesetPainter(Layers());
 }
 
 void CMapLayers::LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints)
@@ -336,18 +337,13 @@ void CMapLayers::OnRender()
 				}
 			}
 
-			if((Render && !IsGameLayer && g_Config.m_GfxGameTiles < 2)/* || (g_Config.m_GfxGameTiles && IsGameLayer)*/)
+			if((Render && !IsGameLayer && g_Config.m_GfxGameTiles < 2))
 			{
 				if(pLayer->m_Type == LAYERTYPE_TILES)
 				{
 					CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 					if(pTMap->m_Image == -1)
-					{
-						// if(IsGameLayer) // show game tiles
-						// 	Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
-						// else
-							Graphics()->TextureClear();
-					}
+						Graphics()->TextureClear();
 					else
 						Graphics()->TextureSet(m_pClient->m_pMapimages->Get(pTMap->m_Image));
 
@@ -399,14 +395,15 @@ void CMapLayers::OnRender()
 		// automapper
 		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter)
 		{
-			CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
-			pTiles = (CTile *)malloc(sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
-			mem_copy(pTiles, pTilesOriginal, sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
+			pTiles = m_pAutoTiles;
+			// CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
+			// pTiles = (CTile *)malloc(sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
+			// mem_copy(pTiles, pTilesOriginal, sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
 
-			// CTilesetPainter TilesetPainter(pLayers);
-			// TilesetPainter.Load();
-			// LoadTilesetPainter(&TilesetPainter);
-			m_pTilesetPainter->Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
+			// // CTilesetPainter TilesetPainter(pLayers);
+			// // TilesetPainter.Load();
+			// // LoadTilesetPainter(&TilesetPainter);
+			// m_pTilesetPainter->Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
 		}
 		else
 			pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
@@ -438,67 +435,12 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
-void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper) //players unused, remove it
-{
-	if(!pAutoMapper)
-		return;
-
-	// read file data into buffer
-	char aBuf[256];
-	const char* m_aName = "grass_main"; // gamer hack 
-	str_format(aBuf, sizeof(aBuf), "editor/automap/%s.json", m_aName);
-	IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(!File)
-		return;
-	int FileSize = (int)io_length(File);
-	char *pFileData = (char *)mem_alloc(FileSize, 1);
-	io_read(File, pFileData, FileSize);
-	io_close(File);
-
-	// parse json data
-	json_settings JsonSettings;
-	mem_zero(&JsonSettings, sizeof(JsonSettings));
-	char aError[256];
-	json_value *pJsonData = json_parse_ex(&JsonSettings, pFileData, FileSize, aError);
-	mem_free(pFileData);
-
-	if(pJsonData == 0)
-	{
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, aBuf, aError);
-		return;
-	}
-
-	// generate configurations
-	const json_value &rTileset = (*pJsonData)[(const char *)IAutoMapper::GetTypeName(IAutoMapper::TYPE_TILESET)];
-	if(rTileset.type == json_array)
-	{
-		// pAutoMapper = new CTilesetPainter(pLayers);
-		pAutoMapper->Load(rTileset);
-	}
-	else
-	{
-		dbg_assert(false, "doodads!");
-		/*const json_value &rDoodads = (*pJsonData)[(const char *)IAutoMapper::GetTypeName(IAutoMapper::TYPE_DOODADS)];
-		if(rDoodads.type == json_array)
-		{
-			pAutoMapper = new CDoodadsMapper(m_pEditor);
-			pAutoMapper->Load(rDoodads);
-		}*/
-	}
-
-	// clean up
-	json_value_free(pJsonData);
-	if(pAutoMapper && g_Config.m_Debug)
-	{
-		str_format(aBuf, sizeof(aBuf),"loaded %s.json (%s)", m_aName, IAutoMapper::GetTypeName(pAutoMapper->GetType()));
-		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
-	}
-}
-
-void CMapLayers::PreLoadTilesetPainter(/*const*/ CLayers *pLayers)
+void CMapLayers::LoadTilesetPainter(CLayers *pLayers)
 {
 	if(m_pTilesetPainter)
 		delete(m_pTilesetPainter);
+	if(m_pAutoTiles)
+		delete(m_pAutoTiles);
 
 	// read file data into buffer
 	char aBuf[256];
@@ -550,6 +492,13 @@ void CMapLayers::PreLoadTilesetPainter(/*const*/ CLayers *pLayers)
 		str_format(aBuf, sizeof(aBuf),"loaded %s.json (%s)", m_aName, IAutoMapper::GetTypeName(m_pTilesetPainter->GetType()));
 		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
 	}
+	
+	// proceed
+	CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
+	CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
+	m_pAutoTiles = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+	mem_copy(m_pAutoTiles, pTilesOriginal, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+	m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
 }
 
 void CMapLayers::ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
