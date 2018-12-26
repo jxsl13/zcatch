@@ -596,9 +596,9 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		
 		// draw left border
 		q.x = r.x - Scale;
-		q.y = r.y - 2 * Scale;
+		q.y = r.y - Scale;
 		q.w = Scale;
-		q.h = r.h + 2*Scale;
+		q.h = r.h + Scale;
 		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		
 		// draw right border
