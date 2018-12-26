@@ -393,10 +393,10 @@ void CMapLayers::OnRender()
 		CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
 
 		// automapper
-		CTilesetPainter* TilesetPainter = 0; //(pLayers);
+		CTilesetPainter TilesetPainter(pLayers);
 		// TilesetPainter.Load();
-		LoadTilesetPainter(TilesetPainter, pLayers);
-		TilesetPainter->Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
+		LoadTilesetPainter(&TilesetPainter, pLayers);
+		TilesetPainter.Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
 
 		Graphics()->BlendNone();
 		vec4 Color;
@@ -420,9 +420,9 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
-void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper, CLayers* pLayers)
+void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper, CLayers* pLayers) //players unused, remove it
 {
-	if(pAutoMapper)
+	if(!pAutoMapper)
 		return;
 
 	// read file data into buffer
@@ -454,7 +454,7 @@ void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper, CLayers* pLaye
 	const json_value &rTileset = (*pJsonData)[(const char *)IAutoMapper::GetTypeName(IAutoMapper::TYPE_TILESET)];
 	if(rTileset.type == json_array)
 	{
-		// pAutoMapper = new CTilesetMapper(m_pEditor);
+		// pAutoMapper = new CTilesetPainter(pLayers);
 		pAutoMapper->Load(rTileset);
 	}
 	else
