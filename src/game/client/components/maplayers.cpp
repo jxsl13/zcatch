@@ -424,8 +424,8 @@ void CMapLayers::OnRender()
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 		
-		if(g_Config.m_GfxGameTiles == 3  && m_pTilesetPainter)
-			free(pTiles);
+		// if(g_Config.m_GfxGameTiles == 3  && m_pTilesetPainter)
+		// 	free(pTiles);
 	}
 
 	if(!g_Config.m_GfxNoclip)
