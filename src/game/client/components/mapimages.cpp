@@ -61,6 +61,12 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 			pMap->UnloadData(pImg->m_ImageData);
 		}
 	}
+	// load grass_main
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "grass_main");
+		m_GrassTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	}
 
 	// load game entities
 	Graphics()->UnloadTexture(&m_EntitiesTexture);
@@ -93,6 +99,10 @@ IGraphics::CTextureHandle CMapImages::Get(int Index) const
 IGraphics::CTextureHandle CMapImages::GetEntities() const
 {
 	return m_EntitiesTexture;
+}
+IGraphics::CTextureHandle CMapImages::GetGrassTiles() const
+{
+	return m_GrassTexture;
 }
 
 int CMapImages::Num() const

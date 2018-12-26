@@ -24,7 +24,7 @@ class CMapLayers : public CComponent
 
 	void LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints);
 	void LoadBackgroundMap();
-	void LoadTilesetPainter(CTilesetPainter* m_pAutoMapper, CLayers* pLayers);
+	void LoadTilesetPainter(CTilesetPainter* m_pAutoMapper);
 
 public:
 	enum

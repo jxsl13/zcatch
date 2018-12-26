@@ -388,14 +388,15 @@ void CMapLayers::OnRender()
 		CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 		dbg_assert(pTMap->m_Image == -1, "not game layer");
 
-		Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
+		// Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
+		Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
 
 		CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
 
 		// automapper
 		CTilesetPainter TilesetPainter(pLayers);
 		// TilesetPainter.Load();
-		LoadTilesetPainter(&TilesetPainter, pLayers);
+		LoadTilesetPainter(&TilesetPainter);
 		TilesetPainter.Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
 
 		Graphics()->BlendNone();
@@ -420,7 +421,7 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
-void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper, CLayers* pLayers) //players unused, remove it
+void CMapLayers::LoadTilesetPainter(CTilesetPainter* pAutoMapper) //players unused, remove it
 {
 	if(!pAutoMapper)
 		return;
