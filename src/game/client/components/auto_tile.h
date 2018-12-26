@@ -13,8 +13,8 @@ class IAutoTiler
 {
 protected:
 	typedef CMapItemLayerTilemap gamelayer_t;
+	gamelayer_t *m_pGameLayer;
 	class CLayers *m_pLayers;
-	class gamelayer_t *m_pGameLayer;
 	CTile *m_pGameTiles;
 	int m_Type;
 
