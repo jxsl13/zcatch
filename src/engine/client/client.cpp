@@ -749,7 +749,7 @@ const char *CClient::ErrorString() const
 
 void CClient::Render()
 {
-	if(g_Config.m_GfxClear || g_Config.m_GfxGameTiles == 2)
+	if(g_Config.m_GfxClear || g_Config.m_GfxGameTiles >= 2)
 		// Graphics()->Clear(0.25f,0.45f,0.55f);
 		// Graphics()->Clear(135/255.f, 206/255.f, 235/255.f);
 		Graphics()->Clear(0/16.f, 3.3/16.f, 6.6/16.f);
