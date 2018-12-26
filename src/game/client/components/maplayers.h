@@ -4,6 +4,7 @@
 #define GAME_CLIENT_COMPONENTS_MAPLAYERS_H
 #include <base/tl/array.h>
 #include <game/client/component.h>
+#include <game/client/components/auto_tile.h>
 
 class CMapLayers : public CComponent
 {
@@ -23,6 +24,7 @@ class CMapLayers : public CComponent
 
 	void LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints);
 	void LoadBackgroundMap();
+	void LoadTilesetPainter(CTilesetPainter* m_pAutoMapper, CLayers* pLayers);
 
 public:
 	enum
