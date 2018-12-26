@@ -388,30 +388,45 @@ void CMapLayers::OnRender()
 		CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 		dbg_assert(pTMap->m_Image == -1, "not game layer");
 
-		// Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
-		Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
+		if(g_Config.m_GfxGameTiles == 3)
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
+		else
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
 
-		CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
-
+		CTile *pTiles;
 		// automapper
-		CTilesetPainter TilesetPainter(pLayers);
-		// TilesetPainter.Load();
-		LoadTilesetPainter(&TilesetPainter);
-		TilesetPainter.Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
+		if(g_Config.m_GfxGameTiles == 3)
+		{
+			CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
+			pTiles = (CTile *)malloc(sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
+			mem_copy(pTiles, pTilesOriginal, sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
+
+			CTilesetPainter TilesetPainter(pLayers);
+			// TilesetPainter.Load();
+			LoadTilesetPainter(&TilesetPainter);
+			TilesetPainter.Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
+		}
+		else
+			pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
 
 		Graphics()->BlendNone();
 		vec4 Color;
 		{
 			if(g_Config.m_GfxGameTiles == 1)
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a*0.8f/255.0f); // bit of alpha
-			else
+			else if(g_Config.m_GfxGameTiles == 2)
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a*0.9f/255.0f); // lil bit of alpha
+			else
+				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f); // lil bit of alpha
 		}
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 		Graphics()->BlendNormal();
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+		
+		if(g_Config.m_GfxGameTiles == 3)
+			free(pTiles);
 	}
 
 	if(!g_Config.m_GfxNoclip)

@@ -1,5 +1,5 @@
 // Tile modifiers
-MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show game tiles (2 = game tiles only)")
+MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 3, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show game tiles (2 = game tiles only, 3 = automap)")
 
 // Healthbar
 MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
