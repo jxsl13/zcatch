@@ -52,7 +52,7 @@ void CMenus::RenderGame(CUIRect MainView)
 	char aBuf[128];
 	CSwitchTeamInfo Info = { 0 };
 	GetSwitchTeamInfo(&Info);
-	CUIRect Button, ButtonRow, Label;
+	CUIRect Button, ButtonRow, GButtonRow, Label, Title;
 
 	float Spacing = 3.0f;
 	float ButtonWidth = (MainView.w/6.0f)-(Spacing*5.0)/6.0f;
@@ -60,14 +60,16 @@ void CMenus::RenderGame(CUIRect MainView)
 	// cut view
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	float NoteHeight = !Info.m_aNotification[0] ? 0.0f : 45.0f;
-	MainView.HSplitTop(20.0f+20.0f+2*Spacing+ NoteHeight, &MainView, 0);
+	MainView.HSplitTop(20.0f+20.0f+20.0f+20.0f+3*Spacing+ NoteHeight, &MainView, 0);
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
 
 	// game options
 	MainView.HSplitTop(20.0f, &Label, &MainView);
 	Label.y += 2.0f;
 	UI()->DoLabel(&Label, Localize("Game options"), 20.0f*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
+	Title = MainView;
+	Title.HSplitTop(20.0f+Spacing, &Title, 0);
+	RenderTools()->DrawUIRect(&Title, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 	if(Info.m_aNotification[0] != 0)
 	{
@@ -196,6 +198,63 @@ void CMenus::RenderGame(CUIRect MainView)
 				Client()->DemoRecorder_Start("demo", true);
 			else
 				Client()->DemoRecorder_Stop();
+		}
+	}
+
+	// game options
+	MainView.HSplitTop(20.0f, 0, &MainView);
+	MainView.HSplitTop(20.0f, &Label, &MainView);
+	Label.y += 2.0f;
+	UI()->DoLabel(&Label, Localize("Automapper"), 20.0f*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0, 0.0, 0.0, 0.25f), CUI::CORNER_ALL, 5.0f);
+
+	// gamer buttons
+	{
+		MainView.HSplitTop(Spacing, 0, &MainView);
+
+		MainView.HSplitTop(20.0f, &GButtonRow, 0);
+		GButtonRow.VMargin(Spacing, &GButtonRow);
+
+		GButtonRow.VSplitLeft(ButtonWidth, &Button, &GButtonRow);
+		GButtonRow.VSplitLeft(Spacing, 0, &GButtonRow);
+		static CButtonContainer s_NoneButton;
+		if(DoButton_Menu(&s_NoneButton, "None", g_Config.m_GfxGameTiles == 0, &Button))
+		{
+			g_Config.m_GfxGameTiles = 0;
+		}
+
+		GButtonRow.VSplitLeft(ButtonWidth, &Button, &GButtonRow);
+		GButtonRow.VSplitLeft(Spacing, 0, &GButtonRow);
+		static CButtonContainer s_GameButton;
+		if(DoButton_Menu(&s_GameButton, "Game tiles", g_Config.m_GfxGameTiles == 1, &Button))
+		{
+			g_Config.m_GfxGameTiles = 1;
+		}
+
+		// right buttons
+		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
+		static CButtonContainer s_GrassButton;
+		if(DoButton_Menu(&s_GrassButton, Localize("Grass"), 0, &Button))
+		{
+			Console()->ExecuteLine("automap grass");
+		}
+		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
+		static CButtonContainer s_DesertButton;
+		if(DoButton_Menu(&s_DesertButton, Localize("Desert"), 0, &Button))
+		{
+			Console()->ExecuteLine("automap desert");
+		}
+		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
+		static CButtonContainer s_JungleButton;
+		if(DoButton_Menu(&s_JungleButton, Localize("Jungle"), 0, &Button))
+		{
+			Console()->ExecuteLine("automap jungle");
+		}
+		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
+		static CButtonContainer s_WinterButton;
+		if(DoButton_Menu(&s_WinterButton, Localize("Winter"), 0, &Button))
+		{
+			Console()->ExecuteLine("automap winter");
 		}
 	}
 }
