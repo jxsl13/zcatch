@@ -112,8 +112,8 @@ const char* CTilesetPainter::GetRuleSetName(int Index) const
 
 void CTilesetPainter::Proceed(CTile* pTiles, int Width, int Height, int ConfigID)
 {
-	//if(pLayer->m_Readonly || ConfigID < 0 || ConfigID >= m_aRuleSets.size())
-	//	return;
+	if(/*pLayer->m_Readonly ||*/ ConfigID < 0 || ConfigID >= m_aRuleSets.size())
+		return;
 
 	CRuleSet *pConf = &m_aRuleSets[ConfigID];
 
@@ -512,7 +512,7 @@ void CDoodadsPainter::AnalyzeGameLayer()
 	}
 }
 
-void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<array<int> > *pPositions, int Amount, int LeftWall)
+void CDoodadsPainter::PlaceDoodads(CTile* pTiles, int Width, int Height, CRule *pRule, array<array<int> > *pPositions, int Amount, int LeftWall)
 {
 	if(pRule->m_Location == CRule::CEILING)
 		pRule->m_RelativePos.y++;
@@ -528,7 +528,7 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 		pRule->m_RelativePos.x -= pRule->m_Size.x-1;
 	}
 
-	int MaxIndex = pLayer->m_Width*pLayer->m_Height;
+	int MaxIndex = Width*Height;
 	int RandomValue = pRule->m_Random*((101.f-Amount)/100.0f);
 
 	if(pRule->m_Random == 1)
@@ -556,16 +556,16 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 
 			// relative position
 			ID += pRule->m_RelativePos.x;
-			ID += pRule->m_RelativePos.y*pLayer->m_Width;
+			ID += pRule->m_RelativePos.y*Width;
 
 			for(int y = 0; y < pRule->m_Size.y; y++)
 				for(int x = 0; x < pRule->m_Size.x; x++)
 				{
-					int Index = y*pLayer->m_Width+x+ID;
+					int Index = y*Width+x+ID;
 					if(Index <= 0 || Index >= MaxIndex)
 						continue;
 
-					pLayer->m_pTiles[Index].m_Index = pRule->m_Rect.x+y*16+x;
+					pTiles[Index].m_Index = pRule->m_Rect.x+y*16+x;
 				}
 
 			// hflip
@@ -574,7 +574,7 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 				for(int y = 0; y < pRule->m_Size.y; y++)
 					for(int x = 0; x < pRule->m_Size.x/2; x++)
 					{
-						int Index = y*pLayer->m_Width+x+ID;
+						int Index = y*Width+x+ID;
 						if(Index <= 0 || Index >= MaxIndex)
 							continue;
 
@@ -583,19 +583,19 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 						if(CheckIndex <= 0 || CheckIndex >= MaxIndex)
 							continue;
 
-						CTile Tmp = pLayer->m_pTiles[Index];
-						pLayer->m_pTiles[Index] = pLayer->m_pTiles[CheckIndex];
-						pLayer->m_pTiles[CheckIndex] = Tmp;
+						CTile Tmp = pTiles[Index];
+						pTiles[Index] = pTiles[CheckIndex];
+						pTiles[CheckIndex] = Tmp;
 					}
 
 				for(int y = 0; y < pRule->m_Size.y; y++)
 					for(int x = 0; x < pRule->m_Size.x; x++)
 					{
-						int Index = y*pLayer->m_Width+x+ID;
+						int Index = y*Width+x+ID;
 						if(Index <= 0 || Index >= MaxIndex)
 							continue;
 
-						pLayer->m_pTiles[Index].m_Flags ^= TILEFLAG_VFLIP;
+						pTiles[Index].m_Flags ^= TILEFLAG_VFLIP;
 					}
 			}
 
@@ -605,28 +605,28 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 				for(int y = 0; y < pRule->m_Size.y/2; y++)
 					for(int x = 0; x < pRule->m_Size.x; x++)
 					{
-						int Index = y*pLayer->m_Width+x+ID;
+						int Index = y*Width+x+ID;
 						if(Index <= 0 || Index >= MaxIndex)
 							continue;
 
-						int CheckIndex = Index+(pRule->m_Size.y-1-y*2)*pLayer->m_Width;
+						int CheckIndex = Index+(pRule->m_Size.y-1-y*2)*Width;
 
 						if(CheckIndex <= 0 || CheckIndex >= MaxIndex)
 							continue;
 
-						CTile Tmp = pLayer->m_pTiles[Index];
-						pLayer->m_pTiles[Index] = pLayer->m_pTiles[CheckIndex];
-						pLayer->m_pTiles[CheckIndex] = Tmp;
+						CTile Tmp = pTiles[Index];
+						pTiles[Index] = pTiles[CheckIndex];
+						pTiles[CheckIndex] = Tmp;
 					}
 
 				for(int y = 0; y < pRule->m_Size.y; y++)
 					for(int x = 0; x < pRule->m_Size.x; x++)
 					{
-						int Index = y*pLayer->m_Width+x+ID;
+						int Index = y*Width+x+ID;
 						if(Index <= 0 || Index >= MaxIndex)
 							continue;
 
-						pLayer->m_pTiles[Index].m_Flags ^= TILEFLAG_HFLIP;
+						pTiles[Index].m_Flags ^= TILEFLAG_HFLIP;
 					}
 			}
 
@@ -659,10 +659,10 @@ void CDoodadsPainter::PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<arra
 		}
 }
 
-void CDoodadsPainter::Proceed(CLayerTiles *pLayer, int ConfigID, int Amount)
+void CDoodadsPainter::Proceed(CTile* pTiles, int Width, int Height, int ConfigID, int Amount)
 {
-	if(pLayer->m_Readonly || ConfigID < 0 || ConfigID >= m_aRuleSets.size())
-		return;
+	// if(pLayer->m_Readonly || ConfigID < 0 || ConfigID >= m_aRuleSets.size())
+	// 	return;
 
 	AnalyzeGameLayer();
 
@@ -671,13 +671,13 @@ void CDoodadsPainter::Proceed(CLayerTiles *pLayer, int ConfigID, int Amount)
 	if(!pConf->m_aRules.size())
 		return;
 
-	int MaxIndex = pLayer->m_Width*pLayer->m_Height;
+	int MaxIndex = Width*Height;
 
 	// clear tiles
 	for(int i = 0 ; i < MaxIndex; i++)
 	{
-		pLayer->m_pTiles[i].m_Index = 0;
-		pLayer->m_pTiles[i].m_Flags = 0;
+		pTiles[i].m_Index = 0;
+		pTiles[i].m_Flags = 0;
 	}
 
 	// place doodads
@@ -688,25 +688,25 @@ void CDoodadsPainter::Proceed(CLayerTiles *pLayer, int ConfigID, int Amount)
 		// floors
 		if(pRule->m_Location == CRule::FLOOR && m_FloorIDs.size() > 0)
 		{
-			PlaceDoodads(pLayer, pRule, &m_FloorIDs, Amount);
+			PlaceDoodads(pTiles, Width, Height, pRule, &m_FloorIDs, Amount);
 		}
 
 		// ceilings
 		if(pRule->m_Location == CRule::CEILING && m_CeilingIDs.size() > 0)
 		{
-			PlaceDoodads(pLayer, pRule, &m_CeilingIDs, Amount);
+			PlaceDoodads(pTiles, Width, Height, pRule, &m_CeilingIDs, Amount);
 		}
 
 		// right walls
 		if(pRule->m_Location == CRule::WALLS && m_RightWallIDs.size() > 0)
 		{
-			PlaceDoodads(pLayer, pRule, &m_RightWallIDs, Amount);
+			PlaceDoodads(pTiles, Width, Height, pRule, &m_RightWallIDs, Amount);
 		}
 
 		// left walls
 		if(pRule->m_Location == CRule::WALLS && m_LeftWallIDs.size() > 0)
 		{
-			PlaceDoodads(pLayer, pRule, &m_LeftWallIDs, Amount, 1);
+			PlaceDoodads(pTiles, Width, Height, pRule, &m_LeftWallIDs, Amount, 1);
 		}
 	}
 }

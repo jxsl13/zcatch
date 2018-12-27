@@ -17,6 +17,7 @@
 #include <game/client/components/camera.h>
 #include <game/client/components/mapimages.h>
 // #include <game/editor/auto_map.h>
+#include <game/collision.h>
 #include <game/client/components/auto_tile.h>
 
 #include "maplayers.h"
@@ -31,7 +32,9 @@ CMapLayers::CMapLayers(int t)
 	m_pMenuLayers = 0;
 	m_OnlineStartTime = 0;
 	m_pTilesetPainter = 0;
+	m_pDoodadsPainter = 0;
 	m_pAutoTiles = 0;
+	m_pAutoDoodads = 0;
 }
 
 void CMapLayers::OnStateChange(int NewState, int OldState)
@@ -90,7 +93,7 @@ void CMapLayers::OnMapLoad()
 {
 	if(Layers())
 		LoadEnvPoints(Layers(), m_lEnvPoints);
-	LoadTilesetPainter(Layers());
+	LoadPainters(Layers());
 }
 
 void CMapLayers::LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints)
@@ -382,33 +385,10 @@ void CMapLayers::OnRender()
 		RenderTools()->MapScreenToGroup(Center.x, Center.y, pGameLayerGroup, m_pClient->m_pCamera->GetZoom());
 
 		CMapItemLayer *pLayer = pLayers->GetLayer(pGameLayerGroup->m_StartLayer+GameLayerId);
-		dbg_assert(pLayer->m_Type == LAYERTYPE_TILES, "not the game layer");
 		CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
-		dbg_assert(pTMap->m_Image == -1, "not game layer");
-
-		if(g_Config.m_GfxGameTiles == 3)
-			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
-		else
-			Graphics()->TextureSet(m_pClient->m_pMapimages->GetEntities());
+		dbg_assert(pLayer->m_Type == LAYERTYPE_TILES || pTMap->m_Image == -1, "not the game layer");
 
 		CTile *pTiles;
-		// automapper
-		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter)
-		{
-			pTiles = m_pAutoTiles;
-			// CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
-			// pTiles = (CTile *)malloc(sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
-			// mem_copy(pTiles, pTilesOriginal, sizeof(CTile)*pTMap->m_Width*pTMap->m_Height);
-
-			// // CTilesetPainter TilesetPainter(pLayers);
-			// // TilesetPainter.Load();
-			// // LoadTilesetPainter(&TilesetPainter);
-			// m_pTilesetPainter->Proceed(pTiles, pTMap->m_Width, pTMap->m_Height, 0);
-		}
-		else
-			pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
-
-		Graphics()->BlendNone();
 		vec4 Color;
 		{
 			if(g_Config.m_GfxGameTiles == 1)
@@ -416,16 +396,38 @@ void CMapLayers::OnRender()
 			else if(g_Config.m_GfxGameTiles == 2)
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a*0.9f/255.0f); // lil bit of alpha
 			else
-				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f); // lil bit of alpha
+				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 		}
+
+		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter)
+		{
+			pTiles = m_pAutoTiles;
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
+			Graphics()->BlendNone();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+			Graphics()->BlendNormal();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+			
+			/*pTiles = m_pAutoDoodads;
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassDoodads());
+			Graphics()->BlendNone();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+			Graphics()->BlendNormal();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);*/
+		}
+
+		Graphics()->TextureSet(g_Config.m_GfxGameTiles == 3 ? m_pClient->m_pMapimages->GetAutoEntities() : m_pClient->m_pMapimages->GetEntities());
+		Graphics()->BlendNone();
+		pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 		Graphics()->BlendNormal();
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
-		
-		// if(g_Config.m_GfxGameTiles == 3  && m_pTilesetPainter)
-		// 	free(pTiles);
 	}
 
 	if(!g_Config.m_GfxNoclip)
@@ -435,17 +437,62 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
-void CMapLayers::LoadTilesetPainter(CLayers *pLayers)
+void CMapLayers::LoadPainters(CLayers *pLayers)
 {
 	if(m_pTilesetPainter)
+	{
 		delete(m_pTilesetPainter);
+		m_pTilesetPainter = 0;
+	}
+	if(m_pDoodadsPainter)
+	{
+		delete(m_pDoodadsPainter);
+		m_pDoodadsPainter = 0;
+	}
 	if(m_pAutoTiles)
+	{
 		delete(m_pAutoTiles);
+		m_pAutoTiles = 0;
+	}
+	if(m_pAutoDoodads)
+	{
+		delete(m_pAutoDoodads);
+		m_pAutoDoodads = 0;
+	}
 
+	LoadAutomapperRules(pLayers, "grass_main");
+	LoadAutomapperRules(pLayers, "grass_doodads");
+	
+	// fill m_pAutoTiles
+	CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
+	CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
+	m_pAutoTiles = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+	mem_copy(m_pAutoTiles, pTilesOriginal, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+
+	// cleanup game tiles from anything but hookable and unhookable
+	int MaxIndex = pTMap->m_Width * pTMap->m_Height;	
+	for(int i = 0 ; i < MaxIndex; i++)
+	{
+		if(m_pAutoTiles[i].m_Index != CCollision::COLFLAG_SOLID && m_pAutoTiles[i].m_Index != (CCollision::COLFLAG_NOHOOK|CCollision::COLFLAG_SOLID)) // hookable and unhookable
+		{
+			m_pAutoTiles[i].m_Index = 0;
+			m_pAutoTiles[i].m_Flags = 0;
+		}
+	}
+
+	m_pAutoDoodads = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+	mem_copy(m_pAutoDoodads, m_pAutoTiles, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+
+	// proceed
+	m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
+	m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 50);
+}
+
+void CMapLayers::LoadAutomapperRules(CLayers *pLayers, const char* pName)
+{
 	// read file data into buffer
 	char aBuf[256];
-	const char* m_aName = "grass_main"; // gamer hack 
-	str_format(aBuf, sizeof(aBuf), "editor/automap/%s.json", m_aName);
+	str_format(aBuf, sizeof(aBuf), "editor/automap/%s.json", pName);
 	IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(!File)
 		return;
@@ -476,29 +523,21 @@ void CMapLayers::LoadTilesetPainter(CLayers *pLayers)
 	}
 	else
 	{
-		dbg_assert(false, "doodads!");
-		/*const json_value &rDoodads = (*pJsonData)[(const char *)IAutoMapper::GetTypeName(IAutoMapper::TYPE_DOODADS)];
+		const json_value &rDoodads = (*pJsonData)[(const char *)IAutoMapper::GetTypeName(IAutoMapper::TYPE_DOODADS)];
 		if(rDoodads.type == json_array)
 		{
-			m_pTilesetPainter = new CDoodadsMapper(m_pEditor);
-			m_pTilesetPainter->Load(rDoodads);
-		}*/
+			m_pDoodadsPainter = new CDoodadsPainter(pLayers);
+			m_pDoodadsPainter->Load(rDoodads);
+		}
 	}
 
 	// clean up
 	json_value_free(pJsonData);
-	if(m_pTilesetPainter && g_Config.m_Debug)
-	{
-		str_format(aBuf, sizeof(aBuf),"loaded %s.json (%s)", m_aName, IAutoMapper::GetTypeName(m_pTilesetPainter->GetType()));
-		Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
-	}
-	
-	// proceed
-	CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
-	CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
-	m_pAutoTiles = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-	mem_copy(m_pAutoTiles, pTilesOriginal, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-	m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
+	// if(m_pTilesetPainter && g_Config.m_Debug)
+	// {
+	// 	str_format(aBuf, sizeof(aBuf),"loaded %s.json (%s)", pName, IAutoMapper::GetTypeName(m_pTilesetPainter->GetType()));
+	// 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
+	// }
 }
 
 void CMapLayers::ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

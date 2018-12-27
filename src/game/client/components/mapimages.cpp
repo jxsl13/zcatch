@@ -66,6 +66,8 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "grass_main");
 		m_GrassTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+		str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "grass_doodads");
+		m_GrassDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	}
 
 	// load game entities
@@ -74,6 +76,7 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 	m_EntitiesTexture = Graphics()->LoadTexture(pName, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	if(!m_EntitiesTexture.IsValid())
 		m_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	m_AutoEntitiesTexture = Graphics()->LoadTexture("editor/entities_auto.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 }
 
 void CMapImages::OnMapLoad()
@@ -100,9 +103,17 @@ IGraphics::CTextureHandle CMapImages::GetEntities() const
 {
 	return m_EntitiesTexture;
 }
+IGraphics::CTextureHandle CMapImages::GetAutoEntities() const
+{
+	return m_AutoEntitiesTexture;
+}
 IGraphics::CTextureHandle CMapImages::GetGrassTiles() const
 {
 	return m_GrassTexture;
+}
+IGraphics::CTextureHandle CMapImages::GetGrassDoodads() const
+{
+	return m_GrassDoodadsTexture;
 }
 
 int CMapImages::Num() const

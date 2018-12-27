@@ -20,7 +20,9 @@ class CMapImages : public CComponent
 		int m_Count;
 	} m_Info[NUM_MAP_TYPES];
 	IGraphics::CTextureHandle m_EntitiesTexture;
+	IGraphics::CTextureHandle m_AutoEntitiesTexture;
 	IGraphics::CTextureHandle m_GrassTexture;
+	IGraphics::CTextureHandle m_GrassDoodadsTexture;
 
 	void LoadMapImages(class IMap *pMap, class CLayers *pLayers, int MapType);
 
@@ -29,7 +31,9 @@ public:
 
 	IGraphics::CTextureHandle Get(int Index) const;
 	IGraphics::CTextureHandle GetEntities() const;
+	IGraphics::CTextureHandle GetAutoEntities() const;
 	IGraphics::CTextureHandle GetGrassTiles() const;
+	IGraphics::CTextureHandle GetGrassDoodads() const;
 	int Num() const;
 
 	virtual void OnMapLoad();

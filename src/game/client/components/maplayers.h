@@ -12,8 +12,9 @@ class CMapLayers : public CComponent
 	IEngineMap *m_pMenuMap;
 	// gamer
 	CTilesetPainter* m_pTilesetPainter;
-	// CTile* m_pGameTiles;
+	CDoodadsPainter* m_pDoodadsPainter;
 	CTile* m_pAutoTiles;
+	CTile* m_pAutoDoodads;
 
 	int m_Type;
 	int m_CurrentLocalTick;
@@ -28,7 +29,8 @@ class CMapLayers : public CComponent
 
 	void LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints);
 	void LoadBackgroundMap();
-	void LoadTilesetPainter(CLayers *pLayers);
+	void LoadPainters(CLayers *pLayers);
+	void LoadAutomapperRules(CLayers *pLayers, const char* pName);
 
 public:
 	enum

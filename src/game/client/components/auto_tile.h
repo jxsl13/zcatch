@@ -34,7 +34,8 @@ public:
 	virtual void Load(const json_value &rElement) = 0;
 	// virtual void Proceed(class CLayerTiles *pLayer, int ConfigID) {}
 	virtual void Proceed(CTile* pTiles, int Width, int Height, int ConfigID) {}
-	virtual void Proceed(class CLayerTiles *pLayer, int ConfigID, int Amount) {} // for convenience purposes
+	virtual void Proceed(CTile* pTiles, int Width, int Height, int ConfigID, int Amount) {}
+	// virtual void Proceed(class CLayerTiles *pLayer, int ConfigID, int Amount) {} // for convenience purposes
 
 	virtual int RuleSetNum() = 0;
 	virtual const char* GetRuleSetName(int Index) const = 0;
@@ -140,14 +141,14 @@ public:
 	CDoodadsPainter(CLayers *pLayers) :  IAutoTiler(pLayers, TYPE_DOODADS) { m_aRuleSets.clear(); }
 
 	virtual void Load(const json_value &rElement);
-	virtual void Proceed(class CLayerTiles *pLayer, int ConfigID, int Amount);
+	virtual void Proceed(CTile* pTiles, int Width, int Height, int ConfigID, int Amount);
 	void AnalyzeGameLayer();
 
 	virtual int RuleSetNum() { return m_aRuleSets.size(); }
 	virtual const char* GetRuleSetName(int Index) const;
 
 private:
-	void PlaceDoodads(CLayerTiles *pLayer, CRule *pRule, array<array<int> > *pPositions, int Amount, int LeftWall = 0);
+	void PlaceDoodads(CTile* pTiles, int Width, int Height, CRule *pRule, array<array<int> > *pPositions, int Amount, int LeftWall = 0);
 
 	array<CRuleSet> m_aRuleSets;
 
