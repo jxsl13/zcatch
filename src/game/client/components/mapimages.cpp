@@ -62,7 +62,7 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 			pMap->UnloadData(pImg->m_ImageData);
 		}
 	}
-	LoadAutoMapres();
+	LoadAutoMapres();	
 
 	// load game entities
 	Graphics()->UnloadTexture(&m_EntitiesTexture);
@@ -71,6 +71,8 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 	if(!m_EntitiesTexture.IsValid())
 		m_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	m_AutoEntitiesTexture = Graphics()->LoadTexture("editor/entities_auto.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	if(!m_AutoTilesTexture.IsValid())
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "automapper", "Failed to load entities_auto.png");
 }
 
 void CMapImages::LoadAutoMapres()
@@ -84,6 +86,11 @@ void CMapImages::LoadAutoMapres()
 	m_AutoTilesTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	str_format(aBuf, sizeof(aBuf), "mapres/%s_doodads.png", g_Config.m_GfxAutomapLayer);
 	m_AutoDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+
+	if(!m_AutoTilesTexture.IsValid())
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "automapper", "Failed to load auto tiles");
+	if(!m_AutoDoodadsTexture.IsValid())
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "automapper", "Failed to load auto doodads");
 }
 
 

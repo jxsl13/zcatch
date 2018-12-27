@@ -574,11 +574,27 @@ void CMapLayers::ConchainAutomapperReload(IConsole::IResult *pResult, void *pUse
 	}
 }
 
+void CMapLayers::Con_Automap(IConsole::IResult *pResult, void *pUserData)
+{
+	CMapLayers *pSelf = (CMapLayers *)pUserData;
+	if(!pResult->GetString(0)[0])
+	{
+		g_Config.m_GfxGameTiles = 0;
+		return;
+	}
+	g_Config.m_GfxGameTiles = 3;
+	str_copy(g_Config.m_GfxAutomapLayer, pResult->GetString(0), sizeof(g_Config.m_GfxAutomapLayer));
+	pSelf->ReloadPainters();
+}
+
+
 void CMapLayers::OnConsoleInit()
 {
 	Console()->Chain("cl_menu_map", ConchainBackgroundMap, this);
 	Console()->Chain("cl_show_menu_map", ConchainBackgroundMap, this);
 	Console()->Chain("gfx_automap_layer", ConchainAutomapperReload, this);
+
+	Console()->Register("automap", "s", CFGFLAG_CLIENT, Con_Automap, this, "Automap the specified layer");
 }
 
 void CMapLayers::BackgroundMapUpdate()

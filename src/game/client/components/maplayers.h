@@ -51,7 +51,7 @@ public:
 
 	static void ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainAutomapperReload(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-
+	static void Con_Automap(IConsole::IResult *pResult, void *pUserData);
 
 	virtual void OnConsoleInit();
 
