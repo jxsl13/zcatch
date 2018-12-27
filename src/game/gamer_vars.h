@@ -1,10 +1,10 @@
 // Tile modifiers
-MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 3, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show game tiles (2 = game tiles only, 3 = autotile)")
-MACRO_CONFIG_STR(GfxAutotileLayer, gfx_autotile_layer, 255, "grass", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Layer to use for the autotile")
+MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 3, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show game tiles (2 = game tiles only, 3 = automapper)")
+MACRO_CONFIG_STR(GfxAutomapLayer, gfx_automap_layer, 255, "grass", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Layer to use for the automapper")
 
 // Healthbar
 MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
-MACRO_CONFIG_INT(GfxHealthBarDamagedOnly, gfx_healthbar_damaged_only, 1, 0, 0, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
+MACRO_CONFIG_INT(GfxHealthBarDamagedOnly, gfx_healthbar_damaged_only, 1, 1, 0, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
 MACRO_CONFIG_INT(GfxArmorUnderHealth, gfx_armor_under_health, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render the armor bar under the health")
 MACRO_CONFIG_INT(GfxHealthBarNumbers, gfx_healthbar_numbers, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render numbers next to the healthbar")
 

@@ -21,6 +21,7 @@ class CMapLayers : public CComponent
 	int m_LastLocalTick;
 	float m_OnlineStartTime;
 	bool m_EnvelopeUpdate;
+	bool m_AutolayerUpdate;
 
 	array<CEnvPoint> m_lEnvPoints;
 	array<CEnvPoint> m_lEnvPointsMenu;
@@ -29,6 +30,7 @@ class CMapLayers : public CComponent
 
 	void LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints);
 	void LoadBackgroundMap();
+	void ReloadPainters();
 	void LoadPainters(CLayers *pLayers);
 	void LoadAutomapperRules(CLayers *pLayers, const char* pName);
 
@@ -48,6 +50,8 @@ public:
 	void EnvelopeUpdate();
 
 	static void ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainAutomapperReload(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
 
 	virtual void OnConsoleInit();
 

@@ -62,24 +62,30 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 			pMap->UnloadData(pImg->m_ImageData);
 		}
 	}
-	// load grass_main
-	{
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "mapres/%s_main.png", g_Config.m_GfxAutotileLayer);
-		// str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "winter_main");
-		m_GrassTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
-		str_format(aBuf, sizeof(aBuf), "mapres/%s_doodads.png", g_Config.m_GfxAutotileLayer);
-		m_GrassDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
-	}
+	LoadAutoMapres();
 
 	// load game entities
 	Graphics()->UnloadTexture(&m_EntitiesTexture);
-	const char *pName = "editor/entities_clear.png";
-	m_EntitiesTexture = Graphics()->LoadTexture(pName, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	Graphics()->UnloadTexture(&m_AutoEntitiesTexture);
+	m_EntitiesTexture = Graphics()->LoadTexture("editor/entities_clear.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	if(!m_EntitiesTexture.IsValid())
 		m_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	m_AutoEntitiesTexture = Graphics()->LoadTexture("editor/entities_auto.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 }
+
+void CMapImages::LoadAutoMapres()
+{
+	Graphics()->UnloadTexture(&m_AutoTilesTexture);
+	Graphics()->UnloadTexture(&m_AutoDoodadsTexture);
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "mapres/%s_main.png", g_Config.m_GfxAutomapLayer);
+	// str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "winter_main");
+	m_AutoTilesTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	str_format(aBuf, sizeof(aBuf), "mapres/%s_doodads.png", g_Config.m_GfxAutomapLayer);
+	m_AutoDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+}
+
 
 void CMapImages::OnMapLoad()
 {
@@ -109,13 +115,13 @@ IGraphics::CTextureHandle CMapImages::GetAutoEntities() const
 {
 	return m_AutoEntitiesTexture;
 }
-IGraphics::CTextureHandle CMapImages::GetGrassTiles() const
+IGraphics::CTextureHandle CMapImages::GetAutoTiles() const
 {
-	return m_GrassTexture;
+	return m_AutoTilesTexture;
 }
-IGraphics::CTextureHandle CMapImages::GetGrassDoodads() const
+IGraphics::CTextureHandle CMapImages::GetAutoDoodads() const
 {
-	return m_GrassDoodadsTexture;
+	return m_AutoDoodadsTexture;
 }
 
 int CMapImages::Num() const

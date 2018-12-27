@@ -16,7 +16,6 @@
 
 #include <game/client/components/camera.h>
 #include <game/client/components/mapimages.h>
-// #include <game/editor/auto_map.h>
 #include <game/collision.h>
 #include <game/client/components/auto_tile.h>
 
@@ -28,6 +27,7 @@ CMapLayers::CMapLayers(int t)
 	m_CurrentLocalTick = 0;
 	m_LastLocalTick = 0;
 	m_EnvelopeUpdate = false;
+	m_AutolayerUpdate = false;
 	m_pMenuMap = 0;
 	m_pMenuLayers = 0;
 	m_OnlineStartTime = 0;
@@ -401,8 +401,15 @@ void CMapLayers::OnRender()
 
 		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter)
 		{
+			if(m_AutolayerUpdate)
+			{
+				m_pClient->m_pMapimages->LoadAutoMapres();
+				LoadPainters(Layers());
+				m_AutolayerUpdate = false;
+			}
+
 			pTiles = m_pAutoTiles;
-			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassTiles());
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetAutoTiles());
 			Graphics()->BlendNone();
 			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
@@ -437,6 +444,12 @@ void CMapLayers::OnRender()
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
 
+// on auto mapres change
+void CMapLayers::ReloadPainters()
+{
+	m_AutolayerUpdate = true;
+}
+
 void CMapLayers::LoadPainters(CLayers *pLayers)
 {
 	if(m_pTilesetPainter)
@@ -461,9 +474,9 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 	}
 
 	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "%s_main", g_Config.m_GfxAutotileLayer);
+	str_format(aBuf, sizeof(aBuf), "%s_main", g_Config.m_GfxAutomapLayer);
 	LoadAutomapperRules(pLayers, aBuf);
-	str_format(aBuf, sizeof(aBuf), "%s_doodads", g_Config.m_GfxAutotileLayer);
+	str_format(aBuf, sizeof(aBuf), "%s_doodads", g_Config.m_GfxAutomapLayer);
 	LoadAutomapperRules(pLayers, aBuf);
 	
 	// fill m_pAutoTiles
@@ -552,10 +565,20 @@ void CMapLayers::ConchainBackgroundMap(IConsole::IResult *pResult, void *pUserDa
 		((CMapLayers*)pUserData)->BackgroundMapUpdate();
 }
 
+void CMapLayers::ConchainAutomapperReload(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	if(pResult->NumArguments())
+	{
+		((CMapLayers*)pUserData)->ReloadPainters();
+	}
+}
+
 void CMapLayers::OnConsoleInit()
 {
 	Console()->Chain("cl_menu_map", ConchainBackgroundMap, this);
 	Console()->Chain("cl_show_menu_map", ConchainBackgroundMap, this);
+	Console()->Chain("gfx_automap_layer", ConchainAutomapperReload, this);
 }
 
 void CMapLayers::BackgroundMapUpdate()
