@@ -460,8 +460,11 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 		m_pAutoDoodads = 0;
 	}
 
-	LoadAutomapperRules(pLayers, "grass_main");
-	LoadAutomapperRules(pLayers, "grass_doodads");
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s_main", g_Config.m_GfxAutotileLayer);
+	LoadAutomapperRules(pLayers, aBuf);
+	str_format(aBuf, sizeof(aBuf), "%s_doodads", g_Config.m_GfxAutotileLayer);
+	LoadAutomapperRules(pLayers, aBuf);
 	
 	// fill m_pAutoTiles
 	CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
@@ -484,8 +487,10 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 	mem_copy(m_pAutoDoodads, m_pAutoTiles, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
 
 	// proceed
-	m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
-	m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 50);
+	if(m_pTilesetPainter)
+		m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
+	if(m_pDoodadsPainter)
+		m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 50);
 }
 
 void CMapLayers::LoadAutomapperRules(CLayers *pLayers, const char* pName)

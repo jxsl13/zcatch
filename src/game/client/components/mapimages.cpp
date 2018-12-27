@@ -4,6 +4,7 @@
 #include <engine/map.h>
 #include <engine/storage.h>
 #include <game/client/component.h>
+#include <engine/shared/config.h>
 #include <game/mapitems.h>
 
 #include "mapimages.h"
@@ -64,9 +65,10 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 	// load grass_main
 	{
 		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "grass_main");
+		str_format(aBuf, sizeof(aBuf), "mapres/%s_main.png", g_Config.m_GfxAutotileLayer);
+		// str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "winter_main");
 		m_GrassTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
-		str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "grass_doodads");
+		str_format(aBuf, sizeof(aBuf), "mapres/%s_doodads.png", g_Config.m_GfxAutotileLayer);
 		m_GrassDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	}
 
