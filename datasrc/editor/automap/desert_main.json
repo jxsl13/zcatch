@@ -1,0 +1,124 @@
+{"tileset": [
+	{"desert":
+		{
+			"basetile": 1,
+
+			"rules": [
+			{
+				"index": 2,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 150
+			},
+			{
+				"index": 3,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 150
+			},
+			{
+				"index": 16,
+				"condition": [
+					{"x": 0, "y": -1, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 17,
+				"condition": [
+					{"x": 1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 18,
+				"condition": [
+					{"x": 0, "y": 1, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 19,
+				"condition": [
+					{"x": -1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 33,
+				"condition": [
+					{"x": 0, "y": -1, "value": "empty"},
+					{"x": 1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 32,
+				"condition": [
+					{"x": 0, "y": -1, "value": "empty"},
+					{"x": -1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 35,
+				"condition": [
+					{"x": 0, "y": 1, "value": "empty"},
+					{"x": -1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 34,
+				"condition": [
+					{"x": 0, "y": 1, "value": "empty"},
+					{"x": 1, "y": 0, "value": "empty"},
+
+				],
+			},
+			{
+				"index": 51,
+				"condition": [
+					{"x": -1, "y": 1, "value": "empty"},
+					{"x": -1, "y": 0, "value": "full"},
+					{"x": 0, "y": 1, "value": "full"},
+
+				],
+			},
+			{
+				"index": 50,
+				"condition": [
+					{"x": 1, "y": 1, "value": "empty"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": 0, "y": 1, "value": "full"},
+
+				],
+			},
+			{
+				"index": 49,
+				"condition": [
+					{"x": 1, "y": -1, "value": "empty"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+
+				],
+			},
+			{
+				"index": 48,
+				"condition": [
+					{"x": -1, "y": -1, "value": "empty"},
+					{"x": -1, "y": 0, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+				],
+			}]
+		}
+	}]
+}
