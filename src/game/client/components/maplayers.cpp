@@ -418,7 +418,7 @@ void CMapLayers::OnRender()
 											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 			
 			/*pTiles = m_pAutoDoodads;
-			Graphics()->TextureSet(m_pClient->m_pMapimages->GetGrassDoodads());
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetAutoDoodads());
 			Graphics()->BlendNone();
 			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);

@@ -25,6 +25,46 @@
 				"random": 150
 			},
 			{
+				"index": 21,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 450
+			},
+			{
+				"index": 37,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 450
+			},
+			{
+				"index": 53,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 450
+			},
+			{
+				"index": 69,
+				"condition": [
+					{"x": 0, "y": 1, "value": "full"},
+					{"x": 0, "y": -1, "value": "full"},
+					{"x": 1, "y": 0, "value": "full"},
+					{"x": -1, "y": 0, "value": "full"},
+				],
+				"random": 450
+			},
+			{
 				"index": 16,
 				"condition": [
 					{"x": 0, "y": -1, "value": "empty"},

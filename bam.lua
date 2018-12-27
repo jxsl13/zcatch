@@ -219,7 +219,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 		if (target_arch == "x86" and arch ~= "ia32") or
 		   (target_arch == "x86_64" and arch ~= "ia64" and arch ~= "amd64") then
 			print("Cross compiling is unsupported on Windows.")
-			os.exit(1)
+			-- os.exit(1)
 		end
 		settings.cc.flags:Add("/wd4244", "/wd4577")
 	elseif compiler == "gcc" or config.compiler.driver == "clang" then
