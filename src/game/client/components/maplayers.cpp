@@ -340,7 +340,10 @@ void CMapLayers::OnRender()
 				}
 			}
 
-			if((Render && !IsGameLayer && g_Config.m_GfxGameTiles < 2))
+			if(Render && !IsGameLayer
+				&& !(g_Config.m_GfxGameTiles >= 2 && !g_Config.m_GfxKeepBackgroundAlways)
+				&& !(g_Config.m_GfxGameTiles >= 2 && m_Type != TYPE_BACKGROUND && g_Config.m_GfxKeepBackgroundAlways)
+				)
 			{
 				if(pLayer->m_Type == LAYERTYPE_TILES)
 				{
@@ -400,7 +403,7 @@ void CMapLayers::OnRender()
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 		}
 
-		if(g_Config.m_GfxGameTiles == 3)
+		if(g_Config.m_GfxGameTiles == 3 && m_Type != TYPE_BACKGROUND)
 		{
 			dbg_assert(pLayers && (bool)pLayers->Map(), "no map");
 			if(m_AutolayerUpdate) // need to update auto ressources
@@ -465,22 +468,16 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 	{
 		delete(m_pTilesetPainter);
 		m_pTilesetPainter = 0;
+		m_pAutoTiles = 0;
 	}
 	if(m_pDoodadsPainter)
 	{
 		delete(m_pDoodadsPainter);
 		m_pDoodadsPainter = 0;
-	}
-	if(m_pAutoTiles)
-	{
-		delete(m_pAutoTiles);
-		m_pAutoTiles = 0;
-	}
-	if(m_pAutoDoodads)
-	{
-		delete(m_pAutoDoodads);
 		m_pAutoDoodads = 0;
 	}
+	delete(m_pAutoTiles);
+	delete(m_pAutoDoodads);
 
 	char aBuf[64];
 	str_format(aBuf, sizeof(aBuf), "%s_main", g_Config.m_GfxAutomapLayer);
@@ -489,30 +486,37 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 	LoadAutomapperRules(pLayers, aBuf);
 	
 	// fill m_pAutoTiles
-	CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
-	CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
-	m_pAutoTiles = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-	mem_copy(m_pAutoTiles, pTilesOriginal, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-
-	// cleanup game tiles from anything but hookable and unhookable
-	int MaxIndex = pTMap->m_Width * pTMap->m_Height;	
-	for(int i = 0 ; i < MaxIndex; i++)
+	if(m_pTilesetPainter)
 	{
-		if(m_pAutoTiles[i].m_Index != CCollision::COLFLAG_SOLID && m_pAutoTiles[i].m_Index != (CCollision::COLFLAG_NOHOOK|CCollision::COLFLAG_SOLID)) // hookable and unhookable
+		CMapItemLayerTilemap *pTMap = pLayers->GameLayer();
+		CTile *pTilesOriginal = ((CTile *)pLayers->Map()->GetData(pTMap->m_Data));
+		m_pAutoTiles = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+		mem_copy(m_pAutoTiles, pTilesOriginal, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+
+		// cleanup game tiles from anything but hookable and unhookable
+		int MaxIndex = pTMap->m_Width * pTMap->m_Height;	
+		for(int i = 0 ; i < MaxIndex; i++)
 		{
-			m_pAutoTiles[i].m_Index = 0;
-			m_pAutoTiles[i].m_Flags = 0;
+			if(m_pAutoTiles[i].m_Index != CCollision::COLFLAG_SOLID && m_pAutoTiles[i].m_Index != (CCollision::COLFLAG_NOHOOK|CCollision::COLFLAG_SOLID)) // hookable and unhookable
+			{
+				m_pAutoTiles[i].m_Index = 0;
+				m_pAutoTiles[i].m_Flags = 0;
+			}
+		}
+
+		// proceed tiles
+		m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
+
+		if(m_pDoodadsPainter)
+		{
+			// copy the collision from the tiles
+			m_pAutoDoodads = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+			mem_copy(m_pAutoDoodads, m_pAutoTiles, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
+
+			// proceed
+			m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 1);
 		}
 	}
-
-	m_pAutoDoodads = (CTile *)malloc(sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-	mem_copy(m_pAutoDoodads, m_pAutoTiles, sizeof(CTile) * pTMap->m_Width * pTMap->m_Height);
-
-	// proceed
-	if(m_pTilesetPainter)
-		m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
-	if(m_pDoodadsPainter)
-		m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 1);
 }
 
 void CMapLayers::LoadAutomapperRules(CLayers *pLayers, const char* pName)

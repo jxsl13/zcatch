@@ -59,8 +59,11 @@ void CMenus::RenderGame(CUIRect MainView)
 	
 	// cut view
 	MainView.HSplitTop(20.0f, 0, &MainView);
+	bool IsAutomapping = (g_Config.m_GfxGameTiles == 3);
+	bool MapIsCleared = (g_Config.m_GfxGameTiles >= 2);
 	float NoteHeight = !Info.m_aNotification[0] ? 0.0f : 45.0f;
-	MainView.HSplitTop(20.0f+20.0f+20.0f+20.0f+3*Spacing+ NoteHeight, &MainView, 0);
+	float GNoteHeight = MapIsCleared ? Spacing + 15.0f : 0.0f;
+	MainView.HSplitTop(20.0f+20.0f+20.0f+20.0f+3*Spacing+ NoteHeight +  GNoteHeight, &MainView, 0);
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
 
 	// game options
@@ -234,27 +237,56 @@ void CMenus::RenderGame(CUIRect MainView)
 		// right buttons
 		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
 		static CButtonContainer s_GrassButton;
-		if(DoButton_Menu(&s_GrassButton, Localize("Grass"), 0, &Button))
+		if(DoButton_Menu(&s_GrassButton, Localize("Grass"), IsAutomapping && !str_comp(g_Config.m_GfxAutomapLayer, "grass"), &Button,
+			0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(140.f/255.f, 219.f/255.f, 38.f/255.f, 0.75f)))
 		{
 			Console()->ExecuteLine("automap grass");
 		}
 		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
 		static CButtonContainer s_DesertButton;
-		if(DoButton_Menu(&s_DesertButton, Localize("Desert"), 0, &Button))
+		if(DoButton_Menu(&s_DesertButton, Localize("Desert"), IsAutomapping && !str_comp(g_Config.m_GfxAutomapLayer, "desert"), &Button,
+			0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(188.f/255.f, 107.f/255.f, 53.f/255.f, 0.75f)))
 		{
 			Console()->ExecuteLine("automap desert");
 		}
 		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
 		static CButtonContainer s_JungleButton;
-		if(DoButton_Menu(&s_JungleButton, Localize("Jungle"), 0, &Button))
+		if(DoButton_Menu(&s_JungleButton, Localize("Jungle"), IsAutomapping && !str_comp(g_Config.m_GfxAutomapLayer, "jungle"), &Button,
+			0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(238.f/255.f, 237.f/255.f, 144.f/255.f, 0.75f)))
 		{
 			Console()->ExecuteLine("automap jungle");
 		}
 		GButtonRow.VSplitRight(100.f, &GButtonRow, &Button);
 		static CButtonContainer s_WinterButton;
-		if(DoButton_Menu(&s_WinterButton, Localize("Winter"), 0, &Button))
+		if(DoButton_Menu(&s_WinterButton, Localize("Winter"), IsAutomapping && !str_comp(g_Config.m_GfxAutomapLayer, "winter"), &Button,
+			0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(158.f/255.f, 172.f/255.f, 172.f/255.f, 0.75f)))
 		{
 			Console()->ExecuteLine("automap winter");
+		}
+
+
+		if(MapIsCleared)
+		{
+			CUIRect GNoteRow, Label;
+			MainView.HSplitTop(20.0f+Spacing, 0, &MainView);
+			MainView.HSplitTop(15.0f, &GNoteRow, 0);
+
+			GNoteRow.VSplitRight(100.f, &GNoteRow, &Label);
+			if(IsAutomapping)
+			{
+				static int s_Doodads = 0;
+				if(DoButton_CheckBox(&s_Doodads, "Doodads", g_Config.m_GfxAutomapDoodads == 1, &Label))
+				{
+					g_Config.m_GfxAutomapDoodads ^= 1;
+				}
+			}
+
+			GNoteRow.VSplitRight(100.f, &GNoteRow, &Label);
+			static int s_Background = 0;
+			if(DoButton_CheckBox(&s_Background, "Background", g_Config.m_GfxKeepBackgroundAlways == 1, &Label))
+			{
+				g_Config.m_GfxKeepBackgroundAlways ^= 1;
+			}
 		}
 	}
 }

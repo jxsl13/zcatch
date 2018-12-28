@@ -1,5 +1,6 @@
 // Tile modifiers
 MACRO_CONFIG_INT(GfxGameTiles, gfx_game_tiles, 0, 0, 3, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show game tiles (2 = game tiles only, 3 = automapper)")
+MACRO_CONFIG_INT(GfxKeepBackgroundAlways, gfx_keep_background_always, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Always keep the background, even when showing game tiles / automapping")
 MACRO_CONFIG_INT(GfxAutomapDoodads, gfx_automap_doodads, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Automap doodads too")
 MACRO_CONFIG_STR(GfxAutomapLayer, gfx_automap_layer, 255, "grass", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Layer to use for the automapper")
 
