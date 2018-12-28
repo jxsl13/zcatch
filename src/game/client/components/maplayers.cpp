@@ -384,6 +384,7 @@ void CMapLayers::OnRender()
 	{
 		RenderTools()->MapScreenToGroup(Center.x, Center.y, pGameLayerGroup, m_pClient->m_pCamera->GetZoom());
 
+		// useless calculation to get the game layer
 		CMapItemLayer *pLayer = pLayers->GetLayer(pGameLayerGroup->m_StartLayer+GameLayerId);
 		CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 		dbg_assert(pLayer->m_Type == LAYERTYPE_TILES || pTMap->m_Image == -1, "not the game layer");
@@ -399,14 +400,24 @@ void CMapLayers::OnRender()
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 		}
 
-		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter)
+		if(g_Config.m_GfxGameTiles == 3 && m_pTilesetPainter && m_pDoodadsPainter)
 		{
-			if(m_AutolayerUpdate)
+			if(m_AutolayerUpdate) // need to update auto ressources
 			{
 				m_pClient->m_pMapimages->LoadAutoMapres();
 				LoadPainters(Layers());
 				m_AutolayerUpdate = false;
 			}
+
+			// render doodads first
+			pTiles = m_pAutoDoodads;
+			Graphics()->TextureSet(m_pClient->m_pMapimages->GetAutoDoodads());
+			Graphics()->BlendNone();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+			Graphics()->BlendNormal();
+			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 
 			pTiles = m_pAutoTiles;
 			Graphics()->TextureSet(m_pClient->m_pMapimages->GetAutoTiles());
@@ -416,15 +427,6 @@ void CMapLayers::OnRender()
 			Graphics()->BlendNormal();
 			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
-			
-			/*pTiles = m_pAutoDoodads;
-			Graphics()->TextureSet(m_pClient->m_pMapimages->GetAutoDoodads());
-			Graphics()->BlendNone();
-			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
-			Graphics()->BlendNormal();
-			RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-											EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);*/
 		}
 
 		Graphics()->TextureSet(g_Config.m_GfxGameTiles == 3 ? m_pClient->m_pMapimages->GetAutoEntities() : m_pClient->m_pMapimages->GetEntities());
@@ -503,7 +505,7 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 	if(m_pTilesetPainter)
 		m_pTilesetPainter->Proceed(m_pAutoTiles, pTMap->m_Width, pTMap->m_Height, 0);
 	if(m_pDoodadsPainter)
-		m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 50);
+		m_pDoodadsPainter->Proceed(m_pAutoDoodads, pTMap->m_Width, pTMap->m_Height, 0, 1);
 }
 
 void CMapLayers::LoadAutomapperRules(CLayers *pLayers, const char* pName)

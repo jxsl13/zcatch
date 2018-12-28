@@ -82,7 +82,6 @@ void CMapImages::LoadAutoMapres()
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "mapres/%s_main.png", g_Config.m_GfxAutomapLayer);
-	// str_format(aBuf, sizeof(aBuf), "mapres/%s.png", "winter_main");
 	m_AutoTilesTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	str_format(aBuf, sizeof(aBuf), "mapres/%s_doodads.png", g_Config.m_GfxAutomapLayer);
 	m_AutoDoodadsTexture = Graphics()->LoadTexture(aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);

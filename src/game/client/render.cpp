@@ -596,7 +596,6 @@ void CRenderTools::MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup 
 
 void CRenderTools::RenderTilemapGenerateSkip(class CLayers *pLayers)
 {
-
 	for(int g = 0; g < pLayers->NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = pLayers->GetGroup(g);

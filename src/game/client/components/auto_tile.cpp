@@ -163,6 +163,11 @@ void CTilesetPainter::Proceed(CTile* pTiles, int Width, int Height, int ConfigID
 
 				if(RespectRules && (pConf->m_aRules[i].m_Random <= 1 || (int)(frandom() * pConf->m_aRules[i].m_Random) == 1))
 				{
+					// hack: no random on walls
+					if(pConf->m_aRules[i].m_Random > 1)
+						if(x == 0 || x == Width-1 || y == 0 || y == Height-1)
+							continue;
+
 					pTile->m_Index = pConf->m_aRules[i].m_Index;
 					pTile->m_Flags = 0;
 
@@ -328,7 +333,7 @@ void CDoodadsPainter::AnalyzeGameLayer()
 
 	// gamer
 	// CLayerGame *pLayer = m_pGameLayer;
-	CMapItemLayerTilemap *pLayer = m_pGameLayer;
+	const CMapItemLayerTilemap *pLayer = m_pGameLayer;
 	// m_pTiles = (CTile *)m_pLayers->Map()->GetData(pLayer->m_Data);
 
 	bool FloorKeepChaining = false;
@@ -514,6 +519,7 @@ void CDoodadsPainter::AnalyzeGameLayer()
 
 void CDoodadsPainter::PlaceDoodads(CTile* pTiles, int Width, int Height, CRule *pRule, array<array<int> > *pPositions, int Amount, int LeftWall)
 {
+
 	if(pRule->m_Location == CRule::CEILING)
 		pRule->m_RelativePos.y++;
 	else if(pRule->m_Location == CRule::WALLS)
@@ -678,6 +684,7 @@ void CDoodadsPainter::Proceed(CTile* pTiles, int Width, int Height, int ConfigID
 	{
 		pTiles[i].m_Index = 0;
 		pTiles[i].m_Flags = 0;
+		pTiles[i].m_Skip = 0; // important: do not skip! (wrong value because we're using the collision layer)
 	}
 
 	// place doodads
