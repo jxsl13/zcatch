@@ -29,7 +29,7 @@ public:
 
 	//
 	IAutoTiler(CLayers *pLayers, int Type) : m_pGameLayer(pLayers->GameLayer()), m_pLayers(pLayers), m_Type(Type)
-		{ m_pGameTiles = (CTile *)pLayers->Map()->GetData(m_pGameLayer->m_Data); }
+		{ dbg_assert(pLayers && pLayers->Map()); m_pGameTiles = (CTile *)pLayers->Map()->GetData(m_pGameLayer->m_Data); }
 	virtual ~IAutoTiler() {};
 	virtual void Load(const json_value &rElement) = 0;
 	// virtual void Proceed(class CLayerTiles *pLayer, int ConfigID) {}

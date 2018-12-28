@@ -400,12 +400,12 @@ void CMapLayers::OnRender()
 				Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 		}
 
-		if(g_Config.m_GfxGameTiles == 3)
+		if(g_Config.m_GfxGameTiles == 3 && pLayers->Map())
 		{
 			if(m_AutolayerUpdate) // need to update auto ressources
 			{
 				m_pClient->m_pMapimages->LoadAutoMapres();
-				LoadPainters(Layers());
+				LoadPainters(pLayers);
 				m_AutolayerUpdate = false;
 			}
 
