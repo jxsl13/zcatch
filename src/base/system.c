@@ -1793,6 +1793,24 @@ void str_sanitize(char *str_in)
 	}
 }
 
+/* removes all forbidden windows/unix characters */
+char* str_sanitize_filename(char* aName)
+{
+	// sanitize icon name
+	char *str = (char *)aName;
+	while(*str)
+	{
+		// remove forbidden characters
+		if(*str == '/' || *str == '<' || *str == '>' || *str == ':' || *str == '"' 
+			|| *str == '/' || *str == '\\' || *str == '|' || *str == '?' || *str == '*')
+ 			*str = ' ';
+		str++;
+	}
+	// removes trailing whitespaces
+	str_clean_whitespaces(aName);
+	return aName;
+}
+
 /* removes leading and trailing spaces and limits the use of multiple spaces */
 void str_clean_whitespaces(char *str_in)
 {
