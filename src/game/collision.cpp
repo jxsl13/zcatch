@@ -31,7 +31,8 @@ void CCollision::Init(class CLayers *pLayers)
 	{
 		int Index = m_pTiles[i].m_Index;
 
-		if(Index > 128)
+		// if(Index > 128)
+		if(Index >= 8)
 			continue;
 
 		switch(Index)
@@ -61,7 +62,7 @@ int CCollision::GetTile(int x, int y) const
 
 bool CCollision::IsTileSolid(int x, int y) const
 {
-	return GetTile(x, y)&COLFLAG_SOLID;
+	return GetTile(x, y) <= COLFLAG_MAXGAME && (GetTile(x, y)&COLFLAG_SOLID);
 }
 
 // TODO: rewrite this smarter!

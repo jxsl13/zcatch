@@ -70,9 +70,15 @@ void CMapImages::LoadMapImages(IMap *pMap, class CLayers *pLayers, int MapType)
 	m_EntitiesTexture = Graphics()->LoadTexture("editor/entities_clear.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	if(!m_EntitiesTexture.IsValid())
 		m_EntitiesTexture = Graphics()->LoadTexture("editor/entities.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+
 	m_AutoEntitiesTexture = Graphics()->LoadTexture("editor/entities_auto.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
 	if(!m_AutoTilesTexture.IsValid())
 		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "automapper", "Failed to load entities_auto.png");
+
+	m_TeleEntitiesTexture = Graphics()->LoadTexture("editor/entities_teleport.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, IGraphics::TEXLOAD_ARRAY_256);
+	if(!m_TeleEntitiesTexture.IsValid())
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "automapper", "Failed to load entities_teleport.png");
+
 }
 
 void CMapImages::LoadAutoMapres()
@@ -120,6 +126,10 @@ IGraphics::CTextureHandle CMapImages::GetEntities() const
 IGraphics::CTextureHandle CMapImages::GetAutoEntities() const
 {
 	return m_AutoEntitiesTexture;
+}
+IGraphics::CTextureHandle CMapImages::GetTeleEntities() const
+{
+	return m_TeleEntitiesTexture;
 }
 IGraphics::CTextureHandle CMapImages::GetAutoTiles() const
 {

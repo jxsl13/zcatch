@@ -261,11 +261,21 @@ void CMapLayers::OnRender()
 
 	bool PassedGameLayer = false;
 	int GameLayerId = -1;
-	CMapItemGroup *pGameLayerGroup = NULL;
+	CMapItemGroup *pGameGroup = NULL;
+	CMapItemGroup *pRaceGroup = NULL;
 
 	for(int g = 0; g < pLayers->NumGroups(); g++)
 	{
 		CMapItemGroup *pGroup = pLayers->GetGroup(g);
+
+		// don't print race group
+		char aName[12];
+		IntsToStr(pGroup->m_aName, sizeof(aName)/sizeof(int), aName);
+		if(str_comp(aName, "#race") == 0)
+		{
+			pRaceGroup = pGroup;
+			continue;
+		}
 
 		if(!g_Config.m_GfxNoclip && pGroup->m_Version >= 2 && pGroup->m_UseClipping)
 		{
@@ -298,7 +308,7 @@ void CMapLayers::OnRender()
 				IsGameLayer = true;
 				PassedGameLayer = 1;
 				GameLayerId = l;
-				pGameLayerGroup = pGroup;
+				pGameGroup = pGroup;
 			}
 
 			// skip rendering if detail layers if not wanted
@@ -382,13 +392,14 @@ void CMapLayers::OnRender()
 		if(!g_Config.m_GfxNoclip)
 			Graphics()->ClipDisable();
 	}
-	// render game tiles
+
+	// render automap/game tiles
 	if(g_Config.m_GfxGameTiles && GameLayerId > -1)
 	{
-		RenderTools()->MapScreenToGroup(Center.x, Center.y, pGameLayerGroup, m_pClient->m_pCamera->GetZoom());
+		RenderTools()->MapScreenToGroup(Center.x, Center.y, pGameGroup, m_pClient->m_pCamera->GetZoom());
 
 		// useless calculation to get the game layer
-		CMapItemLayer *pLayer = pLayers->GetLayer(pGameLayerGroup->m_StartLayer+GameLayerId);
+		CMapItemLayer *pLayer = pLayers->GetLayer(pGameGroup->m_StartLayer+GameLayerId);
 		CMapItemLayerTilemap *pTMap = (CMapItemLayerTilemap *)pLayer;
 		dbg_assert(pLayer->m_Type == LAYERTYPE_TILES || pTMap->m_Image == -1, "not the game layer");
 
@@ -439,6 +450,7 @@ void CMapLayers::OnRender()
 			}
 		}
 
+		// the game tiles now
 		Graphics()->TextureSet(g_Config.m_GfxGameTiles == 3 ? m_pClient->m_pMapimages->GetAutoEntities() : m_pClient->m_pMapimages->GetEntities());
 		Graphics()->BlendNone();
 		pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
@@ -447,6 +459,36 @@ void CMapLayers::OnRender()
 		Graphics()->BlendNormal();
 		RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 										EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+
+		// and the race tiles
+		if(pRaceGroup)
+		{
+			for(int l = 0; l < pRaceGroup->m_NumLayers; l++)
+			{
+				CMapItemLayer *pLayer = pLayers->GetLayer(pRaceGroup->m_StartLayer+l);
+				if(pLayer->m_Type != LAYERTYPE_TILES)
+					continue;
+				CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
+				
+				char aName[12];
+				IntsToStr(pTilemap->m_aName, sizeof(aName)/sizeof(int), aName);
+
+				// teleport layer
+				if(str_comp(aName, "#tele") == 0)
+				{
+					Graphics()->TextureSet(m_pClient->m_pMapimages->GetTeleEntities());
+					Graphics()->BlendNone();
+					CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
+					vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
+
+					RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+													EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+					Graphics()->BlendNormal();
+					RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+													EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+				}
+			}
+		}
 	}
 
 	if(!g_Config.m_GfxNoclip)

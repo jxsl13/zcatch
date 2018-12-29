@@ -21,6 +21,7 @@ class CMapImages : public CComponent
 	} m_Info[NUM_MAP_TYPES];
 	IGraphics::CTextureHandle m_EntitiesTexture;
 	IGraphics::CTextureHandle m_AutoEntitiesTexture;
+	IGraphics::CTextureHandle m_TeleEntitiesTexture;
 	IGraphics::CTextureHandle m_AutoTilesTexture;
 	IGraphics::CTextureHandle m_AutoDoodadsTexture;
 
@@ -32,6 +33,7 @@ public:
 	IGraphics::CTextureHandle Get(int Index) const;
 	IGraphics::CTextureHandle GetEntities() const;
 	IGraphics::CTextureHandle GetAutoEntities() const;
+	IGraphics::CTextureHandle GetTeleEntities() const;
 	IGraphics::CTextureHandle GetAutoTiles() const;
 	IGraphics::CTextureHandle GetAutoDoodads() const;
 	int Num() const;
