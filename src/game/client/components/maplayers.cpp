@@ -478,14 +478,14 @@ void CMapLayers::OnRender()
 				{
 					Graphics()->TextureSet(m_pClient->m_pMapimages->GetTeleEntities());
 					Graphics()->BlendNone();
-					CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTMap->m_Data);
-					vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
+					CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTilemap->m_Data);
+					vec4 Color = vec4(pTilemap->m_Color.r/255.0f, pTilemap->m_Color.g/255.0f, pTilemap->m_Color.b/255.0f, pTilemap->m_Color.a/255.0f);
 
-					RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-													EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+					RenderTools()->RenderTilemap(pTiles, pTilemap->m_Width, pTilemap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
 					Graphics()->BlendNormal();
-					RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-													EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
+					RenderTools()->RenderTilemap(pTiles, pTilemap->m_Width, pTilemap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
 				}
 			}
 		}
