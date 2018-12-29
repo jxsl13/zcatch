@@ -13,6 +13,7 @@ class CMapLayers : public CComponent
 	// gamer
 	CTilesetPainter* m_pTilesetPainter;
 	CDoodadsPainter* m_pDoodadsPainter;
+	CTile* m_pTeleTiles;
 	CTile* m_pAutoTiles;
 	CTile* m_pAutoDoodads;
 
@@ -22,6 +23,7 @@ class CMapLayers : public CComponent
 	float m_OnlineStartTime;
 	bool m_EnvelopeUpdate;
 	bool m_AutolayerUpdate;
+	bool m_TeleUpdate;
 
 	array<CEnvPoint> m_lEnvPoints;
 	array<CEnvPoint> m_lEnvPointsMenu;

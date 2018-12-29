@@ -28,11 +28,13 @@ CMapLayers::CMapLayers(int t)
 	m_LastLocalTick = 0;
 	m_EnvelopeUpdate = false;
 	m_AutolayerUpdate = false;
+	m_TeleUpdate = true;
 	m_pMenuMap = 0;
 	m_pMenuLayers = 0;
 	m_OnlineStartTime = 0;
 	m_pTilesetPainter = 0;
 	m_pDoodadsPainter = 0;
+	m_pTeleTiles = 0;
 	m_pAutoTiles = 0;
 	m_pAutoDoodads = 0;
 }
@@ -94,6 +96,7 @@ void CMapLayers::OnMapLoad()
 	if(Layers())
 		LoadEnvPoints(Layers(), m_lEnvPoints);
 	LoadPainters(Layers());
+	m_TeleUpdate = true;
 }
 
 void CMapLayers::LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints)
@@ -476,15 +479,40 @@ void CMapLayers::OnRender()
 				// teleport layer
 				if(str_comp(aName, "#tele") == 0)
 				{
+					const int Width = pTilemap->m_Width;
+					const int Height = pTilemap->m_Height;
+					dbg_assert(Width <= pTMap->m_Width && Height <= pTMap->m_Height, "teleport layer is too big");
+					if(m_TeleUpdate) // need to reload teleport stuff
+					{
+						delete m_pTeleTiles;
+
+						CTile *pTeleTiles = (CTile *)pLayers->Map()->GetData(pTilemap->m_Data);
+
+						// arrange tiles
+						for(int i = 0 ; i < Width*Height; i++)
+						{
+							if(pTeleTiles[i].m_Index)
+							{
+								if(pTiles[i].m_Index == 26)
+									pTeleTiles[i].m_Index = pTeleTiles[i].m_Index*2 - 1;
+								else if(pTiles[i].m_Index == 27)
+									pTeleTiles[i].m_Index = pTeleTiles[i].m_Index*2 - 2;
+								else
+									dbg_msg("automap", "Strange teleport, game ID = %d", pTiles[i].m_Index);
+							}
+						}
+						m_pTeleTiles = (CTile *)malloc(sizeof(CTile) * Width * Height);
+						mem_copy(m_pTeleTiles, pTeleTiles, sizeof(CTile) * Width * Height);
+						m_TeleUpdate = false;
+					}
+
+					// vec4 Color = vec4(1.f,1.f,1.f,1.f);
 					Graphics()->TextureSet(m_pClient->m_pMapimages->GetTeleEntities());
 					Graphics()->BlendNone();
-					CTile *pTiles = (CTile *)pLayers->Map()->GetData(pTilemap->m_Data);
-					vec4 Color = vec4(pTilemap->m_Color.r/255.0f, pTilemap->m_Color.g/255.0f, pTilemap->m_Color.b/255.0f, pTilemap->m_Color.a/255.0f);
-
-					RenderTools()->RenderTilemap(pTiles, pTilemap->m_Width, pTilemap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+					RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
 					Graphics()->BlendNormal();
-					RenderTools()->RenderTilemap(pTiles, pTilemap->m_Width, pTilemap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+					RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
 													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
 				}
 			}
@@ -560,6 +588,11 @@ void CMapLayers::LoadPainters(CLayers *pLayers)
 		}
 	}
 }
+
+// void CMapLayers::LoadTeleports(CLayers *pLayers)
+// {
+// 	delete(m_pTeleTiles);
+// }
 
 void CMapLayers::LoadAutomapperRules(CLayers *pLayers, const char* pName)
 {
