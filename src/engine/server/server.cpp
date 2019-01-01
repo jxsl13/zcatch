@@ -25,6 +25,7 @@
 #include <engine/shared/packer.h>
 #include <engine/shared/protocol.h>
 #include <engine/shared/snapshot.h>
+#include <engine/shared/fifo.h>
 
 #include <mastersrv/mastersrv.h>
 
@@ -967,9 +968,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 			if(Offset+ChunkSize >= m_CurrentMapSize)
 			{
-				ChunkSize = m_CurrentMapSize-Offset;
-				if(ChunkSize < 0)
-					ChunkSize = 0;
+				ChunkSize = m_CurrentMapSize - Offset;
+				//if (ChunkSize < 0)
+				//	ChunkSize = 0;
 				Last = 1;
 			}
 
@@ -1093,7 +1094,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					m_RconClientID = ClientID;
 					m_RconAuthLevel = m_aClients[ClientID].m_Authed;
 					Console()->SetAccessLevel(m_aClients[ClientID].m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : (m_aClients[ClientID].m_Authed == AUTHED_SUBADMIN ? IConsole::ACCESS_LEVEL_SUBADMIN : IConsole::ACCESS_LEVEL_MOD));
-					Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER);
+					Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER, ClientID);
 					Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 					m_RconClientID = IServer::RCON_CID_SERV;
 					m_RconAuthLevel = AUTHED_SUBADMIN;
@@ -1227,10 +1228,10 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 				for(int b = 0; b < pPacket->m_DataSize && b < 32; b++)
 				{
-					aBuf[b*3] = aHex[((const unsigned char *)pPacket->m_pData)[b]>>4];
-					aBuf[b*3+1] = aHex[((const unsigned char *)pPacket->m_pData)[b]&0xf];
-					aBuf[b*3+2] = ' ';
-					aBuf[b*3+3] = 0;
+					aBuf[b * 3] = aHex[((const unsigned char *)pPacket->m_pData)[b] >> 4];
+					aBuf[b * 3 + 1] = aHex[((const unsigned char *)pPacket->m_pData)[b] & 0xf];
+					aBuf[b * 3 + 2] = ' ';
+					aBuf[b * 3 + 3] = 0;
 				}
 
 				char aBufMsg[256];
@@ -1350,6 +1351,9 @@ void CServer::PumpNetwork()
 
 	m_ServerBan.Update();
 	m_Econ.Update();
+#if defined(CONF_FAMILY_UNIX)
+	m_Fifo.Update();
+#endif
 }
 
 char *CServer::GetMapName()
@@ -1402,8 +1406,8 @@ int CServer::LoadMap(const char *pMapName)
 	// load complete map into memory for download
 	{
 		IOHANDLE File = Storage()->OpenFile(aBuf, IOFLAG_READ, IStorage::TYPE_ALL);
-		m_CurrentMapSize = (int)io_length(File);
-		if(m_pCurrentMapData)
+		m_CurrentMapSize = (unsigned int)io_length(File);
+		if (m_pCurrentMapData)
 			mem_free(m_pCurrentMapData);
 		m_pCurrentMapData = (unsigned char *)mem_alloc(m_CurrentMapSize, 1);
 		io_read(File, m_pCurrentMapData, m_CurrentMapSize);
@@ -1453,6 +1457,10 @@ int CServer::Run()
 	m_NetServer.SetCallbacks(NewClientCallback, DelClientCallback, this);
 
 	m_Econ.Init(Console(), &m_ServerBan);
+
+#if defined(CONF_FAMILY_UNIX)
+	m_Fifo.Init(Console(), g_Config.m_SvInputFifo, CFGFLAG_SERVER);
+#endif
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "server name is '%s'", g_Config.m_SvName);
@@ -1595,6 +1603,9 @@ int CServer::Run()
 
 		m_Econ.Shutdown();
 	}
+#if defined(CONF_FAMILY_UNIX)
+	m_Fifo.Shutdown();
+#endif
 
 	GameServer()->OnShutdown();
 	m_pMap->Unload();
@@ -2106,6 +2117,8 @@ void CServer::rconLogClientOut(int ClientID, const char *msg)
 		m_aClients[ClientID].m_Authed = AUTHED_NO;
 		m_aClients[ClientID].m_AuthTries = 0;
 		m_aClients[ClientID].m_pRconCmdToSend = 0;
+		m_aClients[ClientID].m_Authed = IConsole::ACCESS_LEVEL_NO;
+
 		SendRconLine(ClientID, msg);
 		char aBuf[32];
 		str_format(aBuf, sizeof(aBuf), "ClientID=%d logged out", ClientID);

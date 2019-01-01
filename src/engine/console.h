@@ -20,6 +20,7 @@ public:
 		ACCESS_LEVEL_ADMIN=0,
 		ACCESS_LEVEL_SUBADMIN,
 		ACCESS_LEVEL_MOD,
+		ACCESS_LEVEL_NO=-1,
 
 		TEMPCMD_NAME_LENGTH=32,
 		TEMPCMD_HELP_LENGTH=96,
@@ -78,9 +79,9 @@ public:
 	virtual void StoreCommands(bool Store) = 0;
 
 	virtual bool LineIsValid(const char *pStr) = 0;
-	virtual void ExecuteLine(const char *Sptr) = 0;
-	virtual void ExecuteLineFlag(const char *Sptr, int FlasgMask) = 0;
-	virtual void ExecuteLineStroked(int Stroke, const char *pStr) = 0;
+	virtual void ExecuteLine( const char *Sptr, int ClientID = -1) = 0;
+	virtual void ExecuteLineFlag(const char *Sptr, int FlasgMask, int ClientID = -1) = 0;
+	virtual void ExecuteLineStroked(int Stroke, const char *pStr, int ClientID = -1) = 0;
 	virtual void ExecuteFile(const char *pFilename) = 0;
 
 	virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData) = 0;
