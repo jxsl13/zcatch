@@ -1,4 +1,3 @@
-CheckVersion("0.4")
 
 Import("configure.lua")
 Import("other/sdl/sdl.lua")
@@ -151,8 +150,13 @@ function build(settings)
 			-- disable visibility attribute support for gcc on windows
 			settings.cc.defines:Add("NO_VIZ")
 		elseif platform == "macosx" then
-			settings.cc.flags:Add("-mmacosx-version-min=10.5")
-			settings.link.flags:Add("-mmacosx-version-min=10.5")
+			settings.cc.flags:Add("-mmacosx-version-min=10.7")
+			settings.link.flags:Add("-mmacosx-version-min=10.7")
+
+			-----jxsl13 was here mac os x thread crap -----
+			settings.cc.flags:Add("--stdlib=libc++")
+			settings.link.flags:Add("--stdlib=libc++")
+			----------
 			if config.minmacosxsdk.value == 1 then
 				settings.cc.flags:Add("-isysroot /Developer/SDKs/MacOSX10.5.sdk")
 				settings.link.flags:Add("-isysroot /Developer/SDKs/MacOSX10.5.sdk")
@@ -206,6 +210,9 @@ function build(settings)
 	-- build sqlite
 	sqlite = Compile(settings, Collect("src/engine/external/sqlite/sqlite3.c"))
 
+	-- build md5 --
+	md5 = Compile(settings, Collect("src/engine/external/md5/md5.c"))
+
 	-- build game components
 	engine_settings = settings:Copy()
 	server_settings = engine_settings:Copy()
@@ -236,12 +243,17 @@ function build(settings)
 	-- apply freetype settings
 	config.freetype:Apply(client_settings)
 
-	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c"))
+
+	-- settings.cc.flags:Add("-std=c++11")
+	-- threads need c++11
+	settings.cc.flags:Add("-std=c++11")
+
+	engine_cpp = Compile(settings, Collect("src/engine/shared/*.cpp", "src/base/*.cpp"))
+	engine = Compile(engine_settings, Collect("src/base/*.c"))
 	client = Compile(client_settings, Collect("src/engine/client/*.cpp"))
 
 	-- we need threads in the server
-	-- threads need c++11
-	settings.cc.flags:Add("-std=c++11")
+
 	server = Compile(server_settings, Collect("src/engine/server/*.cpp"))
 
 	versionserver = Compile(settings, Collect("src/versionsrv/*.cpp"))
@@ -264,27 +276,23 @@ function build(settings)
 	tools = {}
 	for i,v in ipairs(tools_src) do
 		toolname = PathFilename(PathBase(v))
-		tools[i] = Link(settings, toolname, Compile(settings, v), engine, zlib, pnglite)
+		tools[i] = Link(settings, toolname, Compile(settings, v), engine, md5, zlib, pnglite)
 	end
 
 	-- build client, server, version server and master server
 	client_exe = Link(client_settings, "teeworlds", game_shared, game_client,
-		engine, client, game_editor, zlib, pnglite, wavpack,
+		engine, client, game_editor, md5, zlib, pnglite, wavpack,
 		client_link_other, client_osxlaunch)
 
-	server_exe = Link(server_settings, "zcatch_srv", engine, server,
-		game_shared, game_server, zlib, sqlite, server_link_other)
+	server_exe = Link(server_settings, "zcatch_srv", engine, engine_cpp, server,
+		game_shared, game_server, md5, zlib, sqlite, server_link_other)
 
-	serverlaunch = {}
-	if platform == "macosx" then
-		serverlaunch = Link(launcher_settings, "serverlaunch", server_osxlaunch)
-	end
 
 	versionserver_exe = Link(server_settings, "versionsrv", versionserver,
-		engine, zlib)
+		engine, md5, zlib)
 
 	masterserver_exe = Link(server_settings, "mastersrv", masterserver,
-		engine, zlib)
+		engine, md5, zlib)
 
 
 	-- make targets
@@ -307,6 +315,9 @@ debug_settings.config_ext = "_d"
 debug_settings.debug = 1
 debug_settings.optimize = 0
 debug_settings.cc.defines:Add("CONF_DEBUG")
+-- jxsl13 was here sanitizer for debugging stuff --
+--debug_settings.cc.flags:Add("-fsanitize=address")
+--debug_settings.cc.flags:Add("-fsanitize=leak")
 
 release_settings = NewSettings()
 release_settings.config_name = "release"
