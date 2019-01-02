@@ -28,11 +28,6 @@ CGameController_zCatch::~CGameController_zCatch() {
 	for (int i = 0; i < MAX_CLIENTS; i++)
 		if (GameServer()->m_apPlayers[i])
 			SaveRanking(GameServer()->m_apPlayers[i]);
-
-	/**
-	 * Clean up features and wait for them to finish.
-	 */
-	GameServer()->WaitForFutures();	
 }
 
 /* ranking system: create zcatch score table */

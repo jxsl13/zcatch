@@ -852,18 +852,18 @@ static int priv_net_close_all_sockets(NETSOCKET sock)
 	return 0;
 }
 
-static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, int sockaddrlen, int use_random_port)
+static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, int sockaddrlen)
 {
 	int sock, e;
 
 	/* create socket */
 	sock = socket(domain, type, 0);
-	if(sock < 0)
+	if (sock < 0)
 	{
 #if defined(CONF_FAMILY_WINDOWS)
 		char buf[128];
 		int error = WSAGetLastError();
-		if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
 			buf[0] = 0;
 		dbg_msg("net", "failed to create socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
 #else
@@ -872,9 +872,19 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 		return -1;
 	}
 
+#if defined(CONF_FAMILY_UNIX)
+	/* on tcp sockets set SO_REUSEADDR
+		to fix port rebind on restart */
+	if (domain == AF_INET && type == SOCK_STREAM)
+	{
+		int option = 1;
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+	}
+#endif
+
 	/* set to IPv6 only if thats what we are creating */
 #if defined(IPV6_V6ONLY)	/* windows sdk 6.1 and higher */
-	if(domain == AF_INET6)
+	if (domain == AF_INET6)
 	{
 		int ipv6only = 1;
 		setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const char*)&ipv6only, sizeof(ipv6only));
@@ -882,53 +892,34 @@ static int priv_net_create_socket(int domain, int type, struct sockaddr *addr, i
 #endif
 
 	/* bind the socket */
-	while(1)
+	e = bind(sock, addr, sockaddrlen);
+	if (e != 0)
 	{
-		/* pick random port */
-		if(use_random_port)
-		{
-			int port = htons(rand()%16384+49152);	/* 49152 to 65535 */
-			if(domain == AF_INET)
-				((struct sockaddr_in *)(addr))->sin_port = port;
-			else
-				((struct sockaddr_in6 *)(addr))->sin6_port = port;
-		}
-
-		e = bind(sock, addr, sockaddrlen);
-		if(e == 0)
-			break;
-		else
-		{
 #if defined(CONF_FAMILY_WINDOWS)
-			char buf[128];
-			int error = WSAGetLastError();
-			if(error == WSAEADDRINUSE && use_random_port)
-				continue;
-			if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
-				buf[0] = 0;
-			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
+		char buf[128];
+		int error = WSAGetLastError();
+		if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, error, 0, buf, sizeof(buf), 0) == 0)
+			buf[0] = 0;
+		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, error, buf);
 #else
-			if(errno == EADDRINUSE && use_random_port)
-				continue;
-			dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
+		dbg_msg("net", "failed to bind socket with domain %d and type %d (%d '%s')", domain, type, errno, strerror(errno));
 #endif
-			priv_net_close_socket(sock);
-			return -1;
-		}
+		priv_net_close_socket(sock);
+		return -1;
 	}
 
 	/* return the newly created socket */
 	return sock;
 }
 
-NETSOCKET net_udp_create(NETADDR bindaddr, int use_random_port)
+NETSOCKET net_udp_create(NETADDR bindaddr)
 {
 	NETSOCKET sock = invalid_socket;
 	NETADDR tmpbindaddr = bindaddr;
 	int broadcast = 1;
 	int recvsize = 65536;
 
-	if(bindaddr.type&NETTYPE_IPV4)
+	if (bindaddr.type & NETTYPE_IPV4)
 	{
 		struct sockaddr_in addr;
 		int socket = -1;
@@ -936,21 +927,47 @@ NETSOCKET net_udp_create(NETADDR bindaddr, int use_random_port)
 		/* bind, we should check for error */
 		tmpbindaddr.type = NETTYPE_IPV4;
 		netaddr_to_sockaddr_in(&tmpbindaddr, &addr);
-		socket = priv_net_create_socket(AF_INET, SOCK_DGRAM, (struct sockaddr *)&addr, sizeof(addr), use_random_port);
-		if(socket >= 0)
+		socket = priv_net_create_socket(AF_INET, SOCK_DGRAM, (struct sockaddr *)&addr, sizeof(addr));
+		if (socket >= 0)
 		{
 			sock.type |= NETTYPE_IPV4;
 			sock.ipv4sock = socket;
 
-			/* set boardcast */
+			/* set broadcast */
 			setsockopt(socket, SOL_SOCKET, SO_BROADCAST, (const char*)&broadcast, sizeof(broadcast));
 
 			/* set receive buffer size */
 			setsockopt(socket, SOL_SOCKET, SO_RCVBUF, (char*)&recvsize, sizeof(recvsize));
+
+			{
+				/* set DSCP/TOS */
+				int iptos = 0x10 /* IPTOS_LOWDELAY */;
+				//int iptos = 46; /* High Priority */
+				setsockopt(socket, IPPROTO_IP, IP_TOS, (char*)&iptos, sizeof(iptos));
+			}
 		}
 	}
 
-	if(bindaddr.type&NETTYPE_IPV6)
+#if defined(CONF_WEBSOCKETS)
+	if (bindaddr.type & NETTYPE_WEBSOCKET_IPV4)
+	{
+		int socket = -1;
+		char addr_str[NETADDR_MAXSTRSIZE];
+
+		/* bind, we should check for error */
+		tmpbindaddr.type = NETTYPE_WEBSOCKET_IPV4;
+
+		net_addr_str(&tmpbindaddr, addr_str, sizeof(addr_str), 0);
+		socket = websocket_create(addr_str, tmpbindaddr.port);
+
+		if (socket >= 0) {
+			sock.type |= NETTYPE_WEBSOCKET_IPV4;
+			sock.web_ipv4sock = socket;
+		}
+	}
+#endif
+
+	if (bindaddr.type & NETTYPE_IPV6)
 	{
 		struct sockaddr_in6 addr;
 		int socket = -1;
@@ -958,7 +975,7 @@ NETSOCKET net_udp_create(NETADDR bindaddr, int use_random_port)
 		/* bind, we should check for error */
 		tmpbindaddr.type = NETTYPE_IPV6;
 		netaddr_to_sockaddr_in6(&tmpbindaddr, &addr);
-		socket = priv_net_create_socket(AF_INET6, SOCK_DGRAM, (struct sockaddr *)&addr, sizeof(addr), use_random_port);
+		socket = priv_net_create_socket(AF_INET6, SOCK_DGRAM, (struct sockaddr *)&addr, sizeof(addr));
 		if(socket >= 0)
 		{
 			sock.type |= NETTYPE_IPV6;
@@ -974,6 +991,14 @@ NETSOCKET net_udp_create(NETADDR bindaddr, int use_random_port)
 
 	/* set non-blocking */
 	net_set_non_blocking(sock);
+
+#ifdef FUZZING
+	IOHANDLE file = io_open("bar.txt", IOFLAG_READ);
+	gs_NetPosition = 0;
+	gs_NetSize = io_length(file);
+	io_read(file, gs_NetData, 1024);
+	io_close(file);
+#endif /* FUZZING */
 
 	/* return */
 	return sock;
@@ -1095,7 +1120,7 @@ NETSOCKET net_tcp_create(NETADDR bindaddr)
 		/* bind, we should check for error */
 		tmpbindaddr.type = NETTYPE_IPV4;
 		netaddr_to_sockaddr_in(&tmpbindaddr, &addr);
-		socket = priv_net_create_socket(AF_INET, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr), 0);
+		socket = priv_net_create_socket(AF_INET, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr));
 		if(socket >= 0)
 		{
 			sock.type |= NETTYPE_IPV4;
@@ -1111,7 +1136,7 @@ NETSOCKET net_tcp_create(NETADDR bindaddr)
 		/* bind, we should check for error */
 		tmpbindaddr.type = NETTYPE_IPV6;
 		netaddr_to_sockaddr_in6(&tmpbindaddr, &addr);
-		socket = priv_net_create_socket(AF_INET6, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr), 0);
+		socket = priv_net_create_socket(AF_INET6, SOCK_STREAM, (struct sockaddr *)&addr, sizeof(addr));
 		if(socket >= 0)
 		{
 			sock.type |= NETTYPE_IPV6;
@@ -2029,6 +2054,107 @@ unsigned str_quickhash(const char *str)
 	for(; *str; str++)
 		hash = ((hash << 5) + hash) + (*str); /* hash * 33 + c */
 	return hash;
+}
+
+
+struct SECURE_RANDOM_DATA
+{
+	int initialized;
+#if defined(CONF_FAMILY_WINDOWS)
+	HCRYPTPROV provider;
+#else
+	IOHANDLE urandom;
+#endif
+};
+
+static struct SECURE_RANDOM_DATA secure_random_data = { 0 };
+
+int secure_random_init()
+{
+	if (secure_random_data.initialized)
+	{
+		return 0;
+	}
+#if defined(CONF_FAMILY_WINDOWS)
+	if (CryptAcquireContext(&secure_random_data.provider, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+	{
+		secure_random_data.initialized = 1;
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+#else
+	secure_random_data.urandom = io_open("/dev/urandom", IOFLAG_READ);
+	if (secure_random_data.urandom)
+	{
+		secure_random_data.initialized = 1;
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+#endif
+}
+
+void generate_password(char *buffer, unsigned length, unsigned short *random, unsigned random_length)
+{
+	static const char VALUES[] = "ABCDEFGHKLMNPRSTUVWXYZabcdefghjkmnopqt23456789";
+	static const size_t NUM_VALUES = sizeof(VALUES) - 1; // Disregard the '\0'.
+	unsigned i;
+	dbg_assert(length >= random_length * 2 + 1, "too small buffer");
+	dbg_assert(NUM_VALUES * NUM_VALUES >= 2048, "need at least 2048 possibilities for 2-character sequences");
+
+	buffer[random_length * 2] = 0;
+
+	for (i = 0; i < random_length; i++)
+	{
+		unsigned short random_number = random[i] % 2048;
+		buffer[2 * i + 0] = VALUES[random_number / NUM_VALUES];
+		buffer[2 * i + 1] = VALUES[random_number % NUM_VALUES];
+	}
+}
+
+#define MAX_PASSWORD_LENGTH 128
+
+void secure_random_password(char *buffer, unsigned length, unsigned pw_length)
+{
+	unsigned short random[MAX_PASSWORD_LENGTH / 2];
+	// With 6 characters, we get a password entropy of log(2048) * 6/2 = 33bit.
+	dbg_assert(length >= pw_length + 1, "too small buffer");
+	dbg_assert(pw_length >= 6, "too small password length");
+	dbg_assert(pw_length % 2 == 0, "need an even password length");
+	dbg_assert(pw_length <= MAX_PASSWORD_LENGTH, "too large password length");
+
+	secure_random_fill(random, pw_length);
+
+	generate_password(buffer, length, random, pw_length / 2);
+}
+
+#undef MAX_PASSWORD_LENGTH
+
+void secure_random_fill(void *bytes, unsigned length)
+{
+	if (!secure_random_data.initialized)
+	{
+		dbg_msg("secure", "called secure_random_fill before secure_random_init");
+		dbg_break();
+	}
+#if defined(CONF_FAMILY_WINDOWS)
+	if (!CryptGenRandom(secure_random_data.provider, length, bytes))
+	{
+		dbg_msg("secure", "CryptGenRandom failed, last_error=%ld", GetLastError());
+		dbg_break();
+	}
+#else
+	if (length != io_read(secure_random_data.urandom, bytes, length))
+	{
+		dbg_msg("secure", "io_read returned with a short read");
+		dbg_break();
+	}
+#endif
 }
 
 

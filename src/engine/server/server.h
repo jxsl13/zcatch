@@ -15,7 +15,7 @@ class CSnapIDPool
 {
 	enum
 	{
-		MAX_IDS = 16*1024,
+		MAX_IDS = 16 * 1024,
 	};
 
 	class CID
@@ -69,6 +69,8 @@ class CServer : public IServer
 	class IGameServer *m_pGameServer;
 	class IConsole *m_pConsole;
 	class IStorage *m_pStorage;
+	CServerBan m_ServerBan;
+
 	
 	// keep track of how many admins are logged in
 	int m_numLoggedInAdmins;
@@ -93,15 +95,16 @@ public:
 	class IGameServer *GameServer() { return m_pGameServer; }
 	class IConsole *Console() { return m_pConsole; }
 	class IStorage *Storage() { return m_pStorage; }
+	class CServerBan *GetBanServer(){ return &m_ServerBan;}
 
 	enum
 	{
-		AUTHED_NO=0,
+		AUTHED_NO = 0,
 		AUTHED_MOD,
 		AUTHED_SUBADMIN,
 		AUTHED_ADMIN,
 
-		MAX_RCONCMD_SEND=16,
+		MAX_RCONCMD_SEND = 16,
 	};
 
 	class CClient
@@ -116,7 +119,7 @@ public:
 			STATE_READY,
 			STATE_INGAME,
 
-			SNAPRATE_INIT=0,
+			SNAPRATE_INIT = 0,
 			SNAPRATE_FULL,
 			SNAPRATE_RECOVER
 		};
@@ -166,7 +169,6 @@ public:
 #if defined(CONF_FAMILY_UNIX)
 	CFifo m_Fifo;
 #endif
-	CServerBan m_ServerBan;
 
 	IEngineMap *m_pMap;
 
@@ -184,7 +186,7 @@ public:
 	char m_aCurrentMap[64];
 	unsigned m_CurrentMapCrc;
 	unsigned char *m_pCurrentMapData;
-	int m_CurrentMapSize;
+	unsigned int m_CurrentMapSize;
 
 	CDemoRecorder m_DemoRecorder;
 	CRegister m_Register;
@@ -227,6 +229,7 @@ public:
 	void DoSnapshot();
 
 	static int NewClientCallback(int ClientID, void *pUser);
+	static int NewClientNoAuthCallback(int ClientID, void *pUser);
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
 	void SendMap(int ClientID);
@@ -303,7 +306,9 @@ public:
 	static void ConVotebans(IConsole::IResult *pResult, void *pUser);
 	static void ConAddLogin(IConsole::IResult *pResult, void *pUser);
 	static void ConRemoveLogin(IConsole::IResult *pResult, void *pUser);
-	
+
+
+
 	// info messages
 	static void ConAddInfo(IConsole::IResult *pResult, void *pUser);
 	static void ConRemoveInfo(IConsole::IResult *pResult, void *pUser);
@@ -312,13 +317,13 @@ public:
 	int GetInfoTextMsgInterval() { return m_InfoTextMsgInterval; }
 	int GetInfoTextInterval() { return m_InfoTextInterval; }
 	std::string GetNextInfoText();
-	
+
 	virtual int GetNumLoggedInAdmins() { return m_numLoggedInAdmins; }
-	
+
 	// logins
-	typedef std::map<std::string,std::string>::iterator loginiterator;
-	std::map<std::string,std::string> logins;
-	
+	typedef std::map<std::string, std::string>::iterator loginiterator;
+	std::map<std::string, std::string> logins;
+
 	// log some client out of the rcon
 	void rconLogClientOut(int ClientID, const char *msg = "Logout successful.");
 };

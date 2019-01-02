@@ -17,7 +17,6 @@
 
 /* ranking system */
 #include <engine/external/sqlite/sqlite3.h>
-#include <thread>
 #include <queue>
 #include <mutex>
 #include <chrono>
@@ -25,7 +24,7 @@
 
 
 #define MAX_MUTES 35
-#define ZCATCH_VERSION "0.4.8"
+#define ZCATCH_VERSION "0.6.0"
 
 /*
 	Tick
@@ -94,7 +93,6 @@ class CGameContext : public IGameServer
 	
 	/* ranking system: sqlite connection */
 	sqlite3 *m_RankingDb;
-	std::vector<std::thread*> m_RankingThreads;
 	std::timed_mutex m_RankingDbMutex;
 	
 	// zCatch/TeeVi: hard mode
@@ -111,6 +109,8 @@ public:
 	class IConsole *Console() { return m_pConsole; }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
+	class CServerBan *GetBanServer() { return Server()->GetBanServer();}
+
 
 	CGameContext();
 	~CGameContext();
@@ -149,6 +149,7 @@ public:
 		VOTE_ENFORCE_UNKNOWN=0,
 		VOTE_ENFORCE_NO,
 		VOTE_ENFORCE_YES,
+		VOTE_ENFORCE_NO_ADMIN,
 	};
 	CHeap *m_pVoteOptionHeap;
 	CVoteOptionServer *m_pVoteOptionFirst;
@@ -160,24 +161,24 @@ public:
 	void CreateHammerHit(vec2 Pos);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);
-	void CreateSound(vec2 Pos, int Sound, int Mask=-1);
-	void CreateSoundGlobal(int Sound, int Target=-1);
+	void CreateSound(vec2 Pos, int Sound, int Mask = -1);
+	void CreateSoundGlobal(int Sound, int Target = -1);
 
 
 
 	enum
 	{
-		CHAT_ALL=-2,
-		CHAT_SPEC=-1,
-		CHAT_RED=0,
-		CHAT_BLUE=1
+		CHAT_ALL = -2,
+		CHAT_SPEC = -1,
+		CHAT_RED = 0,
+		CHAT_BLUE = 1
 	};
-	
+
 	struct CMutes
 	{
 		char m_aIP[NETADDR_MAXSTRSIZE];
 		int m_Expires;
-	}; 
+	};
 	CMutes m_aMutes[MAX_MUTES];
 	// helper functions
 	void AddMute(const char* pIP, int Secs);
@@ -241,7 +242,7 @@ public:
 	void AddFuture(std::future<void> Future) {m_Futures.push(std::move(Future));};
 	void CleanFutures() {
 		unsigned long size = m_Futures.size();
-	
+
 		for (unsigned long i = 0; i < size; ++i)
 		{
 			std::future<void> f = std::move(m_Futures.front());
@@ -275,7 +276,6 @@ public:
 	bool RankingEnabled() { return m_RankingDb != NULL; };
 	bool LockRankingDb(int ms = -1);
 	void UnlockRankingDb();
-	void AddRankingThread(std::thread *thread) { m_RankingThreads.push_back(thread); };
 
 
 	static void ConMergeRecords(IConsole::IResult *pResult, void *pUserData);
@@ -287,7 +287,7 @@ public:
 };
 
 inline int CmaskAll() { return -1; }
-inline int CmaskOne(int ClientID) { return 1<<ClientID; }
-inline int CmaskAllExceptOne(int ClientID) { return 0x7fffffff^CmaskOne(ClientID); }
-inline bool CmaskIsSet(int Mask, int ClientID) { return (Mask&CmaskOne(ClientID)) != 0; }
+inline int CmaskOne(int ClientID) { return 1 << ClientID; }
+inline int CmaskAllExceptOne(int ClientID) { return 0x7fffffff ^ CmaskOne(ClientID); }
+inline bool CmaskIsSet(int Mask, int ClientID) { return (Mask & CmaskOne(ClientID)) != 0; }
 #endif
