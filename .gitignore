@@ -7,7 +7,6 @@ objs
 src/game/generated
 SDL.dll
 freetype.dll
-autoexec.cfg
 
 crapnet*
 dilate*
