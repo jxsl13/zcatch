@@ -18,9 +18,11 @@
 /* ranking system */
 #include <engine/external/sqlite/sqlite3.h>
 #include <thread>
-#include <vector>
+#include <queue>
 #include <mutex>
 #include <chrono>
+#include <future>
+
 
 #define MAX_MUTES 35
 #define ZCATCH_VERSION "0.4.8"
@@ -233,12 +235,52 @@ public:
 	};
 	virtual bool IsClientAimBot(int ClientID);
 	
+
+	/*future stuff*/
+	std::queue<std::future<void> > m_Futures;
+	void AddFuture(std::future<void> Future) {m_Futures.push(std::move(Future));};
+	void CleanFutures() {
+		unsigned long size = m_Futures.size();
+	
+		for (unsigned long i = 0; i < size; ++i)
+		{
+			std::future<void> f = std::move(m_Futures.front());
+			m_Futures.pop();
+			auto status = f.wait_for(std::chrono::milliseconds(0));
+			if (status == std::future_status::ready)
+			{
+
+			} else {
+				m_Futures.push(std::move(f));
+			}
+		}
+
+
+	};
+
+	void WaitForFutures() {
+		unsigned long size = m_Futures.size();
+
+		for (unsigned long i = 0; i < size; ++i)
+		{
+			std::future<void> f = std::move(m_Futures.front());
+			m_Futures.pop();
+			f.wait();
+		}
+
+	};
+
 	/* ranking system */
 	sqlite3* GetRankingDb() { return m_RankingDb; };
 	bool RankingEnabled() { return m_RankingDb != NULL; };
 	bool LockRankingDb(int ms = -1);
 	void UnlockRankingDb();
 	void AddRankingThread(std::thread *thread) { m_RankingThreads.push_back(thread); };
+
+
+	static void ConMergeRecords(IConsole::IResult *pResult, void *pUserData);
+	static void ConMergeRecordsId(IConsole::IResult *pResult, void *pUserData);
+	
 	
 	// zCatch/TeeVi: hard mode
 	std::vector<HardMode> GetHardModes() { return std::vector<HardMode>(m_HardModes.begin(), m_HardModes.end()); };

@@ -86,6 +86,7 @@ CGameContext::~CGameContext()
 	for(int i = 0; i < MAX_CLIENTS; i++)
 		delete m_apPlayers[i];
 	
+	WaitForFutures();
 	if (!m_Resetting)
 	{
 		delete m_pVoteOptionHeap;
@@ -786,6 +787,10 @@ void CGameContext::OnClientConnected(int ClientID)
 {
 	// Check which team the player should be on
 	const int StartTeam = g_Config.m_SvTournamentMode ? TEAM_SPECTATORS : m_pController->GetAutoTeam(ClientID);
+
+	// Potential cleanup, taken from DDNet, if slot is still not taken (might as well be a double free vulnerability)
+	if(m_apPlayers[ClientID])
+		delete m_apPlayers[ClientID];
 
 	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, StartTeam);
 	//players[client_id].init(client_id);
@@ -2217,6 +2222,90 @@ void CGameContext::ConKill(IConsole::IResult *pResult, void *pUserData)
 	pSelf->SendChatTarget(-1, aBuf);
 }
 
+/**
+ * @brief Hooks the function CGameController_zCatch::MergeRankingIntoTarget(...) to the specific command
+ * in the remote console.
+ * @details [long description]
+ *
+ * @param pResult [description]
+ * @param pUserData [description]
+ */
+void CGameContext::ConMergeRecords(IConsole::IResult *pResult, void *pUserData) {
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	// Get strings
+	std::string Source(pResult->GetString(0));
+	std::string Target(pResult->GetString(1));
+
+	if (Source.compare(Target) == 0) {
+		// if both strings are equal, do nothing, otherwise this would delete all records of given player.
+
+		/* print info */
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "Merging was not successful, because both nicks are equal.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", aBuf);
+		return;
+	}
+	char *source = (char*)malloc(MAX_NAME_LENGTH);
+	str_copy(source, Source.c_str(), MAX_NAME_LENGTH);
+
+	char *target = (char*)malloc(MAX_NAME_LENGTH);
+	str_copy(target, Target.c_str(), MAX_NAME_LENGTH);
+
+	pSelf->AddFuture(std::async(std::launch::async, &CGameController_zCatch::MergeRankingIntoTarget, pSelf, source, target));
+
+}
+
+
+/**
+ * @brief Merges records of two players using their current ingame client IDs
+ * @details  \see{CGameContext::ConMergeRecords}
+ *
+ * @param pResult Console Input
+ * @param pUserData Context data(?)
+ */
+void CGameContext::ConMergeRecordsId(IConsole::IResult *pResult, void *pUserData) {
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	// Get IDs
+	int Source(pResult->GetInteger(0));
+	int Target(pResult->GetInteger(1));
+
+	/*Invalid input handling */
+	if (Source == Target ||
+	        Source < 0 ||
+	        Target < 0 ||
+	        Source >= MAX_CLIENTS ||
+	        Target >= MAX_CLIENTS) {
+		/* print info */
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "Merging was not successful, because either both IDs are equal or ID's are not valid.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", aBuf);
+		return;
+	}
+
+	char* source = (char*)malloc(sizeof(char) * MAX_NAME_LENGTH);
+	char* target = (char*)malloc(sizeof(char) * MAX_NAME_LENGTH);
+
+	str_copy(source, pSelf->Server()->ClientName(Source), MAX_NAME_LENGTH);
+	str_copy(target, pSelf->Server()->ClientName(Target), MAX_NAME_LENGTH);
+
+	/*More invalid input handling depending on what ClientName() returned*/
+	if (str_comp(source, "(invalid)") == 0 ||
+	        str_comp(target, "(invalid)") == 0 ||
+	        str_comp(source, "(connecting)") == 0 ||
+	        str_comp(target, "(connecting)") == 0) {
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Merging was not successful, because either both one or both IDs are invalid or one of them has not connected to the server yet. Please try again.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", aBuf);
+		free(source);
+		free(target);
+		return;
+	}
+	pSelf->AddFuture(std::async(std::launch::async, &CGameController_zCatch::MergeRankingIntoTarget, pSelf, source, target));
+	// source and target are freed after execution of the thread within the function MergeRankingIntoTarget
+
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -2237,6 +2326,9 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("shuffle_teams", "", CFGFLAG_SERVER, ConShuffleTeams, this, "Shuffle the current teams");
 	Console()->Register("lock_teams", "", CFGFLAG_SERVER, ConLockTeams, this, "Lock/unlock teams");
 
+	Console()->Register("merge_records", "ss", CFGFLAG_SERVER, ConMergeRecords, this, "Merge two records into the target username and delete source records: merge_records <source nickname> <target nickname>", IConsole::ACCESS_LEVEL_ADMIN);
+	Console()->Register("merge_records_id", "ii", CFGFLAG_SERVER, ConMergeRecordsId, this, "Merge two records into the target ID and delete source ID's records: merge_records <source ID> <target ID>", IConsole::ACCESS_LEVEL_ADMIN);
+	
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");

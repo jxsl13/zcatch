@@ -10,14 +10,15 @@
 
 class CGameController_zCatch: public IGameController
 {
-	int m_OldMode;
+
 	
 	void RewardWinner(int winnerId);
 	
 	/* ranking system */
 	static void ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column);
 	static void ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name);
-	static void SaveScore(CGameContext* GameServer, char *name, int score, int numWins, int numKills, int numKillsWallshot, int numDeaths, int numShots, int highestSpree, int timePlayed);
+	static void ChatCommandTopFetchDataFromViewAndPrint(CGameContext* GameServer, int clientId, const char *column);
+	static void SaveScore(CGameContext* GameServer, char *name, int score, int numWins, int numKills, int numKillsWallshot, int numDeaths, int numShots, int highestSpree, int timePlayed, int GameMode, int Free = 0);
 	static void FormatRankingColumn(const char* column, char buf[32], int value);
 
 public:
@@ -34,12 +35,20 @@ public:
 	virtual bool CanChangeTeam(CPlayer *pPlayer, int JoinTeam);
 	virtual void EndRound();
 	
+
+
 	/* ranking system */
 	virtual void SaveRanking(CPlayer *player);
 	virtual void OnInitRanking(sqlite3 *rankingDb);
 	virtual void OnChatCommandTop(CPlayer *pPlayer, const char *category = "");
 	virtual void OnChatCommandOwnRank(CPlayer *pPlayer);
 	virtual void OnChatCommandRank(CPlayer *pPlayer, const char *name);
+
+
+	static void MergeRankingIntoTarget(CGameContext* GameServer, char* Source, char *Target);
+	static void DeleteRanking(CGameContext* GameServer, char* Name, int GameMode = 0, int Free = 0);
+	static std::string GetGameModeTableName(int GameMode = 0);
+
 };
 
 #endif
