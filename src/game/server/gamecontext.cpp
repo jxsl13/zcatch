@@ -825,9 +825,6 @@ void CGameContext::OnClientConnected(int ClientID)
 	// access CServer through ban server
 	if (!GetBanServer()->Server()->m_NetServer.HasSecurityToken(ClientID)) {
 		SendChatTarget(ClientID, "Warning: You are not securely connected to this server.");
-		SendChatTarget(ClientID, "You may have a worse experience playing on this server.");
-		SendChatTarget(ClientID, "Please update your client to one that is protected against IP spoofing.");
-		SendChatTarget(ClientID, "One possible client could be the DDNet Client.");
 	}
 }
 

@@ -165,7 +165,7 @@ void mem_zero(void *block, unsigned size);
 	Returns:
 		<0 - Block a is lesser then block b
 		0 - Block a is equal to block b
-		>0 - Block a is greater then block b
+		>0 - Block a is greater than block b
 */
 int mem_comp(const void *a, const void *b, int size);
 
@@ -182,6 +182,7 @@ enum {
 	IOFLAG_READ = 1,
 	IOFLAG_WRITE = 2,
 	IOFLAG_RANDOM = 4,
+	IOFLAG_APPEND = 8,
 
 	IOSEEK_START = 0,
 	IOSEEK_CUR = 1,
@@ -196,7 +197,7 @@ typedef struct IOINTERNAL *IOHANDLE;
 
 	Parameters:
 		filename - File to open.
-		flags - A set of flags. IOFLAG_READ, IOFLAG_WRITE, IOFLAG_RANDOM.
+		flags - A set of flags. IOFLAG_READ, IOFLAG_WRITE, IOFLAG_RANDOM, IOFLAG_APPEND.
 
 	Returns:
 		Returns a handle to the file on success and 0 on failure.
@@ -280,7 +281,7 @@ int io_seek(IOHANDLE io, int offset, int origin);
 		io - Handle to the file.
 
 	Returns:
-		Returns the current position. -1L if an error occured.
+		Returns the current position. -1L if an error occurred.
 */
 long int io_tell(IOHANDLE io);
 
@@ -292,7 +293,7 @@ long int io_tell(IOHANDLE io);
 		io - Handle to the file.
 
 	Returns:
-		Returns the total size. -1L if an error occured.
+		Returns the total size. -1L if an error occurred.
 */
 long int io_length(IOHANDLE io);
 
@@ -319,6 +320,18 @@ int io_close(IOHANDLE io);
 		Returns 0 on success.
 */
 int io_flush(IOHANDLE io);
+
+/*
+	Function: io_error
+		Checks whether an error occurred during I/O with the file.
+
+	Parameters:
+		io - Handle to the file.
+
+	Returns:
+		Returns nonzero on error, 0 otherwise.
+*/
+int io_error(IOHANDLE io);
 
 
 /*
@@ -507,7 +520,7 @@ int net_init();
 /*
 	Function: net_host_lookup
 		Does a hostname lookup by name and fills out the passed
-		NETADDR struct with the recieved details.
+		NETADDR struct with the received details.
 
 	Returns:
 		0 on success.
@@ -531,7 +544,7 @@ int net_addr_comp(const NETADDR *a, const NETADDR *b);
 
 /*
 	Function: net_addr_str
-		Turns a network address into a representive string.
+		Turns a network address into a representative string.
 
 	Parameters:
 		addr - Address to turn into a string.
@@ -566,7 +579,6 @@ int net_addr_from_str(NETADDR *addr, const char *string);
 
 	Parameters:
 		bindaddr - Address to bind the socket to.
-		use_random_port - use a random port
 
 	Returns:
 		On success it returns an handle to the socket. On failure it
@@ -601,7 +613,7 @@ int net_udp_send(NETSOCKET sock, const NETADDR *addr, const void *data, int size
 		maxsize - Maximum size to recive.
 
 	Returns:
-		On success it returns the number of bytes recived. Returns -1
+		On success it returns the number of bytes received. Returns -1
 		on error.
 */
 int net_udp_recv(NETSOCKET sock, NETADDR *addr, void *data, int maxsize);
@@ -639,7 +651,7 @@ NETSOCKET net_tcp_create(NETADDR bindaddr);
 
 	Parameters:
 		sock - Socket to start listen to.
-		backlog - Size of the queue of incomming connections to keep.
+		backlog - Size of the queue of incoming connections to keep.
 
 	Returns:
 		Returns 0 on success.
@@ -729,7 +741,7 @@ int net_tcp_close(NETSOCKET sock);
 
 	Remarks:
 		- The strings are treated as zero-termineted strings.
-		- Garantees that dst string will contain zero-termination.
+		- Guarantees that dst string will contain zero-termination.
 */
 void str_append(char *dst, const char *src, int dst_size);
 
@@ -744,7 +756,7 @@ void str_append(char *dst, const char *src, int dst_size);
 
 	Remarks:
 		- The strings are treated as zero-termineted strings.
-		- Garantees that dst string will contain zero-termination.
+		- Guarantees that dst string will contain zero-termination.
 */
 void str_copy(char *dst, const char *src, int dst_size);
 
@@ -765,7 +777,7 @@ int str_length(const char *str);
 		Performs printf formating into a buffer.
 
 	Parameters:
-		buffer - Pointer to the buffer to recive the formated string.
+		buffer - Pointer to the buffer to recive the formatted string.
 		buffer_size - Size of the buffer.
 		format - printf formating string.
 		... - Parameters for the formating.
@@ -887,7 +899,7 @@ int str_comp_nocase_num(const char *a, const char *b, const int num);
 
 /*
 	Function: str_comp
-		Compares to strings case sensitive.
+		Compares two strings case sensitive.
 
 	Parameters:
 		a - String to compare.
@@ -1253,13 +1265,13 @@ int str_utf8_forward(const char *str, int cursor);
 
 /*
 	Function: str_utf8_decode
-		Decodes an utf8 character
+		Decodes a utf8 codepoint
 
 	Parameters:
-		ptr - pointer to an utf8 string. this pointer will be moved forward
+		ptr - Pointer to a utf8 string. This pointer will be moved forward.
 
 	Returns:
-		Unicode value for the character. -1 for invalid characters and 0 for end of string.
+		The Unicode codepoint. -1 for invalid input and 0 for end of string.
 
 	Remarks:
 		- This function will also move the pointer forward.
@@ -1271,7 +1283,7 @@ int str_utf8_decode(const char **ptr);
 		Encode an utf8 character
 
 	Parameters:
-		ptr - Pointer to a buffer that should recive the data. Should be able to hold at least 4 bytes.
+		ptr - Pointer to a buffer that should receive the data. Should be able to hold at least 4 bytes.
 
 	Returns:
 		Number of bytes put into the buffer.
@@ -1307,6 +1319,22 @@ int str_utf8_check(const char *str);
 		1 - Initialization failed.
 */
 int secure_random_init();
+
+/*
+	Function: secure_random_password
+		Fills the buffer with the specified amount of random password
+		characters.
+
+		The desired password length must be greater or equal to 6, even
+		and smaller or equal to 128.
+
+	Parameters:
+		buffer - Pointer to the start of the buffer.
+		length - Length of the buffer.
+		pw_length - Length of the desired password.
+*/
+void secure_random_password(char *buffer, unsigned length, unsigned pw_length);
+
 /*
 	Function: secure_random_fill
 		Fills the buffer with the specified amount of random bytes.
@@ -1316,6 +1344,13 @@ int secure_random_init();
 		length - Length of the buffer.
 */
 void secure_random_fill(void *bytes, unsigned length);
+
+/*
+	Function: secure_rand
+		Returns random int (replacement for rand()).
+*/
+int secure_rand();
+
 #ifdef __cplusplus
 }
 #endif
