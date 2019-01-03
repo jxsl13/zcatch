@@ -31,6 +31,9 @@
 #include <algorithm>
 #include <cmath>
 
+#include <bitset>
+
+
 enum
 {
 	RESET,
@@ -2318,6 +2321,69 @@ void CGameContext::ConMergeRecordsId(IConsole::IResult *pResult, void *pUserData
 
 }
 
+/**
+ * @brief Prints all unique flags of all players.
+ */
+void CGameContext::ConFlags(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	char aBuf[256];
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(pSelf->m_apPlayers[i])
+		{
+			std::string name(pSelf->Server()->ClientName(i));
+			std::string clan(pSelf->Server()->ClientClan(i));
+
+			str_format(aBuf, sizeof(aBuf), "Showing flags for player: ID:%2d '%s' '%s':", i, name.c_str(), clan.c_str());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", aBuf);
+
+			std::vector<int> flags = pSelf->m_apPlayers[i]->GetUniqueFlags();
+			for(int &flag : flags)
+			{
+				str_format(aBuf, sizeof(aBuf), "Bitmask: %032s Value: %10d", std::bitset<32>(flag).to_string().c_str(), flag);
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", aBuf);
+			}
+
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "");
+		}
+	}
+}
+
+/**
+ * @brief Prints all unique flags of all players.
+ */
+void CGameContext::ConFlagsById(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	int id(pResult->GetInteger(0));
+	char aBuf[256];
+
+	if(pSelf->m_apPlayers[id] && id >= 0 && id < MAX_CLIENTS)
+		{
+			std::string name(pSelf->Server()->ClientName(id));
+			std::string clan(pSelf->Server()->ClientClan(id));
+
+			str_format(aBuf, sizeof(aBuf), "Showing flags for player: ID:%2d '%s' '%s':", id, name.c_str(), clan.c_str());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", aBuf);
+
+
+			std::vector<int> flags = pSelf->m_apPlayers[id]->GetUniqueFlags();
+			for(int &flag : flags)
+			{
+				str_format(aBuf, sizeof(aBuf), "Bitmask: %032s Value: %10d", std::bitset<32>(flag).to_string().c_str(), flag);
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", aBuf);
+			}
+
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "");
+		}
+		else
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "Invalid id.");
+		}
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -2341,6 +2407,9 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("merge_records", "ss", CFGFLAG_SERVER, ConMergeRecords, this, "Merge two records into the target username and delete source records: merge_records <source nickname> <target nickname>", IConsole::ACCESS_LEVEL_ADMIN);
 	Console()->Register("merge_records_id", "ii", CFGFLAG_SERVER, ConMergeRecordsId, this, "Merge two records into the target ID and delete source ID's records: merge_records <source ID> <target ID>", IConsole::ACCESS_LEVEL_ADMIN);
 	
+	Console()->Register("flags_all", "", CFGFLAG_SERVER, ConFlags, this, "Show all unique sent player flags.");
+	Console()->Register("flags", "i", CFGFLAG_SERVER, ConFlagsById, this, "Show all unique sent player flags of given player: flags <ID>");
+
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
 	Console()->Register("force_vote", "ss?r", CFGFLAG_SERVER, ConForceVote, this, "Force a voting option");

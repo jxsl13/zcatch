@@ -280,8 +280,11 @@ public:
 
 	static void ConMergeRecords(IConsole::IResult *pResult, void *pUserData);
 	static void ConMergeRecordsId(IConsole::IResult *pResult, void *pUserData);
-	
-	
+
+
+	static void ConFlags(IConsole::IResult *pResult, void *pUserData);
+	static void ConFlagsById(IConsole::IResult *pResult, void *pUserData);
+
 	// zCatch/TeeVi: hard mode
 	std::vector<HardMode> GetHardModes() { return std::vector<HardMode>(m_HardModes.begin(), m_HardModes.end()); };
 };

@@ -295,10 +295,21 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput *NewInput)
 			m_pCharacter->ResetInput();
 
 		m_PlayerFlags = NewInput->m_PlayerFlags;
+
+		/**
+		 * Insert all of a player's sent player flags into the set
+		 * and keep track of them.
+		 */
+		m_PlayerUniqueFlags.insert(m_PlayerFlags);
  		return;
 	}
 
 	m_PlayerFlags = NewInput->m_PlayerFlags;
+
+	/**
+	 * Keep track of all player flags in a set.
+	 */
+	m_PlayerUniqueFlags.insert(m_PlayerFlags);
 
 	if(m_pCharacter)
 		m_pCharacter->OnDirectInput(NewInput);
@@ -642,3 +653,19 @@ void CPlayer::HardModeFailedShot()
 		GameServer()->SendBroadcast(Buf, GetCID());
 	}
 }
+
+    
+std::vector<int> CPlayer::GetUniqueFlags() 
+{
+	std::vector<int> v;
+	for (auto &flag : m_PlayerUniqueFlags)
+	{
+		v.push_back(flag);
+	}
+
+	std::sort(v.begin(), v.end());
+	return v;
+}
+
+
+

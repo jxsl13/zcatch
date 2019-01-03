@@ -6,6 +6,10 @@
 // this include should perhaps be removed
 #include "entities/character.h"
 #include "gamecontext.h"
+#include <set>
+#include <vector>
+#include <bitset>
+#include <algorithm>
 
 // player object
 class CPlayer
@@ -42,6 +46,17 @@ public:
 
 	// states if the client is chatting, accessing a menu etc.
 	int m_PlayerFlags;
+
+	/**
+     * @brief Unique flags that the client sends to the server.
+     * Keeps track of all unique sent player flags
+     */
+    std::set<int> m_PlayerUniqueFlags;
+
+    /**
+     * @brief Returns a vector created from the set of all unique flags.
+     */
+    std::vector<int> GetUniqueFlags();
 
 	// used for snapping to just update latency if the scoreboard is active
 	int m_aActLatency[MAX_CLIENTS];
