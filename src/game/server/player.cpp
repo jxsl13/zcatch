@@ -667,5 +667,24 @@ std::vector<int> CPlayer::GetUniqueFlags()
 	return v;
 }
 
+std::vector<int> CPlayer::GetUniqueClientVersions() 
+{
+	std::vector<int> v;
+	// no version data, return empty vector.
+	if (m_ClientVersions.empty())
+	{
+		return v;
+	}
+
+	// have version data, return sorted vector, basically a list.
+	for (auto &version : m_ClientVersions)
+	{
+		v.push_back(version);
+	}
+
+	std::sort(v.begin(), v.end());
+	return v;
+}
+
 
 

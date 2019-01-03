@@ -58,6 +58,25 @@ public:
      */
     std::vector<int> GetUniqueFlags();
 
+
+    /**
+     * @brief could be interesting if a client sends multiple client versions.
+     */
+    std::set<int> m_ClientVersions;
+
+    /**
+     * @brief returns an empty vector if the client is a vanilla client.
+     * Returns one client version if the client is some kind of ddnet based client.
+     * Returns multiple versions if the client sends multiple client versions.
+     */
+    std::vector<int> GetUniqueClientVersions();
+
+    /**
+     * @brief Add a sent client version to the players set of unique
+     * client versions.
+     */
+    void AddClientVersion(int version){m_ClientVersions.insert(version);};
+
 	// used for snapping to just update latency if the scoreboard is active
 	int m_aActLatency[MAX_CLIENTS];
 

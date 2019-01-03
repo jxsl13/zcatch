@@ -879,6 +879,34 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 	void *pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
 	CPlayer *pPlayer = m_apPlayers[ClientID];
 
+	// sets player's client version.
+	if(pPlayer){
+		if (MsgID == (NETMSGTYPE_CL_CALLVOTE + 1))
+		{
+			int Version = pUnpacker->GetInt();
+			pPlayer->AddClientVersion(Version);
+			return;
+
+		} else if (MsgID != NETMSGTYPE_CL_SAY &&
+					MsgID != NETMSGTYPE_CL_CALLVOTE &&
+					MsgID != NETMSGTYPE_CL_VOTE &&
+					MsgID != NETMSGTYPE_CL_SETTEAM &&
+					MsgID != NETMSGTYPE_CL_SETSPECTATORMODE &&
+					MsgID != NETMSGTYPE_CL_STARTINFO &&
+					MsgID != NETMSGTYPE_CL_CHANGEINFO &&
+					MsgID != NETMSGTYPE_CL_EMOTICON &&
+					MsgID != NETMSGTYPE_CL_KILL)
+		{
+			// todo: weird message logging
+			return;
+		}
+	}
+
+
+	/**
+	 * firstly check client version
+	 * and then analyse any other kind of message.
+	 */
 	if(!pRawMsg)
 	{
 		if(g_Config.m_Debug)
@@ -2384,6 +2412,89 @@ void CGameContext::ConFlagsById(IConsole::IResult *pResult, void *pUserData)
 		}
 }
 
+
+/**
+ * @brief Prints all unique client version of each player.
+ */
+void CGameContext::ConClientVersions(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	char aBuf[256];
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(pSelf->m_apPlayers[i])
+		{
+			std::string name(pSelf->Server()->ClientName(i));
+			std::string clan(pSelf->Server()->ClientClan(i));
+
+			str_format(aBuf, sizeof(aBuf), "Showing client version(s) for player: ID:%2d '%s' '%s':", i, name.c_str(), clan.c_str());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", aBuf);
+
+			std::vector<int> versions = pSelf->m_apPlayers[i]->GetUniqueClientVersions();
+
+			// no information received, we assume that it's vanilla
+			if (versions.empty())
+			{
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "Most likely vanilla, because no version information received.");
+				continue;
+			}
+
+			// version information received, we print them.
+			for(int &version : versions)
+			{
+				str_format(aBuf, sizeof(aBuf), "Version: %d", version);
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", aBuf);
+			}
+
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "");
+		}
+	}
+}
+
+/**
+ * @brief Prints all unique client versions of given player.
+ */
+void CGameContext::ConClientVersionsById(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	int id(pResult->GetInteger(0));
+	char aBuf[256];
+
+	if(pSelf->m_apPlayers[id] && id >= 0 && id < MAX_CLIENTS)
+		{
+			std::string name(pSelf->Server()->ClientName(id));
+			std::string clan(pSelf->Server()->ClientClan(id));
+
+			str_format(aBuf, sizeof(aBuf), "Showing client version(s) for player: ID:%2d '%s' '%s':", id, name.c_str(), clan.c_str());
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", aBuf);
+
+			std::vector<int> versions = pSelf->m_apPlayers[id]->GetUniqueClientVersions();
+
+			// no information received, we assume that it's vanilla
+			if (versions.empty())
+			{
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "Most likely vanilla, because no version information received.");
+
+			}
+			else
+			{
+				// version information received, we print them.
+				for(int &version : versions)
+				{
+					str_format(aBuf, sizeof(aBuf), "Version: %d", version);
+					pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", aBuf);
+				}
+			}
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "");
+		}
+		else
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "Invalid id.");
+		}
+}
+
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -2409,6 +2520,9 @@ void CGameContext::OnConsoleInit()
 	
 	Console()->Register("flags_all", "", CFGFLAG_SERVER, ConFlags, this, "Show all unique sent player flags.");
 	Console()->Register("flags", "i", CFGFLAG_SERVER, ConFlagsById, this, "Show all unique sent player flags of given player: flags <ID>");
+
+	Console()->Register("clients_all", "", CFGFLAG_SERVER, ConClientVersions, this, "Show player client version number(s).");
+	Console()->Register("clients", "i", CFGFLAG_SERVER, ConClientVersionsById, this, "Show player client's version number(s): clients <ID>");
 
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
