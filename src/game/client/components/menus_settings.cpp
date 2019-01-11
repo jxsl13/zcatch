@@ -582,26 +582,24 @@ public:
 int CMenus::ThemeScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
 	CMenus *pSelf = (CMenus *)pUser;
-	int l = str_length(pName);
-
-	if(l < 5 || IsDir || str_comp(pName+l-4, ".map") != 0)
+	const char *pSuffix = str_endswith(pName, ".map");
+	if(IsDir || !pSuffix)
 		return 0;
 	char aFullName[128];
 	char aThemeName[128];
-	str_copy(aFullName, pName, min((int)sizeof(aFullName),l-3));
+	str_truncate(aFullName, sizeof(aFullName), pName, pSuffix - pName);
 
-	l = str_length(aFullName);
-	bool isDay = false;
-	bool isNight = false;
-	if(l > 4 && str_comp(aFullName+l-4, "_day") == 0)
+	bool IsDay = false;
+	bool IsNight = false;
+	if((pSuffix = str_endswith(aFullName, "_day")))
 	{
-		str_copy(aThemeName, pName, min((int)sizeof(aThemeName),l-3));
-		isDay = true;
+		str_truncate(aThemeName, sizeof(aThemeName), pName, pSuffix - aFullName);
+		IsDay = true;
 	}
-	else if(l > 6 && str_comp(aFullName+l-6, "_night") == 0)
+	else if((pSuffix = str_endswith(aFullName, "_night")))
 	{
-		str_copy(aThemeName, pName, min((int)sizeof(aThemeName),l-5));
-		isNight = true;
+		str_truncate(aThemeName, sizeof(aThemeName), pName, pSuffix - aFullName);
+		IsNight = true;
 	}
 	else
 		str_copy(aThemeName, aFullName, sizeof(aThemeName));
@@ -614,16 +612,16 @@ int CMenus::ThemeScan(const char *pName, int IsDir, int DirType, void *pUser)
 	{
 		if(str_comp(pSelf->m_lThemes[i].m_Name, aThemeName) == 0)
 		{
-			if(isDay)
+			if(IsDay)
 				pSelf->m_lThemes[i].m_HasDay = true;
-			if(isNight)
+			if(IsNight)
 				pSelf->m_lThemes[i].m_HasNight = true;
 			return 0;
 		}
 	}
 
 	// make new theme
-	CTheme Theme(aThemeName, isDay, isNight);
+	CTheme Theme(aThemeName, IsDay, IsNight);
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "added theme %s from ui/themes/%s", aThemeName, pName);
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "game", aBuf);
@@ -634,12 +632,12 @@ int CMenus::ThemeScan(const char *pName, int IsDir, int DirType, void *pUser)
 int CMenus::ThemeIconScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
 	CMenus *pSelf = (CMenus *)pUser;
-	int l = str_length(pName);
-
-	if(l < 4 || IsDir || str_comp(pName+l-4, ".png") != 0)
+	const char *pSuffix = str_endswith(pName, ".png");
+	if(IsDir || !pSuffix)
 		return 0;
+
 	char aThemeName[128];
-	str_copy(aThemeName, pName, min((int)sizeof(aThemeName),l-3));
+	str_truncate(aThemeName, sizeof(aThemeName), pName, pSuffix - pName);
 
 	// save icon for an existing theme
 	for(sorted_array<CTheme>::range r = pSelf->m_lThemes.all(); !r.empty(); r.pop_front()) // bit slow but whatever
@@ -960,7 +958,7 @@ void CMenus::RenderSettingsGeneral(CUIRect MainView)
 		GameLeft.HSplitTop(Spacing, 0, &GameLeft);
 		GameLeft.HSplitTop(ButtonHeight, &Button, &GameLeft);
 		Button.VSplitLeft(ButtonHeight, 0, &Button);
-		DoScrollbarOption(&g_Config.m_ClNameplatesSize, &g_Config.m_ClNameplatesSize, &Button, Localize("Size"), 100.0f, 0, 100);
+		DoScrollbarOption(&g_Config.m_ClNameplatesSize, &g_Config.m_ClNameplatesSize, &Button, Localize("Size"), 0, 100);
 
 		GameLeft.HSplitTop(Spacing, 0, &GameLeft);
 		GameLeft.HSplitTop(ButtonHeight, &Button, &GameLeft);
@@ -1046,7 +1044,7 @@ void CMenus::RenderSettingsGeneral(CUIRect MainView)
 		Client.HSplitTop(Spacing, 0, &Client);
 		Client.HSplitTop(ButtonHeight, &Button, &Client);
 		Button.VSplitLeft(ButtonHeight, 0, &Button);
-		DoScrollbarOption(&g_Config.m_ClAutoDemoMax, &g_Config.m_ClAutoDemoMax, &Button, Localize("Max"), 100.0f, 0, 1000, true);
+		DoScrollbarOption(&g_Config.m_ClAutoDemoMax, &g_Config.m_ClAutoDemoMax, &Button, Localize("Max"), 0, 1000, true);
 	}
 
 	Client.HSplitTop(Spacing, 0, &Client);
@@ -1060,7 +1058,7 @@ void CMenus::RenderSettingsGeneral(CUIRect MainView)
 		Client.HSplitTop(Spacing, 0, &Client);
 		Client.HSplitTop(ButtonHeight, &Button, &Client);
 		Button.VSplitLeft(ButtonHeight, 0, &Button);
-		DoScrollbarOption(&g_Config.m_ClAutoScreenshotMax, &g_Config.m_ClAutoScreenshotMax, &Button, Localize("Max"), 100.0f, 0, 1000, true);
+		DoScrollbarOption(&g_Config.m_ClAutoScreenshotMax, &g_Config.m_ClAutoScreenshotMax, &Button, Localize("Max"), 0, 1000, true);
 	}
 
 	MainView.HSplitTop(10.0f, 0, &MainView);
@@ -1683,7 +1681,7 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 			ScreenRight.HSplitTop(Spacing, 0, &ScreenRight);
 			ScreenRight.HSplitTop(ButtonHeight, &Button, &ScreenRight);
 			DoScrollbarOption(&g_Config.m_GfxMaxFps, &g_Config.m_GfxMaxFps,
-							  &Button, Localize("Max fps"), 144.0f, 30, 300);
+							  &Button, Localize("Max fps"), 30, 300);
 		}
 	}
 
@@ -1692,7 +1690,7 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 		ScreenRight.HSplitTop(Spacing, 0, &ScreenRight);
 		ScreenRight.HSplitTop(ButtonHeight, &Button, &ScreenRight);
 		int Index = g_Config.m_GfxScreen;
-		DoScrollbarOption(&g_Config.m_GfxScreen, &Index, &Button, Localize("Screen"), 110.0f, 0, Graphics()->GetNumScreens()-1);
+		DoScrollbarOption(&g_Config.m_GfxScreen, &Index, &Button, Localize("Screen"), 0, Graphics()->GetNumScreens()-1);
 		if(Index != g_Config.m_GfxScreen)
 			Client()->SwitchWindowScreen(Index);
 	}
@@ -1941,7 +1939,7 @@ void CMenus::RenderSettingsSound(CUIRect MainView)
 		}
 
 		Right.HSplitTop(ButtonHeight, &Button, &Right);
-		DoScrollbarOption(&g_Config.m_SndVolume, &g_Config.m_SndVolume, &Button, Localize("Volume"), 130.0f, 0, 100);
+		DoScrollbarOption(&g_Config.m_SndVolume, &g_Config.m_SndVolume, &Button, Localize("Volume"), 0, 100);
 	}
 	else
 	{

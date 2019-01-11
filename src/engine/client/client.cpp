@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <new>
 
-#include <immintrin.h> //_mm_pause
 #include <stdlib.h> // qsort
 #include <stdarg.h>
 
@@ -240,7 +239,7 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 		UpdateInt(Target);
 }
 
-CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotDelta), m_pConLinkIdentifier("teeworlds:")
+CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotDelta)
 {
 	m_pEditor = 0;
 	m_pInput = 0;
@@ -1778,7 +1777,7 @@ bool CClient::LimitFps()
 			Now = time_get();
 			RenderDeltaTime = (Now - LastT) / Freq;
 			d = DesiredTime - RenderDeltaTime;
-			_mm_pause();
+			cpu_relax();
 		}
 
 		SkipFrame = false;
@@ -2422,9 +2421,9 @@ static CClient *CreateClient()
 	return new(pClient) CClient;
 }
 
-void CClient::HandleTeeworldsConnectLink(const char *pConLink)
+void CClient::ConnectOnStart(const char *pAddress)
 {
-	str_copy(m_aCmdConnect, pConLink, sizeof(m_aCmdConnect));
+	str_copy(m_aCmdConnect, pAddress, sizeof(m_aCmdConnect));
 }
 
 /*
@@ -2452,8 +2451,13 @@ int main(int argc, const char **argv) // ignore_convention
 	#else
 	bool HideConsole = false;
 	#endif
+	bool QuickEditMode = false;
 	for(int i = 1; i < argc; i++) // ignore_convention
 	{
+		if(str_comp("--quickeditmode", argv[i]) == 0) // ignore_convention
+		{
+			QuickEditMode = true;
+		}
 		if(str_comp("-c", argv[i]) == 0 || str_comp("--console", argv[i]) == 0) // ignore_convention
 		{
 			HideConsole = false;
@@ -2468,6 +2472,8 @@ int main(int argc, const char **argv) // ignore_convention
 
 	if(HideConsole)
 		FreeConsole();
+	else if(!QuickEditMode)
+		dbg_console_init();
 #endif
 
 	bool UseDefaultConfig = false;
@@ -2552,22 +2558,19 @@ int main(int argc, const char **argv) // ignore_convention
 		// parse the command line arguments
 		if(argc > 1) // ignore_convention
 		{
-			switch(argc) // ignore_convention
+			const char *pAddress = 0;
+			if(argc == 2)
 			{
-			case 2:
+				pAddress = str_startswith(argv[1], "teeworlds:");
+			}
+			if(pAddress)
 			{
-				// handle Teeworlds connect link
-				const int Length = str_length(pClient->m_pConLinkIdentifier);
-				if(str_comp_num(pClient->m_pConLinkIdentifier, argv[1], Length) == 0) // ignore_convention
-				{
-					pClient->HandleTeeworldsConnectLink(argv[1] + Length); // ignore_convention
-					break;
-				}
+				pClient->ConnectOnStart(pAddress);
 			}
-			default:
-				pConsole->ParseArguments(argc - 1, &argv[1]); // ignore_convention
+			else
+			{
+				pConsole->ParseArguments(argc - 1, &argv[1]);
 			}
-
 		}
 	}
 
@@ -2583,6 +2586,10 @@ int main(int argc, const char **argv) // ignore_convention
 	// write down the config and quit
 	pConfig->Save();
 
+#if defined(CONF_FAMILY_WINDOWS)
+	if(!HideConsole && !QuickEditMode)
+		dbg_console_cleanup();
+#endif
 	// free components
 	mem_free(pClient);
 	delete pKernel;

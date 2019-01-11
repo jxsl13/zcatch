@@ -548,12 +548,13 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 		// get paras
 		switch(gs_GameMsgList[GameMsgID].m_ParaType)
 		{
-		case PARA_III:
-			aParaI[NumParaI++] = pUnpacker->GetInt();
-		case PARA_II:
-			aParaI[NumParaI++] = pUnpacker->GetInt();
-		case PARA_I:
-			aParaI[NumParaI++] = pUnpacker->GetInt();
+		case PARA_I: NumParaI = 1; break;
+		case PARA_II: NumParaI = 2; break;
+		case PARA_III: NumParaI = 3; break;
+		}
+		for(int i = 0; i < NumParaI; i++)
+		{
+			aParaI[i] = pUnpacker->GetInt();
 		}
 
 		// check for unpacking errors
@@ -1604,7 +1605,7 @@ void CGameClient::ConTeam(IConsole::IResult *pResult, void *pUserData)
 	CMenus::CSwitchTeamInfo Info;
 	pClient->m_pMenus->GetSwitchTeamInfo(&Info);
 	int Team = pResult->GetInteger(0);
-	if(pClient->m_aClients[pClient->m_LocalClientID].m_Team == Team || (Team == TEAM_SPECTATORS && !(Info.m_AllowSpec)) || Info.m_aNotification[0])
+	if(pClient->m_aClients[pClient->m_LocalClientID].m_Team == Team || (Team == TEAM_SPECTATORS && !(Info.m_AllowSpec)) || (Team != TEAM_SPECTATORS && Info.m_aNotification[0]))
 	{
 		if(Info.m_aNotification[0])
 			pClient->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", Info.m_aNotification);
