@@ -594,13 +594,13 @@ void CGameConsole::Toggle(int Type)
 			m_pClient->m_pMenus->UseMouseButtons(false);
 			m_ConsoleState = CONSOLE_OPENING;
 			// reset controls
-			m_pClient->m_pControls->OnReset();
+			//m_pClient->m_pControls->OnReset();
 		}
 		else
 		{
 			Input()->MouseModeRelative();
 			m_pClient->m_pMenus->UseMouseButtons(true);
-			m_pClient->OnRelease();
+			// m_pClient->OnRelease();
 			m_ConsoleState = CONSOLE_CLOSING;
 		}
 	}
