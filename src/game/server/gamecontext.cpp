@@ -2400,8 +2400,19 @@ void CGameContext::ConFlagsById(IConsole::IResult *pResult, void *pUserData)
 	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
 	int id(pResult->GetInteger(0));
 	char aBuf[256];
-
-	if(pSelf->m_apPlayers[id] && id >= 0 && id < MAX_CLIENTS)
+	
+	// check if id is valid.
+	if(id < 0 || id >= MAX_CLIENTS)
+	{	
+		// the given id is in the invalid range.
+		// print this information to the admin remote console.
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "Invalid id.");
+		// don't do anything anymore.
+		return;
+	}
+	
+	// check if a player with the given id actually exists.
+	if(pSelf->m_apPlayers[id])
 		{
 			std::string name(pSelf->Server()->ClientName(id));
 			std::string clan(pSelf->Server()->ClientClan(id));
@@ -2421,7 +2432,7 @@ void CGameContext::ConFlagsById(IConsole::IResult *pResult, void *pUserData)
 		}
 		else
 		{
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "Invalid id.");
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "No such player id online.");
 		}
 }
 
@@ -2443,13 +2454,13 @@ void CGameContext::ConClientVersions(IConsole::IResult *pResult, void *pUserData
 
 			str_format(aBuf, sizeof(aBuf), "Showing client version(s) for player: ID:%2d '%s' '%s':", i, name.c_str(), clan.c_str());
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", aBuf);
-
+			
 			std::vector<int> versions = pSelf->m_apPlayers[i]->GetUniqueClientVersions();
 
 			// no information received, we assume that it's vanilla
 			if (versions.empty())
 			{
-				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "Most likely vanilla, because no version information received.");
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "[?]");
 				continue;
 			}
 
@@ -2473,8 +2484,18 @@ void CGameContext::ConClientVersionsById(IConsole::IResult *pResult, void *pUser
 	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
 	int id(pResult->GetInteger(0));
 	char aBuf[256];
-
-	if(pSelf->m_apPlayers[id] && id >= 0 && id < MAX_CLIENTS)
+	
+	// check if id is valid.
+	if(id < 0 || id >= MAX_CLIENTS)
+	{	
+		// the given id is in the invalid range.
+		// print this information to the admin remote console.
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "Invalid id.");
+		// don't do anything anymore.
+		return;
+	}
+	
+	if(pSelf->m_apPlayers[id])
 		{
 			std::string name(pSelf->Server()->ClientName(id));
 			std::string clan(pSelf->Server()->ClientClan(id));
@@ -2503,7 +2524,7 @@ void CGameContext::ConClientVersionsById(IConsole::IResult *pResult, void *pUser
 		}
 		else
 		{
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Flags", "Invalid id.");
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Client version", "No such player id online.");
 		}
 }
 
