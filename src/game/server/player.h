@@ -54,9 +54,9 @@ public:
     std::set<int> m_PlayerUniqueFlags;
 
     /**
-     * @brief Returns a vector created from the set of all unique flags.
+     * @brief Returns a non-mutable vector created from the set of all unique flags.
      */
-    std::vector<int> GetUniqueFlags();
+    const std::vector<int> GetUniqueFlags() const;
 
 
     /**
@@ -65,11 +65,11 @@ public:
     std::set<int> m_ClientVersions;
 
     /**
-     * @brief returns an empty vector if the client is a vanilla client.
+     * @brief returns a non-mutable empty vector if the client is a vanilla client.
      * Returns one client version if the client is some kind of ddnet based client.
      * Returns multiple versions if the client sends multiple client versions.
      */
-    std::vector<int> GetUniqueClientVersions();
+    const std::vector<int> GetUniqueClientVersions() const;
 
     /**
      * @brief Add a sent client version to the players set of unique

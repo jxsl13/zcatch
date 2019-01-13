@@ -19,7 +19,7 @@ int m_OldMode;
 CGameController_zCatch::CGameController_zCatch(class CGameContext *pGameServer) :
 		IGameController(pGameServer)
 {
-	m_pGameType = "zCatch/TeeVi";
+	m_pGameType = "zCatch";
 	m_OldMode = g_Config.m_SvMode;
 }
 

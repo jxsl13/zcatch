@@ -655,7 +655,7 @@ void CPlayer::HardModeFailedShot()
 }
 
     
-std::vector<int> CPlayer::GetUniqueFlags() 
+const std::vector<int> CPlayer::GetUniqueFlags() const
 {
 	std::vector<int> v;
 	for (auto &flag : m_PlayerUniqueFlags)
@@ -667,7 +667,7 @@ std::vector<int> CPlayer::GetUniqueFlags()
 	return v;
 }
 
-std::vector<int> CPlayer::GetUniqueClientVersions() 
+const std::vector<int> CPlayer::GetUniqueClientVersions() const
 {
 	std::vector<int> v;
 	// no version data, return empty vector.
