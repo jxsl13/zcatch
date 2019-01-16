@@ -150,9 +150,9 @@ void CMenus::SaveSkinfile()
 	m_pClient->m_pSkins->AddSkin(m_aSaveSkinName);
 }
 
-void CMenus::RenderHSLPicker(CUIRect MainView)
+void CMenus::RenderSkinHSLPicker(CUIRect MainView)
 {
-	CUIRect Label, Button, Picker;
+	CUIRect Label, Button;
 
 	// background
 	float Spacing = 2.0f;
@@ -177,22 +177,42 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 
 	MainView.HSplitTop(Spacing, 0, &MainView);
 
-	bool Modified = false;
 	bool UseAlpha = m_TeePartSelected == SKINPART_MARKING;
 	int Color = *CSkins::ms_apColorVariables[m_TeePartSelected];
+	bool Modified;
 
+	ivec4 Hsl = RenderHSLPicker(MainView, Color, UseAlpha, Modified);
+
+	if(Modified)
+	{
+		int NewVal = (Hsl.x << 16) + (Hsl.y << 8) + Hsl.z;
+		for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			if(m_TeePartSelected == p)
+				*CSkins::ms_apColorVariables[p] = NewVal;
+		}
+		if(UseAlpha)
+			g_Config.m_PlayerColorMarking = (Hsl.w << 24) + NewVal;
+	}
+}
+
+ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified)
+{
+	CUIRect Picker, Label, Button;
 	int Hue, Sat, Lgt, Alp;
 	Hue = (Color>>16)&0xff;
 	Sat = (Color>>8)&0xff;
 	Lgt = Color&0xff;
 	if(UseAlpha)
 		Alp = (Color>>24)&0xff;
+	float Spacing = 2.0f;
 
 	MainView.HSplitTop(144.0f, &Picker, &MainView);
 	RenderTools()->DrawUIRect(&Picker, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 	float Dark = CSkins::DARKEST_COLOR_LGT/255.0f;
 	IGraphics::CColorVertex ColorArray[4];
+	Modified = false;
 
 	// Hue/Lgt picker :
 	{
@@ -393,18 +413,7 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 			}
 		}
 	}
-
-	if(Modified)
-	{
-		int NewVal = (Hue << 16) + (Sat << 8) + Lgt;
-		for(int p = 0; p < NUM_SKINPARTS; p++)
-		{
-			if(m_TeePartSelected == p)
-				*CSkins::ms_apColorVariables[p] = NewVal;
-		}
-		if(UseAlpha)
-			g_Config.m_PlayerColorMarking = (Alp << 24) + NewVal;
-	}
+	return ivec4(Hue, Sat, Lgt, Alp);
 }
 
 void CMenus::RenderSkinSelection(CUIRect MainView)
@@ -1252,7 +1261,7 @@ void CMenus::RenderSettingsTeeCustom(CUIRect MainView)
 	RenderSkinPartSelection(Left);
 
 	// HSL picker
-	RenderHSLPicker(Right);
+	RenderSkinHSLPicker(Right);
 }
 
 void CMenus::RenderSettingsTee(CUIRect MainView)

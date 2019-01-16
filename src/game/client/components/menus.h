@@ -567,7 +567,8 @@ private:
 	// found in menus_settings.cpp
 	void RenderLanguageSelection(CUIRect MainView, bool Header=true);
 	void RenderThemeSelection(CUIRect MainView, bool Header=true);
-	void RenderHSLPicker(CUIRect Picker);
+	void RenderSkinHSLPicker(CUIRect Picker);
+	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified);
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
 	void RenderSettingsGeneral(CUIRect MainView);
