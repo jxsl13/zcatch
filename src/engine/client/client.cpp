@@ -5,7 +5,9 @@
 #include <stdlib.h> // qsort
 #include <stdarg.h>
 
+#include <base/color.h>
 #include <base/math.h>
+#include <base/vmath.h>
 #include <base/system.h>
 
 #include <engine/client.h>
@@ -749,9 +751,17 @@ const char *CClient::ErrorString() const
 void CClient::Render()
 {
 	if(g_Config.m_GfxClear || g_Config.m_GfxGameTiles >= 2)
+	{
+		vec3 RGBClearColor = HsvToRgb(vec3(
+			(g_Config.m_GfxClearColor>>16&0xff)/255.0f,
+			(g_Config.m_GfxClearColor>>8&0xff)/255.0f,
+			(g_Config.m_GfxClearColor&0xff)/255.0f
+		));
+		Graphics()->Clear(RGBClearColor.r, RGBClearColor.g, RGBClearColor.v);
+	}
 		// Graphics()->Clear(0.25f,0.45f,0.55f);
 		// Graphics()->Clear(135/255.f, 206/255.f, 235/255.f);
-		Graphics()->Clear(0/16.f, 3.3/16.f, 6.6/16.f);
+		// Graphics()->Clear(0/16.f, 3.3/16.f, 6.6/16.f);
 
 	GameClient()->OnRender();
 	DebugRender();
