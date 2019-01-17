@@ -960,7 +960,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			if(!str_comp_nocase("info", pMsg->m_pMessage + 1))
 			{
 				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "zCatch %s by erd and Teetime, modified by Teelevision. See /help.", ZCATCH_VERSION);
+				str_format(aBuf, sizeof(aBuf), "zCatch %s by erd and Teetime, modified by Teelevision, maintained by jxsl13. See /help.", ZCATCH_VERSION);
 				SendChatTarget(ClientID, aBuf);
 				SendChatTarget(ClientID, "Players you catch (kill) join again when you die. Catch everyone to win.");
 				if(g_Config.m_SvLastStandingPlayers > 2)
@@ -1004,8 +1004,9 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				if (RankingEnabled())
 				{
 					SendChatTarget(ClientID, "The ranking system saves various stats about players. The stats are updated at the end of a round and on leaving the server.");
-					SendChatTarget(ClientID, "/top [<category>]: display top 5 players");
-					SendChatTarget(ClientID, "/rank [<player>]: display own/players's rank");
+					SendChatTarget(ClientID, "/top <score|wins|kills|wallshotkills|deaths|kd|shots|spree|time>: display top 5 players");
+					SendChatTarget(ClientID, "/rank [<player name>]: display own/players's rank");
+					SendChatTarget(ClientID, "/stats [average|total]: display some general ranking statistics.");
 				}
 				else
 					SendChatTarget(ClientID, "The ranking system is disabled on this server.");
@@ -1133,41 +1134,66 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				}
 			}
 			
-			/* ranking system */
-			else if(RankingEnabled() && (!str_comp_nocase("top", pMsg->m_pMessage + 1) || !str_comp_nocase("top5", pMsg->m_pMessage + 1)))
-			{
-				m_pController->OnChatCommandTop(pPlayer);
-			}
-			else if(RankingEnabled() && (!str_comp_nocase_num("top ", pMsg->m_pMessage + 1, 4) || !str_comp_nocase_num("top5 ", pMsg->m_pMessage + 1, 5)))
-			{
-				char *category = str_skip_whitespaces((char*)pMsg->m_pMessage + 5);
-				int length = str_length(category);
-				/* trim right */
-				while (length > 0 && str_skip_whitespaces(category + length - 1) >= (category + length)) {
-					--length;
-					category[length] = 0;
-				}
-				m_pController->OnChatCommandTop(pPlayer, category);
-			}
-			else if(RankingEnabled() && (!str_comp_nocase("rank", pMsg->m_pMessage + 1)))
-			{
-				m_pController->OnChatCommandOwnRank(pPlayer);
-			}
-			else if(RankingEnabled() && (!str_comp_nocase_num("rank ", pMsg->m_pMessage + 1, 5)))
-			{
-				char *name = str_skip_whitespaces((char*)pMsg->m_pMessage + 6);
-				int length = str_length(name);
-				/* trim right */
-				while (length > 0 && str_skip_whitespaces(name + length - 1) >= (name + length)) {
-					--length;
-					name[length] = 0;
-				}
-				m_pController->OnChatCommandRank(pPlayer, name);
-			}
-			
-			// hard mode
-			else if(g_Config.m_SvAllowHardMode == 1 && (!str_comp_nocase_num("hard", pMsg->m_pMessage + 1, 4) || !str_comp_nocase_num("hard ", pMsg->m_pMessage + 1, 5)))
-			{
+            /* ranking system */
+            else if (RankingEnabled() && (!str_comp_nocase("top", pMsg->m_pMessage + 1) || !str_comp_nocase("top5", pMsg->m_pMessage + 1)))
+            {
+                m_pController->OnChatCommandTop(pPlayer);
+            }
+            else if (RankingEnabled() && (!str_comp_nocase_num("top ", pMsg->m_pMessage + 1, 4) || !str_comp_nocase_num("top5 ", pMsg->m_pMessage + 1, 5)))
+            {
+                char* category = str_skip_whitespaces((char*)pMsg->m_pMessage + 5);
+                int length = str_length(category);
+                /* trim right */
+                while (length > 0 && str_skip_whitespaces(category + length - 1) >= (category + length))
+                {
+                    --length;
+                    category[length] = 0;
+                }
+                m_pController->OnChatCommandTop(pPlayer, category);
+            }
+            else if (RankingEnabled() && (!str_comp_nocase("rank", pMsg->m_pMessage + 1)))
+            {
+                m_pController->OnChatCommandOwnRank(pPlayer);
+            }
+            else if (RankingEnabled() && (!str_comp_nocase_num("rank ", pMsg->m_pMessage + 1, 5)))
+            {
+                char* name = str_skip_whitespaces((char*)pMsg->m_pMessage + 6);
+                int length = str_length(name);
+                /* trim right */
+                while (length > 0 && str_skip_whitespaces(name + length - 1) >= (name + length))
+                {
+                    --length;
+                    name[length] = 0;
+                }
+                m_pController->OnChatCommandRank(pPlayer, name);
+            }
+            else if (!str_comp_nocase_num("stats", pMsg->m_pMessage + 1, 5) ||
+                !str_comp_nocase_num("stats ", pMsg->m_pMessage + 1, 6))
+            {
+                if (RankingEnabled())
+            {
+                // either avg, average, total
+                char* cmd_name = str_skip_whitespaces((char*)pMsg->m_pMessage + 6);
+                    int length = str_length(cmd_name);
+                    /* trim right */
+                    while (length > 0 && str_skip_whitespaces(cmd_name + length - 1) >= (cmd_name + length))
+                    {
+                        --length;
+                        cmd_name[length] = '\0';
+                    }
+
+                    m_pController->OnChatCommandStats(pPlayer, cmd_name);
+                }
+                else
+                {
+                    SendChatTarget(ClientID, "Ranking is disabled on this server, thus 'stats' is not available.");
+                }
+
+            }
+
+            // hard mode
+            else if (g_Config.m_SvAllowHardMode == 1 && (!str_comp_nocase_num("hard", pMsg->m_pMessage + 1, 4) || !str_comp_nocase_num("hard ", pMsg->m_pMessage + 1, 5)))
+            {
 				if(pPlayer->m_HardMode.m_Active)
 				{
 					SendChatTarget(ClientID, "You already are in hard mode.");

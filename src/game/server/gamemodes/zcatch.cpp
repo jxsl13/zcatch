@@ -9,7 +9,11 @@
 #include <game/server/entities/character.h>
 #include <game/server/player.h>
 #include "zcatch.h"
-#include <string.h>
+#include <string>
+#include <sstream>
+#include <future>
+#include <iomanip>
+
 
 /**
  * Global variable to be accessible from static and non-static context.
@@ -46,7 +50,7 @@ void CGameController_zCatch::OnInitRanking(sqlite3 *rankingDb) {
 
 		char aMode[16];
 		str_format(aMode, sizeof(aMode), "%s", GetGameModeTableName(i).c_str()) ;
-		char aQuery[2048];
+		char aQuery[8192];
 		str_format(aQuery, sizeof(aQuery), "\
 			BEGIN; \
 			CREATE TABLE IF NOT EXISTS %s ( \
@@ -68,12 +72,87 @@ void CGameController_zCatch::OnInitRanking(sqlite3 *rankingDb) {
 			CREATE INDEX IF NOT EXISTS %s_numShots_index ON %s (numShots); \
 			CREATE INDEX IF NOT EXISTS %s_highestSpree_index ON %s (highestSpree); \
 			CREATE INDEX IF NOT EXISTS %s_timePlayed_index ON %s (timePlayed); \
-			CREATE VIEW IF NOT EXISTS %sView (username, kd) \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_score_View (username, score) \
+			AS \
+			SELECT username, score FROM %s \
+			ORDER BY score DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_numWins_View (username, numWins) \
+			AS \
+			SELECT username, numWins FROM %s \
+			ORDER BY numKills DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_kd_View (username, kd) \
 			AS \
 			SELECT username, (t.numKills + t.numKillsWallshot)/(t.numDeaths) as kd FROM %s as t \
 			ORDER BY kd DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_numKills_View (username, numKills) \
+			AS \
+			SELECT username, numKills FROM %s \
+			ORDER BY numKills DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_numKillsWallShot_View (username, numKillsWallShot) \
+			AS \
+			SELECT username, numKillsWallShot FROM %s \
+			ORDER BY numKillsWallShot DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_timePlayed_View (username, timePlayed) \
+			AS \
+			SELECT username, timePlayed FROM %s \
+			ORDER BY timePlayed DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_numShots_View (username, numShots) \
+			AS \
+			SELECT username, numShots FROM %s \
+			ORDER BY numShots DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_numDeaths_View (username, numDeaths) \
+			AS \
+			SELECT username, numDeaths FROM %s \
+			ORDER BY numDeaths DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_top_highestSpree_View (username, highestSpree) \
+			AS \
+			SELECT username, highestSpree FROM %s \
+			ORDER BY numKillsWallShot DESC LIMIT 5; \
+			\
+			CREATE VIEW IF NOT EXISTS %s_avg_statistics_View \
+			AS \
+			SELECT  \
+				ROUND(sum(t.score) * 1.0 / count(*), 4) 			AS score_avg,  \
+				ROUND(sum(t.numWins) * 1.0 / count(*), 4) 			AS numWins_avg, \
+				ROUND(sum(t.numKills) * 1.0 / count(*), 4) 			AS numKills_avg, \
+				ROUND(sum(t.numDeaths) * 1.0 / count(*), 4) 		AS numDeaths_avg, \
+				ROUND(sum(t.numKillsWallshot) * 1.0 / count(*), 4) 	AS numKillsWallshot_avg, \
+				ROUND(sum(t.numShots) * 1.0 / count(*), 4) 			AS numShots_avg, \
+				ROUND(sum(t.timePlayed) * 1.0 / count(*), 4) 		AS timePlayed_avg, \
+				ROUND(sum(t.highestSpree) * 1.0 / count(*), 4) 		AS highestSpree_avg \
+			FROM %s as t \
+				WHERE t.timePlayed >= (5 * 60); \
+			\
+			CREATE VIEW IF NOT EXISTS %s_total_statistics_View \
+			AS \
+			SELECT  \
+    			sum(t.score)            AS score_total,  \
+    			sum(t.numWins)          AS numWins_total, \
+    			sum(t.numKills)         AS numKills_total, \
+    			sum(t.numDeaths)        AS numDeaths_total, \
+    			sum(t.numKillsWallshot) AS numKillsWallshot_total, \
+    			sum(t.numShots)         AS numShots_total, \
+    			sum(t.timePlayed)       AS timePlayed_total \
+			FROM %s as t \
+    			WHERE t.timePlayed >= (5 * 60); \
 			COMMIT; \
-		", aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode, aMode);
+		", aMode, aMode, aMode, aMode, aMode, 
+		aMode, aMode, aMode, aMode, aMode,
+		aMode, aMode, aMode, aMode, aMode, 
+		aMode, aMode, aMode, aMode, aMode, 
+		aMode, aMode, aMode, aMode, aMode,
+		aMode, aMode, aMode, aMode, aMode,
+		aMode, aMode, aMode, aMode, aMode,
+		aMode, aMode, aMode, aMode);
 
 		int rc = sqlite3_exec(GameServer()->GetRankingDb(), aQuery, NULL, 0, &zErrMsg);
 
@@ -505,6 +584,7 @@ void CGameController_zCatch::SaveRanking(CPlayer *player)
  * @param numShots Number of shots
  * @param highestSpree highest continuous killing spree.
  * @param timePlayed Time played on this server.
+ * @param Free - whether to free(.) the *name
  */
 void CGameController_zCatch::SaveScore(CGameContext* GameServer, char *name, int score, int numWins, int numKills, int numKillsWallshot, int numDeaths, int numShots, int highestSpree, int timePlayed, int GameMode, int Free) {
 	// Don't save connecting players
@@ -612,9 +692,21 @@ void CGameController_zCatch::SaveScore(CGameContext* GameServer, char *name, int
 void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *category)
 {
 	const char *column;
-	bool isCalculatedViewData = false;
 
-	if (!str_comp_nocase("score", category) || !str_comp_nocase("", category))
+	/**
+	 * Compare passed category. if we have such a category,
+	 * assign a column for that specific category.
+	 * that column is then used to build a SQLite View name, which
+	 * contains 5 entries of the top players.
+	 */
+	if(!str_comp_nocase("", category))
+	{
+		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "score", "Score"));
+		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "numWins", "Wins"));
+		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "numKills", "Kills"));
+		return;
+	}
+	else if (!str_comp_nocase("score", category))
 	{
 		column = "score";
 	}
@@ -647,29 +739,27 @@ void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *cate
 		column = "timePlayed";
 	} else if (!str_comp_nocase("kd", category)) {
 		column = "kd";
-		isCalculatedViewData = true;
 	}
 	else
 	{
-		GameServer()->SendChatTarget(pPlayer->GetCID(), "Usage: /top [score|wins|kills|wallshotkills|deaths|shots|spree|time|kd]");
+		GameServer()->SendChatTarget(pPlayer->GetCID(), "Usage: /top [score|wins|kills|wallshotkills|deaths|kd|shots|spree|time]");
 		return;
 	}
-	if (!isCalculatedViewData) {
-		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), column));
-	} else {
-		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataFromViewAndPrint, GameServer(), pPlayer->GetCID(), column));
-	}
 
+	// send data to the specific player.
+	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), column, ""));
 }
 
 /* get the top players */
-void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column)
+void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column, const char* title)
 {
 
 	/* prepare */
 	const char *zTail;
 	char sqlBuf[128];
-	str_format(sqlBuf, sizeof(sqlBuf), "SELECT username, %s FROM %s ORDER BY %s DESC LIMIT 5;", column, GetGameModeTableName(0).c_str(), column);
+
+	str_format(sqlBuf, sizeof(sqlBuf), "SELECT * FROM %s_top_%s_View LIMIT 5;", GetGameModeTableName(0).c_str(), column);
+	dbg_msg("TEST", sqlBuf);
 	const char *zSql = sqlBuf;
 	sqlite3_stmt *pStmt = 0;
 	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, strlen(zSql), &pStmt, &zTail);
@@ -687,6 +777,12 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 			/* fetch from database */
 			int numRows = 0;
 			int rc;
+			if (strlen(title) > 0)
+			{
+				char buf[64];
+				str_format(buf, sizeof(buf), "Top 5: %s", title);
+				GameServer->SendChatTarget(clientId, buf);
+			}
 			while ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
 			{
 				const unsigned char* name = sqlite3_column_text(pStmt, 0);
@@ -711,80 +807,13 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 			if (numRows == 0)
 			{
 				if (rc == SQLITE_BUSY)
+				{
 					GameServer->SendChatTarget(clientId, "Could not load top ranks. Try again later.");
-				else
-					GameServer->SendChatTarget(clientId, "There are no ranks");
-			}
-
-		}
-		else
-		{
-			GameServer->SendChatTarget(clientId, "Could not load top ranks. Try again later.");
-		}
-	}
-	else
-	{
-		/* print error */
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "SQL error (#%d): %s", rc, sqlite3_errmsg(GameServer->GetRankingDb()));
-		GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", aBuf);
-	}
-
-	sqlite3_finalize(pStmt);
-}
-
-/* get the top players */
-void CGameController_zCatch::ChatCommandTopFetchDataFromViewAndPrint(CGameContext* GameServer, int clientId, const char *column)
-{
-
-	/* prepare */
-	const char *zTail;
-	char sqlBuf[128];
-	str_format(sqlBuf, sizeof(sqlBuf), "SELECT username, %s FROM %sView ORDER BY %s DESC LIMIT 5;", column, GetGameModeTableName(0).c_str(), column);
-	const char *zSql = sqlBuf;
-	sqlite3_stmt *pStmt = 0;
-	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, strlen(zSql), &pStmt, &zTail);
-
-	if (rc == SQLITE_OK)
-	{
-
-		/* lock database access in this process, but wait maximum 1 second */
-		if (GameServer->LockRankingDb(1000))
-		{
-
-			/* when another process uses the database, wait up to 1 second */
-			sqlite3_busy_timeout(GameServer->GetRankingDb(), 1000);
-
-			/* fetch from database */
-			int numRows = 0;
-			int rc;
-			while ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
-			{
-				const unsigned char* name = sqlite3_column_text(pStmt, 0);
-				int value = sqlite3_column_int(pStmt, 1);
-				// don't show in top if no score available.
-				if (value == 0) {
-					continue;
 				}
-				char aBuf[64], bBuf[32];
-				FormatRankingColumn(column, bBuf, value);
-				str_format(aBuf, sizeof(aBuf), "[%s] %s", bBuf, name);
-				/* if the player left and the client id is unused, nothing will happen */
-				/* if another player joined, there is no big harm that he receives it */
-				/* maybe later i have a good idea how to prevent this */
-				GameServer->SendChatTarget(clientId, aBuf);
-				++numRows;
-			}
-
-			/* unlock database access */
-			GameServer->UnlockRankingDb();
-
-			if (numRows == 0)
-			{
-				if (rc == SQLITE_BUSY)
-					GameServer->SendChatTarget(clientId, "Could not load top ranks. Try again later.");
 				else
+				{
 					GameServer->SendChatTarget(clientId, "There are no ranks");
+				}
 			}
 
 		}
@@ -807,6 +836,9 @@ void CGameController_zCatch::ChatCommandTopFetchDataFromViewAndPrint(CGameContex
 /* when a player typed /top into the chat */
 void CGameController_zCatch::OnChatCommandOwnRank(CPlayer *pPlayer)
 {
+	/**
+	 * uses the more generalized fuction that is able to retrieve the rank of any player.
+	 */
 	OnChatCommandRank(pPlayer, GameServer()->Server()->ClientName(pPlayer->GetCID()));
 }
 
@@ -817,8 +849,213 @@ void CGameController_zCatch::OnChatCommandRank(CPlayer *pPlayer, const char *nam
 	str_copy(queryName, name, MAX_NAME_LENGTH);
 
 	// executes function with the parameters given afterwards
-	//GameServer()->AddThread(new std::thread(&CGameController_zCatch::ChatCommandRankFetchDataAndPrint, GameServer(), pPlayer->GetCID(), queryName));
+	
+	/**
+	 * A future is something like a thread that can be executed on a different cpu core in parallel.
+	 * The execution of a future depends on the C++ STL implementation, but in general a future is expected to 
+	 * be executed in the future and return its result. Has the future not been executed yet, when you try to
+	 * retrieve the result, the future is more or less forced to be executed due to the retrieval.
+	 * There are exceptions to this behaviour, where you only check if the future did aready return a result, but
+	 * don't invoke the future's execution.
+	 */
 	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandRankFetchDataAndPrint, GameServer(), pPlayer->GetCID(), queryName));
+}
+
+void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* GameServer, int ClientID, const char* cmd)
+{
+    std::string cmdName(cmd);
+    std::string mode;
+
+    if (cmdName == "avg" ||
+            cmdName == "average")
+    {
+        mode = "avg";
+    }
+    else if (cmdName == "total")
+    {
+        mode = "total";
+    }
+    else
+    {
+    	GameServer->SendChatTarget(ClientID, "Usage: /stats [average|total]");
+        return;
+    }
+
+    std::string gamemode = GetGameModeTableName(0);
+
+    /* prepare */
+    const char* zTail;
+    char sqlBuf[128];
+
+    str_format(sqlBuf, sizeof(sqlBuf), "SELECT * FROM %s_%s_statistics_View LIMIT 1;", gamemode.c_str(), mode.c_str());
+    const char* zSql = sqlBuf;
+    sqlite3_stmt* pStmt = 0;
+    int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, strlen(zSql), &pStmt, &zTail);
+
+    if (rc == SQLITE_OK)
+    {
+
+        /* lock database access in this process, but wait maximum 1 second */
+        if (GameServer->LockRankingDb(1000))
+        {
+
+            /* when another process uses the database, wait up to 1 second */
+            sqlite3_busy_timeout(GameServer->GetRankingDb(), 1000);
+
+            /* fetch from database */
+            int numRows = 0;
+            int rc;
+
+            if ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
+            {
+
+                double score_stat = 0.0;
+                double numWins_stat = 0.0;
+                double numKills_stat = 0.0;
+                double numDeaths_stat = 0.0;
+                double numKillsWallshot_stat = 0.0;
+                double numShots_stat = 0.0;
+                double timePlayed_stat = 0.0;
+
+                /**
+                 * only avalable in average statistics
+                 */
+                double highestSpree_avg = 0.0;
+
+
+                score_stat = sqlite3_column_double(pStmt, 0);
+                numWins_stat = sqlite3_column_double(pStmt, 1);
+                numKills_stat = sqlite3_column_double(pStmt, 2);
+                numDeaths_stat = sqlite3_column_double(pStmt, 3);
+                numKillsWallshot_stat = sqlite3_column_double(pStmt, 4);
+                numShots_stat = sqlite3_column_double(pStmt, 5);
+                timePlayed_stat = sqlite3_column_double(pStmt, 6);
+
+                if (mode == "avg")
+                {
+                    highestSpree_avg = sqlite3_column_double(pStmt, 7);
+                }
+
+                /**
+                 * description to be printed for every value
+                 */
+                std::string desc;
+                if (mode == "avg")
+                {
+                    desc = "Average";
+                }
+                else
+                {
+                    desc = "Total";
+                }
+
+                /**
+                 * create a formatted string with newlines
+                 */
+                std::stringstream buf;
+                int hours = static_cast<int>(timePlayed_stat) / 3600;
+                int seconds = (static_cast<int>(timePlayed_stat) / 60) % 60;
+
+                buf << desc << " Score: " 				<< score_stat / 100.0	<< "\n"
+                    << desc << " Number of Wins: " 		<< numWins_stat			<< "\n"
+                    << desc << " Number of Kills: " 	<< numKills_stat 		<< "\n";
+
+                if (gamemode == "Laser" || gamemode == "Everything")
+                {
+                    buf << desc << " Number of Wallshot Kills: " << numKillsWallshot_stat << "\n";
+                }
+
+                buf     << desc << " Number of Deaths: " 		<< numDeaths_stat	<< "\n"
+                        << desc << " Number of Shots: " 		<< numShots_stat	<< "\n"
+                        << desc << " Time played: " 			<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << "h" << "\n";
+
+                if (mode == "avg")
+                {
+                    buf << desc << " Highest Spree: "	<< highestSpree_avg	<< "\n";
+                }
+
+
+                /**
+                 * create a string from the stringstream
+                 */
+                std::string result_string = buf.str();
+
+                /**
+                 * iterators to walk over the string.
+                 */
+                auto line_beginning = result_string.begin();
+                auto line_end = result_string.begin();
+                auto it = result_string.begin();
+
+                /**
+                 * split at newlines and print to requesting player.
+                 */
+                while (it != result_string.end())
+                {
+                    /**
+                     * An iterator implements the dereferencing operator
+                     * 'operator*()' which is used to access the underlying 
+                     * element that the iterator currently resides at.
+                     */
+                    if ((*it) == '\n')
+                    {
+                    	/**
+                    	 * Do not include the newline character in our string.
+                    	 */
+                        line_end = it;
+                        /// Copies string from beginning to end, excluding end.
+                        std::string line(line_beginning, line_end);
+                        line_beginning = line_end + 1;
+                        GameServer->SendChatTarget(ClientID, line.c_str());
+                    }
+
+                    /**
+                     * an iterator also implements the 'operator++', 
+                     * which is, in this case, used to walk to the next 
+                     * character in the string.
+                     */
+                    it++;
+                }
+
+                ++numRows;
+            }
+
+            /* unlock database access */
+            GameServer->UnlockRankingDb();
+
+            if (numRows == 0)
+            {
+                if (rc == SQLITE_BUSY)
+                {
+                    GameServer->SendChatTarget(ClientID, "Could not load statistics. Try again later.");
+                }
+                else
+                {
+                    GameServer->SendChatTarget(ClientID, "There are no statistics available.");
+                }
+            }
+
+        }
+        else
+        {
+            GameServer->SendChatTarget(ClientID, "Could not load statistics, because the database is being used.");
+        }
+    }
+    else
+    {
+        /* print error */
+        char aBuf[512];
+        str_format(aBuf, sizeof(aBuf), "SQL error (#%d): %s", rc, sqlite3_errmsg(GameServer->GetRankingDb()));
+        GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistics", aBuf);
+    }
+
+    sqlite3_finalize(pStmt);
+}
+
+
+void CGameController_zCatch::OnChatCommandStats(CPlayer *pPlayer, const char *cmdName)
+{
+	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandStatsFetchDataAndPrint, GameServer(), pPlayer->GetCID(), cmdName));
 }
 
 /**
@@ -852,7 +1089,7 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 			(SELECT COUNT(*) FROM %s b WHERE b.score > a.score) + 1, \
 			MAX(0, (SELECT MIN(b.score) FROM %s b WHERE b.score > a.score) - a.score) \
 		FROM %s a \
-		WHERE username = ?1\
+		WHERE username = ?1 \
 		;", aMode, aMode, aMode);
 
 	sqlite3_stmt *pStmt = 0;
@@ -892,8 +1129,9 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 				int scoreToNextRank = sqlite3_column_int(pStmt, 9);
 
 				char aBuf[512];
-				// needs at least one win to be ranked
-				if (score > 0)
+
+				// needs to have played at least 5 minutes to be visibly ranked
+				if (timePlayed > 5 * 60)
 				{
 					if (g_Config.m_SvMode == 1) // laser
 					{
