@@ -9,6 +9,7 @@
 #include <game/server/entities/character.h>
 #include <game/server/player.h>
 #include "zcatch.h"
+#include <cstring>
 #include <string>
 #include <sstream>
 #include <future>
@@ -633,12 +634,12 @@ void CGameController_zCatch::SaveScore(CGameContext* GameServer, char *name, int
 		", aMode, aMode);
 
 	sqlite3_stmt *pStmt = 0;
-	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, strlen(aQuery), &pStmt, &zTail);
+	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, std::strlen(aQuery), &pStmt, &zTail);
 
 	if (rc == SQLITE_OK)
 	{
 		/* bind parameters in query */
-		sqlite3_bind_text(pStmt, 1, name, strlen(name), 0);
+		sqlite3_bind_text(pStmt, 1, name, std::strlen(name), 0);
 		sqlite3_bind_int(pStmt, 2, score);
 		sqlite3_bind_int(pStmt, 3, numWins);
 		sqlite3_bind_int(pStmt, 4, numKills);
@@ -762,7 +763,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 	dbg_msg("TEST", sqlBuf);
 	const char *zSql = sqlBuf;
 	sqlite3_stmt *pStmt = 0;
-	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, strlen(zSql), &pStmt, &zTail);
+	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, std::strlen(zSql), &pStmt, &zTail);
 
 	if (rc == SQLITE_OK)
 	{
@@ -777,7 +778,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 			/* fetch from database */
 			int numRows = 0;
 			int rc;
-			if (strlen(title) > 0)
+			if (std::strlen(title) > 0)
 			{
 				char buf[64];
 				str_format(buf, sizeof(buf), "Top 5: %s", title);
@@ -890,7 +891,7 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
     str_format(sqlBuf, sizeof(sqlBuf), "SELECT * FROM %s_%s_statistics_View LIMIT 1;", gamemode.c_str(), mode.c_str());
     const char* zSql = sqlBuf;
     sqlite3_stmt* pStmt = 0;
-    int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, strlen(zSql), &pStmt, &zTail);
+    int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, std::strlen(zSql), &pStmt, &zTail);
 
     if (rc == SQLITE_OK)
     {
@@ -1093,12 +1094,12 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 		;", aMode, aMode, aMode);
 
 	sqlite3_stmt *pStmt = 0;
-	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, strlen(aQuery), &pStmt, &zTail);
+	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, std::strlen(aQuery), &pStmt, &zTail);
 
 	if (rc == SQLITE_OK)
 	{
 		/* bind parameters in query */
-		sqlite3_bind_text(pStmt, 1, name, strlen(name), 0);
+		sqlite3_bind_text(pStmt, 1, name, std::strlen(name), 0);
 
 		/* lock database access in this process, but wait maximum 1 second */
 		if (GameServer->LockRankingDb(1000))
@@ -1254,12 +1255,12 @@ void CGameController_zCatch::MergeRankingIntoTarget(CGameContext* GameServer, ch
 
 		/* First part: fetch all data from Source player*/
 		/*check if query is ok and create statement object pStmt*/
-		source_rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, strlen(aQuery), &pStmt, &zTail);
+		source_rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, std::strlen(aQuery), &pStmt, &zTail);
 
 		if (source_rc == SQLITE_OK)
 		{
 			/* bind parameters in query */
-			sqlite3_bind_text(pStmt, 1, Source, strlen(Source), 0);
+			sqlite3_bind_text(pStmt, 1, Source, std::strlen(Source), 0);
 
 			/* lock database access in this process, but wait maximum 1 second */
 			if (GameServer->LockRankingDb(1000))
@@ -1389,11 +1390,11 @@ void CGameController_zCatch::DeleteRanking(CGameContext* GameServer, char* Name,
 	str_format(aQuery, sizeof(aQuery), "DELETE FROM %s WHERE username = trim(?1);", aMode);
 
 	sqlite3_stmt * pStmt;
-	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, strlen(aQuery), &pStmt, &zTail);
+	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), aQuery, std::strlen(aQuery), &pStmt, &zTail);
 	if (rc == SQLITE_OK) {
 
 		/* bind parameters in query */
-		sqlite3_bind_text(pStmt, 1, Name, strlen(Name), 0);
+		sqlite3_bind_text(pStmt, 1, Name, std::strlen(Name), 0);
 
 		/* lock database access in this process */
 		GameServer->LockRankingDb();
