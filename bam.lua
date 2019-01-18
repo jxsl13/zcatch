@@ -120,7 +120,7 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 		os.exit(1)
 	end
 
-	-- c++ stdlib needed 
+	-- c++ stdlib needed
 	settings.cc.flags:Add("--stdlib=libc++")
 	settings.link.flags:Add("--stdlib=libc++")
 	-- this also needs the macOS min SDK version to be at least 10.7
@@ -164,7 +164,7 @@ function GenerateMacOSXSettings(settings, conf, arch, compiler)
 	BuildClient(settings)
 
 	-- Content
-	BuildContent(settings)
+	BuildContent(settings, arch, conf)
 end
 
 function GenerateLinuxSettings(settings, conf, arch, compiler)
@@ -204,7 +204,7 @@ function GenerateLinuxSettings(settings, conf, arch, compiler)
 	BuildClient(settings)
 
 	-- Content
-	BuildContent(settings)
+	BuildContent(settings, arch, conf)
 end
 
 function GenerateSolarisSettings(settings, conf, arch, compiler)
@@ -267,7 +267,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 	BuildClient(settings)
 
 	-- Content
-	BuildContent(settings)
+	BuildContent(settings, target_arch, conf)
 end
 
 function SharedCommonFiles()
@@ -367,9 +367,25 @@ function BuildVersionserver(settings)
 	return Link(settings, "versionsrv", Compile(settings, Collect("src/versionsrv/*.cpp")), libs["zlib"], libs["md5"])
 end
 
-function BuildContent(settings)
+function BuildContent(settings, arch, conf)
 	local content = {}
 	table.insert(content, CopyToDir(settings.link.Output(settings, "data"), CollectRecursive(content_src_dir .. "*.png", content_src_dir .. "*.wv", content_src_dir .. "*.ttf", content_src_dir .. "*.txt", content_src_dir .. "*.map", content_src_dir .. "*.rules", content_src_dir .. "*.json")))
+	if family == "windows" then
+		if arch == "x86_64" then
+			_arch = "64"
+		else
+			_arch = "32"
+		end
+		-- dependencies
+		dl = Python("scripts/download.py")
+		dl = dl .. " --arch " .. arch .. " --conf " .. conf
+		AddJob("other/sdl/include/SDL.h", "Downloading SDL2", dl .. " sdl")
+		AddJob("other/freetype/include/ft2build.h", "Downloading freetype", dl .. " freetype")
+		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"))
+		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/freetype.dll", "other/freetype/windows/lib" .. _arch .. "/freetype.dll"))
+		AddDependency(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/include/SDL.h")
+		AddDependency(settings.link.Output(settings, "") .. "/freetype.dll", "other/freetype/include/ft2build.h")
+	end
 	PseudoTarget(settings.link.Output(settings, "content") .. settings.link.extension, content)
 end
 
@@ -414,6 +430,8 @@ function GenerateSettings(conf, arch, builddir, compiler)
 	end
 	
 	settings.cc.includes:Add("src")
+	settings.cc.includes:Add("src/engine/external/pnglite")
+	settings.cc.includes:Add("src/engine/external/wavpack")
 	settings.cc.includes:Add(generated_src_dir)
 	
 	if family == "windows" then
@@ -431,7 +449,7 @@ function GenerateSettings(conf, arch, builddir, compiler)
 	return settings
 end
 
--- String formatting wth named parameters, by RiciLake http://lua-users.org/wiki/StringInterpolation
+-- String formatting with named parameters, by RiciLake http://lua-users.org/wiki/StringInterpolation
 function interp(s, tab)
 	return (s:gsub('%%%((%a%w*)%)([-0-9%.]*[cdeEfgGiouxXsq])',
 			function(k, fmt)
@@ -499,6 +517,7 @@ for a, cur_arch in ipairs(archs) do
 		end
 	end
 end
+
 for cur_name, cur_target in pairs(targets) do
 	-- Supertarget for all configurations and architectures of that target
 	PseudoTarget(cur_name, subtargets[cur_target])

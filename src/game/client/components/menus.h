@@ -86,7 +86,7 @@ private:
 	*/
 	int DoEditBox(void *pID, const CUIRect *pRect, char *pStr, unsigned StrSize, float FontSize, float *pOffset, bool Hidden=false, int Corners=CUI::CORNER_ALL);
 	void DoEditBoxOption(void *pID, char *pOption, int OptionLength, const CUIRect *pRect, const char *pStr, float VSplitVal, float *pOffset, bool Hidden=false);
-	void DoScrollbarOption(void *pID, int *pOption, const CUIRect *pRect, const char *pStr, float VSplitVal, int Min, int Max, bool infinite=false);
+	void DoScrollbarOption(void *pID, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, bool infinite=false);
 	float DoDropdownMenu(void *pID, const CUIRect *pRect, const char *pStr, float HeaderHeight, FDropdownCallback pfnCallback);
 	float DoIndependentDropdownMenu(void *pID, const CUIRect *pRect, const char *pStr, float HeaderHeight, FDropdownCallback pfnCallback, bool* pActive);
 	void DoInfoBox(const CUIRect *pRect, const char *pLable, const char *pValue);
@@ -191,6 +191,7 @@ private:
 	int m_Popup;
 	int m_ActivePage;
 	int m_MenuPage;
+	int m_MenuPageOld;
 	bool m_MenuActive;
 	int m_SidebarTab;
 	bool m_SidebarActive;
@@ -239,9 +240,8 @@ private:
 	public:
 		enum
 		{
-			GAMEICON_FULL=0,
-			GAMEICON_ON,
-			GAMEICON_OFF,
+			GAMEICON_SIZE=64,
+			GAMEICON_OLDHEIGHT=192,
 		};
 		CGameIcon() {};
 		CGameIcon(const char *pName) : m_Name(pName) {}
@@ -251,7 +251,7 @@ private:
 	};
 	array<CGameIcon> m_lGameIcons;
 	IGraphics::CTextureHandle m_GameIconDefault;
-	void DoGameIcon(const char *pName, const CUIRect *pRect, int Type);
+	void DoGameIcon(const char *pName, const CUIRect *pRect);
 	static int GameIconScan(const char *pName, int IsDir, int DirType, void *pUser);
 
 	int64 m_LastInput;
@@ -535,7 +535,7 @@ private:
 	void RenderServerInfo(CUIRect MainView);
 	void HandleCallvote(int Page, bool Force);
 	void RenderServerControl(CUIRect MainView);
-	bool RenderServerControlKick(CUIRect MainView, bool FilterSpectators);
+	void RenderServerControlKick(CUIRect MainView, bool FilterSpectators);
 	bool RenderServerControlServer(CUIRect MainView);
 	void RenderServerBrowse(CUIRect MainView);
 
@@ -567,7 +567,8 @@ private:
 	// found in menus_settings.cpp
 	void RenderLanguageSelection(CUIRect MainView, bool Header=true);
 	void RenderThemeSelection(CUIRect MainView, bool Header=true);
-	void RenderHSLPicker(CUIRect Picker);
+	void RenderSkinHSLPicker(CUIRect Picker);
+	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified);
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
 	void RenderSettingsGeneral(CUIRect MainView);

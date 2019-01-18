@@ -57,6 +57,7 @@ CGameConsole::CInstance::CInstance(int Type)
 void CGameConsole::CInstance::Init(CGameConsole *pGameConsole)
 {
 	m_pGameConsole = pGameConsole;
+	m_Input.Init(m_pGameConsole->Input());
 };
 
 void CGameConsole::CInstance::ClearBacklog()
@@ -594,13 +595,13 @@ void CGameConsole::Toggle(int Type)
 			m_pClient->m_pMenus->UseMouseButtons(false);
 			m_ConsoleState = CONSOLE_OPENING;
 			// reset controls
-			//m_pClient->m_pControls->OnReset();
+			// m_pClient->m_pControls->OnReset(); // gamer
 		}
 		else
 		{
 			Input()->MouseModeRelative();
 			m_pClient->m_pMenus->UseMouseButtons(true);
-			// m_pClient->OnRelease();
+			m_pClient->OnRelease();
 			m_ConsoleState = CONSOLE_CLOSING;
 		}
 	}

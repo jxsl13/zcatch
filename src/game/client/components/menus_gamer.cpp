@@ -1,3 +1,5 @@
+#include <base/color.h>
+
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 #include <engine/graphics.h>
@@ -127,6 +129,22 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	// DoButton_BinaryCheckBox(&g_Config.m_ClGcolor, "Use Gamer colors", &Button);
 	
 	/*
+	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Announcers"), 14.0f, CUI::ALIGN_LEFT);
+	
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncers, "Visual announcers", &Button);
+	
+	if(g_Config.m_ClAnnouncers)
+	{
+		// NewLine();
+		// DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersShadows, "Render shadows around the announcers", &Button);
+		
+		NewLine();
+		DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersLegend, "Render a legend under the announcers", &Button);
+	}
+
 	NewLine();
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Extras"), 14.0f, CUI::ALIGN_LEFT);
@@ -331,21 +349,6 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClShowSkins, "Show skin names", &Button);
 	*/
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Announcers"), 14.0f, CUI::ALIGN_LEFT);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncers, "Visual announcers", &Button);
-	
-	if(g_Config.m_ClAnnouncers)
-	{
-		// NewLine();
-		// DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersShadows, "Render shadows around the announcers", &Button);
-		
-		NewLine();
-		DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncersLegend, "Render a legend under the announcers", &Button);
-	}
 
 	NewLine();
 	NewLine();
@@ -363,6 +366,25 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		SOUND_SPREE_WICKEDSICK, SOUND_SPREE_PREPARETOFIGHT, SOUND_SPREE_PREPARETOKILL, SOUND_SPREE_HOLYSHIT, SOUND_SPREE_FIRSTBLOOD};
 		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, sounds[rand()%11], 0);
 	}	
+
+	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Maps: default background"), 14.0f, CUI::ALIGN_LEFT);
+	NewLine();
+	RenderTools()->DrawUIRect(&Button, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
+	// Button.VSplitLeft(0.0f, 0, &Button);
+	// Button.VSplitLeft(350.0f, &Button, 0);
+	static CButtonContainer s_ResetClearButton;
+	if(DoButton_Menu(&s_ResetClearButton, Localize("Reset background color"), 0, &Button))
+	{
+		const ivec4 DefaultClearColor = ivec4(149, 255, 53, 255);
+		g_Config.m_GfxClearColor = (int(DefaultClearColor.x) << 16) + (int(DefaultClearColor.y) << 8) + int(DefaultClearColor.z);
+	}
+	bool Modified;
+	ivec4 Hsl = RenderHSLPicker(RightView, g_Config.m_GfxClearColor, false, Modified);
+	if(Modified)
+		g_Config.m_GfxClearColor = (Hsl.x << 16) + (Hsl.y << 8) + Hsl.z;
+
 	NewLine(NULL, NULL);
 }
 
