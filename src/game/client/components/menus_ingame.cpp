@@ -62,11 +62,12 @@ void CMenus::RenderGame(CUIRect MainView)
 	
 	// cut view
 	MainView.HSplitTop(20.0f, 0, &MainView);
+	int AutomapperMenusHeight = (g_Config.m_ClAutomapperMenus) ? 20.f+Spacing : 0.f;
 	bool IsAutomapping = (g_Config.m_GfxGameTiles == 3);
 	bool MapIsCleared = (g_Config.m_GfxGameTiles >= 2);
 	float NoteHeight = !Info.m_aNotification[0] ? 0.0f : 45.0f;
-	float GNoteHeight = MapIsCleared ? Spacing + 15.0f : 0.0f;
-	MainView.HSplitTop(20.0f+20.0f+20.0f+20.0f+3*Spacing+ NoteHeight +  GNoteHeight, &MainView, 0);
+	float GNoteHeight = AutomapperMenusHeight && MapIsCleared ? Spacing + 15.0f : 0.0f;
+	MainView.HSplitTop(20.0f+20.0f+20.0f+AutomapperMenusHeight+2*Spacing+ NoteHeight +  GNoteHeight, &MainView, 0);
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
 
 	// game options
@@ -210,6 +211,8 @@ void CMenus::RenderGame(CUIRect MainView)
 	}
 
 	// game options
+	if(!g_Config.m_ClAutomapperMenus)
+		return;
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	MainView.HSplitTop(20.0f, &Label, &MainView);
 	Label.y += 2.0f;
