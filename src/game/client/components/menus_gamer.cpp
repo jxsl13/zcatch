@@ -126,10 +126,10 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	// NewLine();
 	// DoButton_BinaryCheckBox(&g_Config.m_ClGcolor, "Use Gamer colors", &Button);
 	
+	/*
 	NewLine();
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Extras"), 14.0f, CUI::ALIGN_LEFT);
-	/*
 	NewLine();
 	{
 		static float Offset = 0.0f;
@@ -155,11 +155,22 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		
 		g_Config.m_ClBroadcastSize += (int)Plus*10 - (int)Minus*10;
 	}*/
-	
-	
-	// NewLine();
-	NewLine();
 
+	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Instagib"), 14.0f, CUI::ALIGN_LEFT);
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClShieldDisplay, "Display shield graphics instead of pickups", &Button);
+	
+	
+	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
+
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClAutomapperMenus, "Show automapper options in the ingame menus", &Button);
+
+	NewLine();
 	static int s_ShowGameTiles = 0;
 	if(DoButton_CheckBox(&s_ShowGameTiles, "Show the game tiles", g_Config.m_GfxGameTiles > 0, &Button))
 	{
@@ -168,11 +179,11 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		else
 			g_Config.m_GfxGameTiles = 1;
 	}
-	
+	/*
+	NewLine();
 	if(g_Config.m_GfxGameTiles)
 	{
 		// LeftView.HSplitTop(Spacing, 0, &LeftView);
-		LeftView.HSplitTop(20.f, &Button, &LeftView);
 		Button.VSplitLeft(20.f, 0, &Button);
 		static int s_ShowMapOnTop = 0;
 		if(DoButton_CheckBox(&s_ShowMapOnTop, Localize("Show the map on top"), g_Config.m_GfxGameTiles == 1, &Button))
@@ -182,19 +193,13 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 			else
 				g_Config.m_GfxGameTiles = 2;
 		}
-	}
+	}*/
 
 	// NewLine();
 	// NewLine();
 	// UI()->DoLabel(&Button, Localize("Browser"), 14.0f, CUI::ALIGN_LEFT);
 	// NewLine();
 	// DoButton_BinaryCheckBox(&g_Config.m_ClColorfulBrowser, "Use colored icons", &Button);
-
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Instagib"), 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShieldDisplay, "Display shield graphics instead of pickups", &Button);
 
 
 	// char aBuf[32];

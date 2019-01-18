@@ -506,14 +506,17 @@ void CMapLayers::OnRender()
 						m_TeleUpdate = false;
 					}
 
-					// vec4 Color = vec4(1.f,1.f,1.f,1.f);
-					Graphics()->TextureSet(m_pClient->m_pMapimages->GetTeleEntities());
-					Graphics()->BlendNone();
-					RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
-					Graphics()->BlendNormal();
-					RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-													EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
+					if(m_pTeleTiles)
+					{
+						// vec4 Color = vec4(1.f,1.f,1.f,1.f);
+						Graphics()->TextureSet(m_pClient->m_pMapimages->GetTeleEntities());
+						Graphics()->BlendNone();
+						RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
+														EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
+						Graphics()->BlendNormal();
+						RenderTools()->RenderTilemap(m_pTeleTiles, Width, Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
+														EnvelopeEval, this, pTilemap->m_ColorEnv, pTilemap->m_ColorEnvOffset);
+					}
 				}
 			}
 		}
