@@ -557,7 +557,7 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);
 				Graphics()->QuadsBegin();
 				RenderTools()->SelectSprite(SPRITE_GAMERICON);
-				IGraphics::CQuadItem QuadItem(Cursor.m_X, y+1, 10, 10);
+				IGraphics::CQuadItem QuadItem(Cursor.m_X+1, y+1, 10, 10);
 				Graphics()->QuadsDrawTL(&QuadItem, 1);
 				Graphics()->QuadsEnd();
 			}
