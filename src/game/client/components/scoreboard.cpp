@@ -551,7 +551,9 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			TextRender()->TextOutlineColor(OutlineColor.r, OutlineColor.g, OutlineColor.b, OutlineColor.a);
 
 			// gamer detection
-			if(g_Config.m_ClClientRecognition && !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!"))
+			if(g_Config.m_ClClientRecognition && 
+				(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")))
 			{
 				// gamer symbol
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);

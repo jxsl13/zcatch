@@ -1579,7 +1579,7 @@ void CGameClient::SendStartInfo()
 	const char* pGamerStr = "gamer!";
 	for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
-		if(g_Config.m_ClClientRecognition && p == NUM_SKINPARTS-1 && !str_comp(CSkins::ms_apSkinVariables[p], "standard"))
+		if(g_Config.m_ClClientRecognition && (p >= NUM_SKINPARTS-2) && !str_comp(CSkins::ms_apSkinVariables[p], "standard"))
 			Msg.m_apSkinPartNames[p] = pGamerStr;
 		else
 			Msg.m_apSkinPartNames[p] = CSkins::ms_apSkinVariables[p];
