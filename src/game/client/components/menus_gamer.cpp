@@ -183,10 +183,9 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	
 	NewLine();
 	NewLine();
-
+	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClAutomapperMenus, "Show automapper options in the ingame menus", &Button);
-	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
 
 	NewLine();
 	static int s_ShowGameTiles = 0;
