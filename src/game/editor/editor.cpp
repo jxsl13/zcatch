@@ -19,6 +19,7 @@
 #include <game/client/localization.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/components/menus.h>
 #include <generated/client_data.h>
 
 #include "auto_map.h"
@@ -566,6 +567,8 @@ int CEditor::DoButton_File(const void *pID, const char *pText, int Checked, cons
 {
 	if(Checked)
 		RenderTools()->DrawUIRect(pRect, GetButtonColor(pID, Checked), CUI::CORNER_ALL, 3.0f);
+	else if(UI()->HotItem() == pID)
+		RenderTools()->DrawUIRect(pRect, vec4(1,1,1,0.33f), CUI::CORNER_ALL, 3.0f);
 
 	CUIRect t = *pRect;
 	t.VMargin(5.0f, &t);
@@ -4134,6 +4137,7 @@ int CEditor::PopupMenuFile(CEditor *pEditor, CUIRect View)
 
 void CEditor::RenderMenubar(CUIRect MenuBar)
 {
+	CUIRect ExitButton;
 	static CUIRect s_File /*, view, help*/;
 
 	MenuBar.VSplitLeft(60.0f, &s_File, &MenuBar);
@@ -4141,14 +4145,26 @@ void CEditor::RenderMenubar(CUIRect MenuBar)
 		UiInvokePopupMenu(&s_File, 1, s_File.x, s_File.y+s_File.h-1.0f, 120, 150, PopupMenuFile, this);
 
 	CUIRect Info;
+	MenuBar.VSplitRight(20.f, &MenuBar, &ExitButton);
 	MenuBar.VSplitLeft(40.0f, 0, &MenuBar);
 	MenuBar.VSplitLeft(MenuBar.w*0.75f, &MenuBar, &Info);
+	
+
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "File: %s", m_aFileName);
 	UI()->DoLabel(&MenuBar, aBuf, 10.0f, CUI::ALIGN_LEFT);
 
 	str_format(aBuf, sizeof(aBuf), "Z: %i, A: %.1f, G: %i", m_ZoomLevel, m_AnimateSpeed, m_GridFactor);
 	UI()->DoLabel(&Info, aBuf, 10.0f, CUI::ALIGN_RIGHT);
+
+	// Exit editor button
+	static int s_ExitButton;
+	ExitButton.VSplitRight(13.f, 0, &ExitButton);
+	if(DoButton_Editor(&s_ExitButton, "\xE2\x9C\x95", 1, &ExitButton, 0, "[ctrl+shift+e] Exit"))
+	{
+		g_Config.m_ClEditor ^= 1;
+		Input()->MouseModeRelative();
+	}
 }
 
 void CEditor::Render()

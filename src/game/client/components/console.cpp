@@ -47,6 +47,9 @@ CGameConsole::CInstance::CInstance(int Type)
 	else
 		m_CompletionFlagmask = CFGFLAG_SERVER;
 
+	m_aCompletionMapBuffer[0] = 0;
+	m_CompletionMapChosen = -1;
+
 	m_aCompletionBuffer[0] = 0;
 	m_CompletionChosen = -1;
 	m_CompletionRenderOffset = 0.0f;
@@ -91,6 +94,27 @@ void CGameConsole::CInstance::PossibleCommandsCompleteCallback(const char *pStr,
 	if(pInstance->m_CompletionChosen == pInstance->m_CompletionEnumerationCount)
 		pInstance->m_Input.Set(pStr);
 	pInstance->m_CompletionEnumerationCount++;
+}
+
+void CGameConsole::CInstance::PossibleMapsCompleteCallback(const char *pStr, void *pUser)
+{
+	CGameConsole::CInstance *pInstance = (CGameConsole::CInstance *)pUser;
+	if(pInstance->m_CompletionMapChosen == pInstance->m_CompletionMapEnumerationCount)
+	{
+		// get command
+		char aBuf[512] = { 0 };
+		const char *pSrc = pInstance->GetString();
+		unsigned i = 0;
+		for(; i < sizeof(aBuf) - 2 && *pSrc && *pSrc != ' '; i++, pSrc++)
+			aBuf[i] = *pSrc;
+		aBuf[i++] = ' ';
+		aBuf[i] = 0;
+
+		// add mapname to current command
+		str_append(aBuf, pStr, sizeof(aBuf));
+		pInstance->m_Input.Set(aBuf);
+	}
+	pInstance->m_CompletionMapEnumerationCount++;
 }
 
 void CGameConsole::CInstance::OnInput(IInput::CEvent Event)
@@ -159,6 +183,22 @@ void CGameConsole::CInstance::OnInput(IInput::CEvent Event)
 					m_pGameConsole->m_pConsole->PossibleCommands(m_aCompletionBuffer, m_CompletionFlagmask, m_Type != CGameConsole::CONSOLETYPE_LOCAL &&
 						m_pGameConsole->Client()->RconAuthed() && m_pGameConsole->Client()->UseTempRconCommands(),	PossibleCommandsCompleteCallback, this);
 				}
+
+				// maplist completion
+				if(str_comp_nocase_num(GetString(), "sv_map ", 7) == 0 && m_Type != CGameConsole::CONSOLETYPE_LOCAL)
+				{
+					m_CompletionMapChosen++;
+					m_CompletionMapEnumerationCount = 0;
+					m_pGameConsole->m_pConsole->PossibleMaps(m_aCompletionMapBuffer, PossibleMapsCompleteCallback, this);
+					
+					// handle wrapping
+					if(m_CompletionMapEnumerationCount && m_CompletionMapChosen >= m_CompletionMapEnumerationCount)
+					{
+						m_CompletionMapChosen %= m_CompletionMapEnumerationCount;
+						m_CompletionMapEnumerationCount = 0;
+						m_pGameConsole->m_pConsole->PossibleMaps(m_aCompletionMapBuffer, PossibleMapsCompleteCallback, this);
+					}
+				}
 			}
 		}
 		else if(Event.m_Key == KEY_PAGEUP)
@@ -182,6 +222,12 @@ void CGameConsole::CInstance::OnInput(IInput::CEvent Event)
 		{
 			m_CompletionChosen = -1;
 			str_copy(m_aCompletionBuffer, m_Input.GetString(), sizeof(m_aCompletionBuffer));
+
+			if(str_comp_nocase_num(GetString(), "sv_map ", 7) == 0)
+			{
+				m_CompletionMapChosen = -1;
+				str_copy(m_aCompletionMapBuffer, &m_Input.GetString()[7], sizeof(m_aCompletionBuffer));
+			}
 		}
 
 		// find the current command
@@ -419,7 +465,7 @@ void CGameConsole::OnRender()
 		const char *pPrompt = "> ";
 		if(m_ConsoleType == CONSOLETYPE_REMOTE)
 		{
-			if(Client()->State() == IClient::STATE_ONLINE)
+			if(Client()->State() == IClient::STATE_ONLINE || Client()->State() == IClient::STATE_LOADING)
 			{
 				if(Client()->RconAuthed())
 					pPrompt = "rcon> ";
@@ -436,7 +482,7 @@ void CGameConsole::OnRender()
 		//hide rcon password
 		char aInputString[256];
 		str_copy(aInputString, pConsole->m_Input.GetString(), sizeof(aInputString));
-		if(m_ConsoleType == CONSOLETYPE_REMOTE && Client()->State() == IClient::STATE_ONLINE && !Client()->RconAuthed())
+		if(m_ConsoleType == CONSOLETYPE_REMOTE && (Client()->State() == IClient::STATE_ONLINE || Client()->State() == IClient::STATE_LOADING) && !Client()->RconAuthed())
 		{
 			for(int i = 0; i < pConsole->m_Input.GetLength(); ++i)
 				aInputString[i] = '*';
