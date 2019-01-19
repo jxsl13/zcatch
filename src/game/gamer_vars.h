@@ -49,8 +49,7 @@ MACRO_CONFIG_INT(ClTextColors, cl_text_colors, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_S
 // MACRO_CONFIG_INT(ClShowId, cl_showid, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show IDs on scoreboard")
 
 // Client auto-reconizing
-// MACRO_CONFIG_INT(ClSendClientInfo, cl_sendclientinfo, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Give other players the ability to see you are using the gamer")
-// MACRO_CONFIG_INT(ClCountGamers, cl_count_gamers, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "")
+MACRO_CONFIG_INT(ClClientRecognition, cl_client_recognition, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable gamer client recognition")
 
 // 	Spectating
 MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Spectator zoom")

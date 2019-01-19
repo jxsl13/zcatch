@@ -550,6 +550,18 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			TextRender()->TextColor(TextColor.r, TextColor.g, TextColor.b, ColorAlpha);
 			TextRender()->TextOutlineColor(OutlineColor.r, OutlineColor.g, OutlineColor.b, OutlineColor.a);
 
+			// gamer detection
+			if(g_Config.m_ClClientRecognition && !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!"))
+			{
+				// gamer symbol
+				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);
+				Graphics()->QuadsBegin();
+				RenderTools()->SelectSprite(SPRITE_GAMERICON);
+				IGraphics::CQuadItem QuadItem(Cursor.m_X, y, 12, 12);
+				Graphics()->QuadsDrawTL(&QuadItem, 1);
+				Graphics()->QuadsEnd();
+			}
+
 			// clan
 			tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[pInfo->m_ClientID].m_aClan, -1/*, TEXTFLAG_STOP_AT_END, ClanLength*/);
 			TextRender()->SetCursor(&Cursor, ClanOffset+ClanLength/2-tw/2, y+Spacing, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);

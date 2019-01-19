@@ -183,10 +183,10 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	
 	NewLine();
 	NewLine();
-	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
 
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClAutomapperMenus, "Show automapper options in the ingame menus", &Button);
+	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
 
 	NewLine();
 	static int s_ShowGameTiles = 0;
@@ -197,6 +197,12 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		else
 			g_Config.m_GfxGameTiles = 1;
 	}
+
+	NewLine();
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClClientRecognition, "Enable gamer client recognition", &Button);
+	
+
 	/*
 	NewLine();
 	if(g_Config.m_GfxGameTiles)
@@ -237,11 +243,6 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	// 	g_Config.m_GfxGameTiles = (g_Config.m_GfxGameTiles + 1) % 3;
 
 	/*
-	NewLine();
-	int hide = !g_Config.m_ClSendClientInfo;
-	DoButton_BinaryCheckBox(&hide, "Hide others you are a gamer user", &Button);
-	g_Config.m_ClSendClientInfo = !hide;
-		
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClShowapm, "Show ingame APM counter", &Button);
 	
