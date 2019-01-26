@@ -38,7 +38,7 @@ Stated individual[1] ...
 Any modification of this software is to be published under EXACTLY THIS SAME LICENSE and to be open sourced via
 any openly accessible version control service like e.g. Github.
 Each of the openly accessible modifications of this modification are to be linked in this repository's
-([Issue Tracker](https://github.com/jxsl13/zcatch/issues)) by opening an issue, stating that something was 
+Issue Tracker(https://github.com/jxsl13/zcatch/issues) by opening an issue, stating that something was 
 changed and linking to the modification's openly accessible repository via a link.
 
 Any change of this license IS to be propagated to any derived modifications.
