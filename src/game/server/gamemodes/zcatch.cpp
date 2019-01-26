@@ -77,72 +77,81 @@ void CGameController_zCatch::OnInitRanking(sqlite3 *rankingDb) {
 			CREATE VIEW IF NOT EXISTS %s_top_score_View (username, score) \
 			AS \
 			SELECT username, score FROM %s \
+			WHERE score > 0 \
 			ORDER BY score DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_numWins_View (username, numWins) \
 			AS \
 			SELECT username, numWins FROM %s \
+			WHERE numWins > 0 \
 			ORDER BY numKills DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_kd_View (username, kd) \
 			AS \
 			SELECT username, (t.numKills + t.numKillsWallshot)/(t.numDeaths) as kd FROM %s as t \
+			WHERE kd > 0 \
 			ORDER BY kd DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_numKills_View (username, numKills) \
 			AS \
 			SELECT username, numKills FROM %s \
+			WHERE numKills > 0 \
 			ORDER BY numKills DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_numKillsWallShot_View (username, numKillsWallShot) \
 			AS \
 			SELECT username, numKillsWallShot FROM %s \
+			WHERE numKillsWallshot > 0 \
 			ORDER BY numKillsWallShot DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_timePlayed_View (username, timePlayed) \
 			AS \
 			SELECT username, timePlayed FROM %s \
+			WHERE timePlayed > 0 \
 			ORDER BY timePlayed DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_numShots_View (username, numShots) \
 			AS \
 			SELECT username, numShots FROM %s \
+			WHERE numShots > 0 \
 			ORDER BY numShots DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_numDeaths_View (username, numDeaths) \
 			AS \
 			SELECT username, numDeaths FROM %s \
+			WHERE numDeaths > 0 \
 			ORDER BY numDeaths DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_top_highestSpree_View (username, highestSpree) \
 			AS \
 			SELECT username, highestSpree FROM %s \
+			WHERE highestSpree > 0 \
 			ORDER BY numKillsWallShot DESC LIMIT 5; \
 			\
 			CREATE VIEW IF NOT EXISTS %s_avg_statistics_View \
 			AS \
 			SELECT  \
-				ROUND(sum(t.score) * 1.0 / count(*), 4) 			AS score_avg,  \
-				ROUND(sum(t.numWins) * 1.0 / count(*), 4) 			AS numWins_avg, \
-				ROUND(sum(t.numKills) * 1.0 / count(*), 4) 			AS numKills_avg, \
-				ROUND(sum(t.numDeaths) * 1.0 / count(*), 4) 		AS numDeaths_avg, \
-				ROUND(sum(t.numKillsWallshot) * 1.0 / count(*), 4) 	AS numKillsWallshot_avg, \
-				ROUND(sum(t.numShots) * 1.0 / count(*), 4) 			AS numShots_avg, \
-				ROUND(sum(t.timePlayed) * 1.0 / count(*), 4) 		AS timePlayed_avg, \
-				ROUND(sum(t.highestSpree) * 1.0 / count(*), 4) 		AS highestSpree_avg \
+				ROUND(sum(t.score) * 1.0 / count(*), 4) 													AS score_avg,  \
+				ROUND(sum(t.numWins) * 1.0 / count(*), 4) 													AS numWins_avg, \
+				ROUND(sum(t.numKills) * 1.0 / count(*), 4) 													AS numKills_avg, \
+				ROUND(sum(t.numDeaths) * 1.0 / count(*), 4) - ROUND(sum(t.numKills) * 1.0 / count(*), 4) 	AS numSuddenDeaths_avg, \
+				ROUND(sum(t.numKillsWallshot) * 1.0 / count(*), 4) 											AS numKillsWallshot_avg, \
+				ROUND(sum(t.numShots) * 1.0 / count(*), 4) 													AS numShots_avg, \
+				ROUND(sum(t.timePlayed) * 1.0 / count(*), 4) 												AS timePlayed_avg, \
+				ROUND(sum(t.highestSpree) * 1.0 / count(*), 4) 												AS highestSpree_avg \
 			FROM %s as t \
 				WHERE t.timePlayed >= (5 * 60); \
 			\
 			CREATE VIEW IF NOT EXISTS %s_total_statistics_View \
 			AS \
 			SELECT  \
-    			sum(t.score)            AS score_total,  \
-    			sum(t.numWins)          AS numWins_total, \
-    			sum(t.numKills)         AS numKills_total, \
-    			sum(t.numDeaths)        AS numDeaths_total, \
-    			sum(t.numKillsWallshot) AS numKillsWallshot_total, \
-    			sum(t.numShots)         AS numShots_total, \
-    			sum(t.timePlayed)       AS timePlayed_total \
+    			sum(t.score)            				AS score_total,  \
+    			sum(t.numWins)          				AS numWins_total, \
+    			sum(t.numKills)         				AS numKills_total, \
+    			sum(t.numDeaths) - sum(t.numKills)      AS numSuddenDeaths_total, \
+    			sum(t.numKillsWallshot) 				AS numKillsWallshot_total, \
+    			sum(t.numShots)         				AS numShots_total, \
+    			sum(t.timePlayed)       				AS timePlayed_total \
 			FROM %s as t \
     			WHERE t.timePlayed >= (5 * 60); \
 			COMMIT; \
@@ -748,7 +757,11 @@ void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *cate
 	}
 
 	// send data to the specific player.
-	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), column, ""));
+	GameServer()->AddFuture(std::async(std::launch::async, 
+										&CGameController_zCatch::ChatCommandTopFetchDataAndPrint, 
+										GameServer(), 
+										pPlayer->GetCID(), 
+										column, ""));
 }
 
 /* get the top players */
@@ -910,27 +923,27 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
             if ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
             {
 
-                double score_stat = 0.0;
-                double numWins_stat = 0.0;
-                double numKills_stat = 0.0;
-                double numDeaths_stat = 0.0;
-                double numKillsWallshot_stat = 0.0;
-                double numShots_stat = 0.0;
-                double timePlayed_stat = 0.0;
+                double score_stat 				= 0.0;
+                double numWins_stat 			= 0.0;
+                double numKills_stat 			= 0.0;
+                double numSuddenDeaths_stat 	= 0.0;
+                double numKillsWallshot_stat	= 0.0;
+                double numShots_stat 			= 0.0;
+                double timePlayed_stat 			= 0.0;
 
                 /**
                  * only avalable in average statistics
                  */
-                double highestSpree_avg = 0.0;
+                double highestSpree_avg 		= 0.0;
 
 
-                score_stat = sqlite3_column_double(pStmt, 0);
-                numWins_stat = sqlite3_column_double(pStmt, 1);
-                numKills_stat = sqlite3_column_double(pStmt, 2);
-                numDeaths_stat = sqlite3_column_double(pStmt, 3);
-                numKillsWallshot_stat = sqlite3_column_double(pStmt, 4);
-                numShots_stat = sqlite3_column_double(pStmt, 5);
-                timePlayed_stat = sqlite3_column_double(pStmt, 6);
+                score_stat 				= sqlite3_column_double(pStmt, 0);
+                numWins_stat 			= sqlite3_column_double(pStmt, 1);
+                numKills_stat 			= sqlite3_column_double(pStmt, 2);
+                numSuddenDeaths_stat 	= sqlite3_column_double(pStmt, 3);
+                numKillsWallshot_stat 	= sqlite3_column_double(pStmt, 4);
+                numShots_stat 			= sqlite3_column_double(pStmt, 5);
+                timePlayed_stat 		= sqlite3_column_double(pStmt, 6);
 
                 if (mode == "avg")
                 {
@@ -943,11 +956,11 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 std::string desc;
                 if (mode == "avg")
                 {
-                    desc = "Average";
+                    desc = "╔—— Average per player statistics ——╗";
                 }
                 else
                 {
-                    desc = "Total";
+                    desc = "╔———  Total sum of all players  ———╗";
                 }
 
                 /**
@@ -957,25 +970,23 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 int hours = static_cast<int>(timePlayed_stat) / 3600;
                 int seconds = (static_cast<int>(timePlayed_stat) / 60) % 60;
 
-                buf << desc << " Score: " 				<< score_stat / 100.0	<< "\n"
-                    << desc << " Number of Wins: " 		<< numWins_stat			<< "\n"
-                    << desc << " Number of Kills: " 	<< numKills_stat 		<< "\n";
-
+                buf << desc << "\n";
+                buf << "║  Score: " 							<< score_stat / 100.0	<< "\n"
+                    << "║  Number of Wins: " 				<< numWins_stat			<< "\n"
+                    << "║  Number of Kills: " 				<< numKills_stat 		<< "\n"
+                    << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
+                    << "║  Number of Shots: " 				<< numShots_stat		<< "\n";
                 if (gamemode == "Laser" || gamemode == "Everything")
                 {
-                    buf << desc << " Number of Wallshot Kills: " << numKillsWallshot_stat << "\n";
+                    buf << "║  Number of Wallshot Kills: " 	<< numKillsWallshot_stat << "\n";
                 }
-
-                buf     << desc << " Number of Deaths: " 		<< numDeaths_stat	<< "\n"
-                        << desc << " Number of Shots: " 		<< numShots_stat	<< "\n"
-                        << desc << " Time played: " 			<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << "h" << "\n";
 
                 if (mode == "avg")
                 {
-                    buf << desc << " Highest Spree: "	<< highestSpree_avg	<< "\n";
+                    buf << "║  Highest Spree: "	<< highestSpree_avg	<< "\n";
                 }
-
-
+                buf << "║  Time played: " 		<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << " h" << "\n";
+                buf << "╚———————————————————╝" << "\n";
                 /**
                  * create a string from the stringstream
                  */
@@ -984,9 +995,9 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 /**
                  * iterators to walk over the string.
                  */
-                auto line_beginning = result_string.begin();
-                auto line_end = result_string.begin();
-                auto it = result_string.begin();
+                auto line_beginning 	= result_string.begin();
+                auto line_end 			= result_string.begin();
+                auto it 				= result_string.begin();
 
                 /**
                  * split at newlines and print to requesting player.
@@ -1056,7 +1067,11 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
 
 void CGameController_zCatch::OnChatCommandStats(CPlayer *pPlayer, const char *cmdName)
 {
-	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandStatsFetchDataAndPrint, GameServer(), pPlayer->GetCID(), cmdName));
+	GameServer()->AddFuture(std::async(std::launch::async, 
+										&CGameController_zCatch::ChatCommandStatsFetchDataAndPrint, 
+										GameServer(), 
+										pPlayer->GetCID(), 
+										cmdName));
 }
 
 /**

@@ -20,7 +20,7 @@ Please visit http://www.teeworlds.com for up-to-date information about
 the game, including new versions, custom maps and much more.
 
 ##################################################################################
-EXTENSION OF THE LICENSE as of the modification done by John Behm, a.k. a. jxsl13:
+EXTENSION OF THE LICENSE as of the modification done by John Behm, a.k.a. jxsl13:
 ##################################################################################
 
 Any individual[1] that is partaking in multiple teeworlds(vanilla) communities, teeworlds mod 
