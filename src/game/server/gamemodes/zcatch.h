@@ -23,6 +23,11 @@ class CGameController_zCatch: public IGameController
 	/* Helper functions */
 	static unsigned int SendLines(CGameContext* GameServer, std::string& lines, int ClientID = -1);
 
+	/**
+	 * Score point transformation
+	 */
+	static inline int enemiesKilledToPoints(int enemies);
+	static inline double pointsToEnemiesKilled(int points);
 
 public:
 	CGameController_zCatch(class CGameContext *pGameServer);

@@ -283,7 +283,6 @@ int CGameController_zCatch::OnCharacterDeath(class CCharacter *pVictim, class CP
 	 */
 	GameServer()->CleanFutures();
 
-	
 
 	if(!pKiller)
 		return 0;
@@ -496,10 +495,10 @@ bool CGameController_zCatch::OnEntity(int Index, vec2 Pos)
 void CGameController_zCatch::RewardWinner(int winnerId) {
 	
 	CPlayer *winner = GameServer()->m_apPlayers[winnerId];
-	int numEnemies = min(15, winner->m_zCatchNumKillsInARow - winner->m_zCatchNumKillsReleased);
+	int numEnemies = min(MAX_CLIENTS - 1, winner->m_zCatchNumKillsInARow - winner->m_zCatchNumKillsReleased);
 	
 	/* calculate points (multiplied with 100) */
-	int points = 100 * numEnemies * numEnemies * numEnemies / 225;
+	int points = 100 * enemiesKilledToPoints(numEnemies);
 	
 	/* set winner's ranking stats */
 	++winner->m_RankCache.m_NumWins;
@@ -829,8 +828,8 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 				if (is_score_ranking)
 				{
 					s << std::fixed;
-					if (value % 100){	s << std::setprecision(2);	}
-					else { 				s << std::setprecision(0);	}
+					if (value % 100){	s << std::fixed << std::setprecision(2);	}
+					else { 				s << std::fixed << std::setprecision(0);	}
 					s << value / 100.0;
 
 				} else if(column == "timePlayed")
@@ -852,7 +851,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 					if (numWins > 0)
 					{
 						double scorePerWin 		= static_cast<double>(value / (100.0 * numWins)) ;
-						double spreePerWin		= std::ceil(std::cbrt( (value / 100 * (255 * numWins))));
+						double spreePerWin		= pointsToEnemiesKilled(value / numWins);
 
 						s << "Score/Win: " << std::fixed << std::setprecision(2) << scorePerWin << " ";
 						s << "Spree/Win: " << std::fixed << std::setprecision(0) << spreePerWin << " ";
@@ -1135,6 +1134,9 @@ void CGameController_zCatch::OnChatCommandStats(CPlayer *pPlayer, const char *cm
  */
 void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name, bool sendToEveryone)
 {
+
+	dbg_msg("TEST", "TEST: %f", pointsToEnemiesKilled(enemiesKilledToPoints(15)));
+
 	std::string rankedName(name);
 	std::string requestingName(GameServer->Server()->ClientName(clientId));
 
@@ -1219,8 +1221,8 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s << "║ Score: ";
 
 					s << std::fixed;
-					if (score % 100){	s << std::setprecision(2);	}
-					else { 				s << std::setprecision(0);	}
+					if (score % 100){	s << std::fixed << std::setprecision(2);	}
+					else { 				s << std::fixed << std::setprecision(0);	}
 					s << score / 100.0;
 					s << "  and to next Rank: ";
 					s << std::fixed;
@@ -1236,7 +1238,7 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 						s << " Score/Win: ";
 						s << std::fixed << std::setprecision(2) 	<< score / (100.0 * numWins);
 						s << " Spree/Win: ";
-						s << std::fixed << std::setprecision(0) 	<< std::ceil(std::cbrt( (score / 100 * (255 * numWins)))); 
+						s << std::fixed << std::setprecision(0) 	<< pointsToEnemiesKilled(score / numWins); 
 
 					}
 					s << "\n";
@@ -1635,6 +1637,31 @@ unsigned int CGameController_zCatch::SendLines(CGameContext* GameServer, std::st
     return linesSent;
 
 }
+ 
+
+ int CGameController_zCatch::enemiesKilledToPoints(int enemies)
+ {
+ 	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
+ 	
+ 	double e = std::exp(enemies / 5.0);
+
+ 	double normalized_points = e / normalize_factor;
+
+ 	return static_cast<int>(100.0 * normalized_points);
+ }
+ double CGameController_zCatch::pointsToEnemiesKilled(int points)
+ {
+ 	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
+
+ 	double normalized_points = points / 100.0;
+
+ 	double unnormalized_points = normalized_points * normalize_factor;
+
+ 	double ln = std::log(unnormalized_points);
+
+ 	int enemies = ln * 5;
+ 	return enemies;
+ }
 
 
 
