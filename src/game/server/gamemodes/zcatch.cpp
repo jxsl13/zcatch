@@ -503,18 +503,22 @@ void CGameController_zCatch::RewardWinner(int winnerId) {
 	
 	/* set winner's ranking stats */
 	++winner->m_RankCache.m_NumWins;
-	
+
+	/* the winner's name */
+	const char *name = GameServer()->Server()->ClientName(winnerId);
+
 	/* abort if no points */
 	if (points <= 0)
 	{
+		/* announce in chat */
+		char aBuf[96];
+		str_format(aBuf, sizeof(aBuf), "Winner '%s' doesn't get any points.", name);
+		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 		return;
 	}
 	winner->m_RankCache.m_Points += points;
 	
 	/* saving is done in EndRound() */
-	
-	/* the winner's name */
-	const char *name = GameServer()->Server()->ClientName(winnerId);
 	
 	/* announce in chat */
 	char aBuf[96];
@@ -828,6 +832,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 					if (value % 100){	s << std::setprecision(2);	}
 					else { 				s << std::setprecision(0);	}
 					s << value / 100.0;
+
 				} else if(column == "timePlayed")
 				{
 					s << value / 3600;
@@ -846,11 +851,11 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 					unsigned int numWins 	= sqlite3_column_int( pStmt, 2);
 					if (numWins > 0)
 					{
-						double scorePerWin 		= (static_cast<double>(value) / numWins) / 100.0;
-						double spreePerWin		= std::cbrt(scorePerWin * 100.0);
+						double scorePerWin 		= static_cast<double>(value / (100.0 * numWins)) ;
+						double spreePerWin		= std::ceil(std::cbrt( (value / 100 * (255 * numWins))));
 
-						s << "Score/Win: " << scorePerWin << " ";
-						s << "Spree/Win: " << spreePerWin << " ";
+						s << "Score/Win: " << std::fixed << std::setprecision(2) << scorePerWin << " ";
+						s << "Spree/Win: " << std::fixed << std::setprecision(0) << spreePerWin << " ";
 					}
 				}
 				
@@ -863,7 +868,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 			GameServer->UnlockRankingDb();
 
 			s << "║ \n";
-			s << "║ Requested by " << GameServer->Server()->ClientName(clientId) << "\n";
+			s << "║ Requested by '" << GameServer->Server()->ClientName(clientId) << "'\n";
 			if (is_score_ranking)
 			{
 				s << "╚══════════════════   °• ♔ •°   ══════════════════╝" << "\n";
@@ -944,7 +949,12 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
 {
     std::string cmdName(cmd);
     std::string mode;
+    bool toEveryone = true;
 
+
+	// stringstream buffer to concatenate the string.
+    std::stringstream s;
+    
     if (cmdName == "avg" ||
             cmdName == "average")
     {
@@ -984,9 +994,6 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
             /* fetch from database */
             int numRows = 0;
             int rc;
-
-            // stringstream buffer to concatenate the string.
-			std::stringstream buf;
 
 
             if ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
@@ -1038,26 +1045,27 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 int hours = static_cast<int>(timePlayed_stat) / 3600;
                 int seconds = (static_cast<int>(timePlayed_stat) / 60) % 60;
 
-                buf << desc << "\n";
-                buf << "║  Score: " 						<< score_stat / 100.0	<< "\n"
+                s << desc << "\n";
+                s << "║  Score: " 							<< score_stat / 100.0	<< "\n"
                     << "║  Number of Wins: " 				<< numWins_stat			<< "\n"
                     << "║  Number of Kills: " 				<< numKills_stat 		<< "\n";
 
     			if (gamemode == "Laser" || gamemode == "Everything")
                 {
-                    buf << "║  Number of Wallshot Kills: " 	<< numKillsWallshot_stat << "\n";
+                    s << "║  Number of Wallshot Kills: " 	<< numKillsWallshot_stat << "\n";
                 }
 
-                buf << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
+                s << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
                     << "║  Number of Shots: " 				<< numShots_stat		<< "\n";
 
                 if (mode == "avg")
                 {
-                    buf << "║  Highest Spree: "	<< highestSpree_avg	<< "\n";
+                    s << "║  Highest Spree: "				<< highestSpree_avg	<< "\n";
                 }
 
-                buf << "║  Time played: " 		<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << "h" << "\n";
-                buf << "╚———————————————————╝" << "\n";
+                s << "║  Time played: " 		<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << "h" << "\n";
+                s << "║  Requested by '" << GameServer->Server()->ClientName(ClientID) << "'\n";
+                s << "╚———————————————————╝" << "\n";
 
                 ++numRows;
             }
@@ -1069,25 +1077,20 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
             {
                 if (rc == SQLITE_BUSY)
                 {
-                    GameServer->SendChatTarget(ClientID, "Could not load statistics. Try again later.");
+                	s << "Could not load statistics. Try again later.\n";
+                    toEveryone = false;
                 }
                 else
                 {
-                    GameServer->SendChatTarget(ClientID, "There are no statistics available.");
+                	s << "There are no statistics available.\n";
+                    toEveryone = false;
                 }
             }
-            else
-            {
-            	// no errors, send the lines.
-                std::string result_string(buf.str());
-
-            	SendLines(GameServer, result_string);
-            }
-
         }
         else
         {
-            GameServer->SendChatTarget(ClientID, "Could not load statistics, because the database is being used.");
+        	s << "Could not load statistics, because the database is being used.\n";
+            toEveryone = false;
         }
     }
     else
@@ -1096,7 +1099,18 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
         char aBuf[512];
         str_format(aBuf, sizeof(aBuf), "SQL error (#%d): %s", rc, sqlite3_errmsg(GameServer->GetRankingDb()));
         GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "statistics", aBuf);
+        s << "An internal database error occurred, could not retrieve the statistics.\n";
     }
+
+    // create string
+	std::string result_string(s.str());
+
+	if (toEveryone)
+	{
+		SendLines(GameServer, result_string);
+	} else {
+		SendLines(GameServer, result_string, ClientID);
+	}
 
     sqlite3_finalize(pStmt);
 }
@@ -1127,6 +1141,7 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 	std::stringstream s;
 	std::string lines;
     std::string gamemode = GetGameModeTableName(0);
+    bool toEveryone = sendToEveryone;
 
 	/* prepare */
 	const char *zTail;
@@ -1214,14 +1229,15 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s << scoreToNextRank / 100.0;
 					s << "\n";
 
-					s << "║ Wins: " 			<< numWins;
+					s << "║ Wins: " 								<< numWins;
 
 					if (numWins > 0)
 					{
-						s << std::fixed << std::setprecision(2) << (score / 100.0) / (numWins * 1.0);
 						s << " Score/Win: ";
-						s << std::fixed << std::setprecision(2) << std::cbrt(score / numWins  * 1.0); 
+						s << std::fixed << std::setprecision(2) 	<< score / (100.0 * numWins);
 						s << " Spree/Win: ";
+						s << std::fixed << std::setprecision(0) 	<< std::ceil(std::cbrt( (score / 100 * (255 * numWins)))); 
+
 					}
 					s << "\n";
 
@@ -1246,7 +1262,8 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s <<"╚———————————————————————————╝" << "\n";
 
 				} else {
-					s << "'" << name << "' has no rank.\n" ;
+					s << "'" << name << "' has not played long enough on the server to earn a rank.\n" ;
+					toEveryone = false;
 				}
 			}
 
@@ -1254,18 +1271,21 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 			else if (row == SQLITE_BUSY)
 			{
 				s << "Could not get rank of '" << name << "'. Try again later.\n";
+				toEveryone = false;
 			}
 
 			/* no result found */
 			else if (row == SQLITE_DONE)
 			{
 				s << "'" << name << "' has no rank\n";
+				toEveryone = false;
 			}
 
 		}
 		else
 		{
 			s << "Could not get rank of '" << name << "'. Try again later.\n";
+			toEveryone = false;
 		}
 	}
 	else
@@ -1277,7 +1297,13 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 	}
 
 	lines = s.str();
-	SendLines(GameServer, lines, clientId);
+	if (toEveryone)
+	{
+		SendLines(GameServer, lines);
+	} else {
+		SendLines(GameServer, lines, clientId);
+	}
+	
 
 	sqlite3_finalize(pStmt);
 	/*name has to be freed here, because this function is executed in a thread.*/
