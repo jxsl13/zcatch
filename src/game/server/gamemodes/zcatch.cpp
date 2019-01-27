@@ -844,11 +844,14 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 				if (is_score_ranking)
 				{
 					unsigned int numWins 	= sqlite3_column_int( pStmt, 2);
-					double scorePerWin 		= (static_cast<double>(value) / numWins) / 100.0;
-					double spreePerWin		= std::cbrt(scorePerWin * 100.0);
+					if (numWins > 0)
+					{
+						double scorePerWin 		= (static_cast<double>(value) / numWins) / 100.0;
+						double spreePerWin		= std::cbrt(scorePerWin * 100.0);
 
-					s << "Score/Win: " << scorePerWin << " ";
-					s << "Spree/Win: " << spreePerWin << " ";
+						s << "Score/Win: " << scorePerWin << " ";
+						s << "Spree/Win: " << spreePerWin << " ";
+					}
 				}
 				
 				s << "\n";
@@ -1212,11 +1215,14 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s << "\n";
 
 					s << "║ Wins: " 			<< numWins;
-					s << " Score/Win: "; 		
-					s << std::fixed << std::setprecision(2) << (score / 100.0) / (numWins * 1.0);
-					
-					s << " Spree/Win: ";
-					s << std::fixed << std::setprecision(2) << std::cbrt(score / numWins  * 1.0);
+
+					if (numWins > 0)
+					{
+						s << std::fixed << std::setprecision(2) << (score / 100.0) / (numWins * 1.0);
+						s << " Score/Win: ";
+						s << std::fixed << std::setprecision(2) << std::cbrt(score / numWins  * 1.0); 
+						s << " Spree/Win: ";
+					}
 					s << "\n";
 
 					s << "║ Kills: " 			<< numKills 					<< "\n";
