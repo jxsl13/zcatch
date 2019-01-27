@@ -824,6 +824,7 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 
 				if (is_score_ranking)
 				{
+					s << std::fixed;
 					if (value % 100){	s << std::setprecision(2);	}
 					else { 				s << std::setprecision(0);	}
 					s << value / 100.0;
@@ -913,7 +914,7 @@ void CGameController_zCatch::OnChatCommandOwnRank(CPlayer *pPlayer)
 }
 
 /* when a player typed /rank nickname into the chat */
-void CGameController_zCatch::OnChatCommandRank(CPlayer *pPlayer, const char *name)
+void CGameController_zCatch::OnChatCommandRank(CPlayer *pPlayer, const char *name, bool sendToEveryone)
 {
 	char *queryName = (char*)malloc(MAX_NAME_LENGTH);
 	str_copy(queryName, name, MAX_NAME_LENGTH);
@@ -928,7 +929,12 @@ void CGameController_zCatch::OnChatCommandRank(CPlayer *pPlayer, const char *nam
 	 * There are exceptions to this behaviour, where you only check if the future did aready return a result, but
 	 * don't invoke the future's execution.
 	 */
-	GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandRankFetchDataAndPrint, GameServer(), pPlayer->GetCID(), queryName));
+	GameServer()->AddFuture(std::async(std::launch::async, 
+										&CGameController_zCatch::ChatCommandRankFetchDataAndPrint, 
+										GameServer(), 
+										pPlayer->GetCID(), 
+										queryName,
+										sendToEveryone));
 }
 
 void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* GameServer, int ClientID, const char* cmd)
@@ -1032,14 +1038,15 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 buf << desc << "\n";
                 buf << "║  Score: " 						<< score_stat / 100.0	<< "\n"
                     << "║  Number of Wins: " 				<< numWins_stat			<< "\n"
-                    << "║  Number of Kills: " 				<< numKills_stat 		<< "\n"
-                    << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
-                    << "║  Number of Shots: " 				<< numShots_stat		<< "\n";
+                    << "║  Number of Kills: " 				<< numKills_stat 		<< "\n";
 
-                if (gamemode == "Laser" || gamemode == "Everything")
+    			if (gamemode == "Laser" || gamemode == "Everything")
                 {
                     buf << "║  Number of Wallshot Kills: " 	<< numKillsWallshot_stat << "\n";
                 }
+
+                buf << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
+                    << "║  Number of Shots: " 				<< numShots_stat		<< "\n";
 
                 if (mode == "avg")
                 {
@@ -1109,8 +1116,14 @@ void CGameController_zCatch::OnChatCommandStats(CPlayer *pPlayer, const char *cm
  * @param clientId Requesting player's clientId
  * @param name Unique name of the player whose rank is being requested by the player "clientId"
  */
-void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name)
+void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name, bool sendToEveryone)
 {
+	std::string rankedName(name);
+	std::string requestingName(GameServer->Server()->ClientName(clientId));
+
+	std::stringstream s;
+	std::string lines;
+    std::string gamemode = GetGameModeTableName(0);
 
 	/* prepare */
 	const char *zTail;
@@ -1160,59 +1173,93 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 			if (row == SQLITE_ROW)
 			{
 
-				int score = sqlite3_column_int(pStmt, 0);
-				int numWins = sqlite3_column_int(pStmt, 1);
-				int numKills = sqlite3_column_int(pStmt, 2);
-				int numKillsWallshot = sqlite3_column_int(pStmt, 3);
-				int numDeaths = sqlite3_column_int(pStmt, 4);
-				int numShots = sqlite3_column_int(pStmt, 5);
-				int highestSpree = sqlite3_column_int(pStmt, 6);
-				int timePlayed = sqlite3_column_int(pStmt, 7);
-				int rank = sqlite3_column_int(pStmt, 8);
-				int scoreToNextRank = sqlite3_column_int(pStmt, 9);
-
-				char aBuf[512];
+				int score 		    	= sqlite3_column_int(pStmt, 0);
+				int numWins 			= sqlite3_column_int(pStmt, 1);
+				int numKills 			= sqlite3_column_int(pStmt, 2);
+				int numKillsWallshot 	= sqlite3_column_int(pStmt, 3);
+				int numDeaths 		    = sqlite3_column_int(pStmt, 4);
+				int numShots 		    = sqlite3_column_int(pStmt, 5);
+				int highestSpree 		= sqlite3_column_int(pStmt, 6);
+				int timePlayed 		    = sqlite3_column_int(pStmt, 7);
+				int rank 		    	= sqlite3_column_int(pStmt, 8);
+				int scoreToNextRank 	= sqlite3_column_int(pStmt, 9);
 
 				// needs to have played at least 5 minutes to be visibly ranked
 				if (timePlayed > 5 * 60)
 				{
-					if (g_Config.m_SvMode == 1) // laser
-					{
-						str_format(aBuf, sizeof(aBuf), "'%s' is rank %d with a score of %.*f points and %d wins (%d kills (%d wallshot), %d deaths, %d shots, spree of %d, %d:%02dh played, %.*f points for next rank)", name, rank, score % 100 ? 2 : 0, score / 100.0, numWins, numKills, numKillsWallshot, numDeaths, numShots, highestSpree, timePlayed / 3600, timePlayed / 60 % 60, scoreToNextRank % 100 ? 2 : 0, scoreToNextRank / 100.0);
-					}
-					else
-					{
-						str_format(aBuf, sizeof(aBuf), "'%s' is rank %d with a score of %.*f points and %d wins (%d kills, %d deaths, %d shots, spree of %d, %d:%02dh played, %.*f points for next rank)", name, rank, score % 100 ? 2 : 0, score / 100.0, numWins, numKills, numDeaths, numShots, highestSpree, timePlayed / 3600, timePlayed / 60 % 60, scoreToNextRank % 100 ? 2 : 0, scoreToNextRank / 100.0);
-					}
-				} else {
-					str_format(aBuf, sizeof(aBuf), "'%s' has no rank", name);
-				}
 
-				GameServer->SendChatTarget(clientId, aBuf);
+					s << "╔—————————  Individual Rank  —————————╗" << "\n";
+					s << "║ Rank of '" << rankedName << "'";
+
+					if (sendToEveryone)
+					{
+						s << " requested by '" << requestingName << "'";
+					}
+					s << "\n";
+
+					s << "║ Rank: " << rank << "\n";
+					s << "║ Score: ";
+
+					s << std::fixed;
+					if (score % 100){	s << std::setprecision(2);	}
+					else { 				s << std::setprecision(0);	}
+					s << score / 100.0;
+					s << "  and to next Rank: ";
+					s << std::fixed;
+					if (scoreToNextRank % 100){	s << std::setprecision(2);	}
+					else { 						s << std::setprecision(0);	}
+					s << scoreToNextRank / 100.0;
+					s << "\n";
+
+					s << "║ Wins: " 			<< numWins;
+					s << " Score/Win: "; 		
+					s << std::fixed << std::setprecision(2) << (score / 100.0) / (numWins * 1.0);
+					
+					s << " Spree/Win: ";
+					s << std::fixed << std::setprecision(2) << std::cbrt(score / numWins  * 1.0);
+					s << "\n";
+
+					s << "║ Kills: " 			<< numKills 					<< "\n";
+					
+					if (gamemode == "Laser" || gamemode == "Everything")
+					{
+						s << "║ Wallshot Kills: "<< numKillsWallshot 			<< "\n";
+					}
+
+					s << "║ Deaths: " 			<< numDeaths 					<< "\n";
+					s << "║ Shots: " 			<< numShots 					<< "\n";
+					s << "║ Highest Spree: " 	<< highestSpree 	 			<< "\n";
+
+					s << "║ Time played: ";
+					s << timePlayed / 3600;
+					s << ":"<< std::setw(2) << std::setfill('0');
+					s << timePlayed/60 % 60;
+					s << "h";
+					s << "\n";
+
+					s <<"╚———————————————————————————╝" << "\n";
+
+				} else {
+					s << "'" << name << "' has no rank.\n" ;
+				}
 			}
 
 			/* database is locked */
 			else if (row == SQLITE_BUSY)
 			{
-				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), "Could not get rank of '%s'. Try again later.", name);
-				GameServer->SendChatTarget(clientId, aBuf);
+				s << "Could not get rank of '" << name << "'. Try again later.\n";
 			}
 
 			/* no result found */
 			else if (row == SQLITE_DONE)
 			{
-				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), "'%s' has no rank", name);
-				GameServer->SendChatTarget(clientId, aBuf);
+				s << "'" << name << "' has no rank\n";
 			}
 
 		}
 		else
 		{
-			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "Could not get rank of '%s'. Try again later.", name);
-			GameServer->SendChatTarget(clientId, aBuf);
+			s << "Could not get rank of '" << name << "'. Try again later.\n";
 		}
 	}
 	else
@@ -1223,22 +1270,14 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 		GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", aBuf);
 	}
 
+	lines = s.str();
+	SendLines(GameServer, lines, clientId);
+
 	sqlite3_finalize(pStmt);
 	/*name has to be freed here, because this function is executed in a thread.*/
 	free(name);
 }
 
-
-void CGameController_zCatch::FormatRankingColumn(const char* column, char buf[32], int value)
-{
-	const int buf_size = 32;
-	if (!str_comp_nocase("score", column))
-		str_format(buf, buf_size, "%.*f", value % 100 ? 2 : 0, value/100.0);
-	else if (!str_comp_nocase("timePlayed", column))
-		str_format(buf, buf_size, "%d:%02dh", value/3600, value/60 % 60);
-	else
-		str_format(buf, buf_size, "%d", value);
-}
 
 /**
  * @brief Merges two rankings into one TARGET ranking and deletes the SOURCE ranking.

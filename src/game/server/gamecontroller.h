@@ -151,7 +151,7 @@ public:
 	virtual void OnInitRanking(sqlite3 *rankingDb) {}
 	virtual void OnChatCommandTop(CPlayer *pPlayer, const char *category = "") {}
 	virtual void OnChatCommandOwnRank(CPlayer *pPlayer) {}
-	virtual void OnChatCommandRank(CPlayer *pPlayer, const char *name) {}
+	virtual void OnChatCommandRank(CPlayer *pPlayer, const char *name, bool sendToEveryone = false) {}
 	virtual void OnChatCommandStats(CPlayer *pPlayer, const char* cmdName){}
 };
 

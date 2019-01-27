@@ -1005,7 +1005,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				{
 					SendChatTarget(ClientID, "The ranking system saves various stats about players. The stats are updated at the end of a round and on leaving the server.");
 					SendChatTarget(ClientID, "/top <score|wins|kills|wallshotkills|deaths|kd|shots|spree|time>: display top 5 players");
-					SendChatTarget(ClientID, "/rank [<player name>]: display own/players's rank");
+					SendChatTarget(ClientID, "/rank Displays own rank without showing it to other players.");
+					SendChatTarget(ClientID, "/rank <player name>: display own/players's rank and share it with other players.");
 					SendChatTarget(ClientID, "/stats [average|total]: display some general ranking statistics.");
 				}
 				else
@@ -1167,7 +1168,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                     --length;
                     name[length] = 0;
                 }
-                m_pController->OnChatCommandRank(pPlayer, name);
+                m_pController->OnChatCommandRank(pPlayer, name, true);
             }
             else if (!str_comp_nocase_num("stats", pMsg->m_pMessage + 1, 5) ||
                 !str_comp_nocase_num("stats ", pMsg->m_pMessage + 1, 6))

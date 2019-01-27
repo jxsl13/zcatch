@@ -16,9 +16,8 @@ class CGameController_zCatch: public IGameController
 	
 	/* ranking system */
 	static void ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column, const char* title);
-	static void ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name);
+	static void ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name, bool sendToEveryone);
 	static void SaveScore(CGameContext* GameServer, char *name, int score, int numWins, int numKills, int numKillsWallshot, int numDeaths, int numShots, int highestSpree, int timePlayed, int GameMode, int Free = 0);
-	static void FormatRankingColumn(const char* column, char buf[32], int value);
 	static void ChatCommandStatsFetchDataAndPrint(CGameContext* GameServer, int clientId, const char* cmd);
 
 	/* Helper functions */
@@ -46,7 +45,7 @@ public:
 	virtual void OnInitRanking(sqlite3 *rankingDb);
 	virtual void OnChatCommandTop(CPlayer *pPlayer, const char *category = "");
 	virtual void OnChatCommandOwnRank(CPlayer *pPlayer);
-	virtual void OnChatCommandRank(CPlayer *pPlayer, const char *name);
+	virtual void OnChatCommandRank(CPlayer *pPlayer, const char *name, bool sendToEveryone = false);
 
 	virtual void OnChatCommandStats(CPlayer *pPlayer, const char *cmdName);
 
