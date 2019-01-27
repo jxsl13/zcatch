@@ -21,6 +21,9 @@ class CGameController_zCatch: public IGameController
 	static void FormatRankingColumn(const char* column, char buf[32], int value);
 	static void ChatCommandStatsFetchDataAndPrint(CGameContext* GameServer, int clientId, const char* cmd);
 
+	/* Helper functions */
+	static unsigned int SendLines(CGameContext* GameServer, std::string& lines, int ClientID = -1);
+
 
 public:
 	CGameController_zCatch(class CGameContext *pGameServer);

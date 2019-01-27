@@ -1133,12 +1133,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					SendChatTarget(ClientID, "Could not deliver private message. Player not found.");
 				}
 			}
-			
             /* ranking system */
-            else if (RankingEnabled() && (!str_comp_nocase("top", pMsg->m_pMessage + 1) || !str_comp_nocase("top5", pMsg->m_pMessage + 1)))
-            {
-                m_pController->OnChatCommandTop(pPlayer);
-            }
             else if (RankingEnabled() && (!str_comp_nocase_num("top ", pMsg->m_pMessage + 1, 4) || !str_comp_nocase_num("top5 ", pMsg->m_pMessage + 1, 5)))
             {
                 char* category = str_skip_whitespaces((char*)pMsg->m_pMessage + 5);
@@ -1151,6 +1146,13 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
                 }
                 m_pController->OnChatCommandTop(pPlayer, category);
             }
+            else if (RankingEnabled() && (!str_comp_nocase_num("top", pMsg->m_pMessage + 1, 3) || !str_comp_nocase_num("top5", pMsg->m_pMessage + 1, 4)))
+            {
+            	// Firstly compare the longer strings an if nothing was matched, fallback to this
+            	// simple /top or /top5 command
+                m_pController->OnChatCommandTop(pPlayer, "score");
+            }
+            
             else if (RankingEnabled() && (!str_comp_nocase("rank", pMsg->m_pMessage + 1)))
             {
                 m_pController->OnChatCommandOwnRank(pPlayer);

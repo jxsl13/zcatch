@@ -9,10 +9,12 @@
 #include <game/server/entities/character.h>
 #include <game/server/player.h>
 #include "zcatch.h"
+
+#include <cmath>
 #include <cstring>
+#include <future>
 #include <string>
 #include <sstream>
-#include <future>
 #include <iomanip>
 
 
@@ -74,9 +76,9 @@ void CGameController_zCatch::OnInitRanking(sqlite3 *rankingDb) {
 			CREATE INDEX IF NOT EXISTS %s_highestSpree_index ON %s (highestSpree); \
 			CREATE INDEX IF NOT EXISTS %s_timePlayed_index ON %s (timePlayed); \
 			\
-			CREATE VIEW IF NOT EXISTS %s_top_score_View (username, score) \
+			CREATE VIEW IF NOT EXISTS %s_top_score_View (username, score, numWins) \
 			AS \
-			SELECT username, score FROM %s \
+			SELECT username, score, numWins FROM %s \
 			WHERE score > 0 \
 			ORDER BY score DESC LIMIT 5; \
 			\
@@ -702,7 +704,6 @@ void CGameController_zCatch::SaveScore(CGameContext* GameServer, char *name, int
 void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *category)
 {
 	const char *column;
-
 	/**
 	 * Compare passed category. if we have such a category,
 	 * assign a column for that specific category.
@@ -711,9 +712,7 @@ void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *cate
 	 */
 	if(!str_comp_nocase("", category))
 	{
-		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "score", "Score"));
-		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "numWins", "Wins"));
-		GameServer()->AddFuture(std::async(std::launch::async, &CGameController_zCatch::ChatCommandTopFetchDataAndPrint, GameServer(), pPlayer->GetCID(), "numKills", "Kills"));
+		column = "score";
 		return;
 	}
 	else if (!str_comp_nocase("score", category))
@@ -761,19 +760,23 @@ void CGameController_zCatch::OnChatCommandTop(CPlayer *pPlayer, const char *cate
 										&CGameController_zCatch::ChatCommandTopFetchDataAndPrint, 
 										GameServer(), 
 										pPlayer->GetCID(), 
-										column, ""));
+										column, category));
 }
 
 /* get the top players */
-void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column, const char* title)
+void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameServer, int clientId, const char *column_str, const char* title_str)
 {
+	std::string column(column_str);
+	std::string title(title_str);
+	std::stringstream s;
+
+	bool is_score_ranking = column == "score" || column == "";
 
 	/* prepare */
 	const char *zTail;
 	char sqlBuf[128];
 
-	str_format(sqlBuf, sizeof(sqlBuf), "SELECT * FROM %s_top_%s_View LIMIT 5;", GetGameModeTableName(0).c_str(), column);
-	dbg_msg("TEST", sqlBuf);
+	str_format(sqlBuf, sizeof(sqlBuf), "SELECT * FROM %s_top_%s_View LIMIT 5;", GetGameModeTableName(0).c_str(), column.c_str());
 	const char *zSql = sqlBuf;
 	sqlite3_stmt *pStmt = 0;
 	int rc = sqlite3_prepare_v2(GameServer->GetRankingDb(), zSql, std::strlen(zSql), &pStmt, &zTail);
@@ -791,32 +794,81 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 			/* fetch from database */
 			int numRows = 0;
 			int rc;
-			if (std::strlen(title) > 0)
+			int rank	= 1;
+
+			if (is_score_ranking)
 			{
-				char buf[64];
-				str_format(buf, sizeof(buf), "Top 5: %s", title);
-				GameServer->SendChatTarget(clientId, buf);
+				s << "╔══════════════════   °• ♔ •°   ══════════════════╗" << "\n";
 			}
+			else
+			{
+				s << "╔═════════   °• ♔ •°   ═════════╗" << "\n";
+			}
+
+			s << "║ Top 5: " << (title == "" ? "" : title) << "\n";
+			s << "║ \n";
+			
+
 			while ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
 			{
-				const unsigned char* name = sqlite3_column_text(pStmt, 0);
-				int value = sqlite3_column_int(pStmt, 1);
+				const unsigned char* name	= sqlite3_column_text(pStmt, 0);
+				unsigned int value 			= sqlite3_column_int( pStmt, 1);
+
 				// don't show in top if no score available.
 				if (value == 0) {
 					continue;
 				}
-				char aBuf[64], bBuf[32];
-				FormatRankingColumn(column, bBuf, value);
-				str_format(aBuf, sizeof(aBuf), "[%s] %s", bBuf, name);
-				/* if the player left and the client id is unused, nothing will happen */
-				/* if another player joined, there is no big harm that he receives it */
-				/* maybe later i have a good idea how to prevent this */
-				GameServer->SendChatTarget(clientId, aBuf);
+
+				s << "║ " << rank++ << ". ";
+				s << "[";
+
+				if (is_score_ranking)
+				{
+					if (value % 100){	s << std::setprecision(2);	}
+					else { 				s << std::setprecision(0);	}
+					s << value / 100.0;
+				} else if(column == "timePlayed")
+				{
+					s << value / 3600;
+					s << ":"<< std::setw(2) << std::setfill('0');
+					s << value/60 % 60;
+					s << "h";
+				} else
+				{
+					s << value;
+				}
+					
+				s << "] " << name << " ";
+
+				if (is_score_ranking)
+				{
+					unsigned int numWins 	= sqlite3_column_int( pStmt, 2);
+					double scorePerWin 		= (static_cast<double>(value) / numWins) / 100.0;
+					double spreePerWin		= std::cbrt(scorePerWin * 100.0);
+
+					s << "Score/Win: " << scorePerWin << " ";
+					s << "Spree/Win: " << spreePerWin << " ";
+				}
+				
+				s << "\n";
+				
 				++numRows;
 			}
 
 			/* unlock database access */
 			GameServer->UnlockRankingDb();
+
+			s << "║ \n";
+			s << "║ Requested by " << GameServer->Server()->ClientName(clientId) << "\n";
+			if (is_score_ranking)
+			{
+				s << "╚══════════════════   °• ♔ •°   ══════════════════╝" << "\n";
+			}
+			else
+			{
+				s << "╚═════════   °• ♔ •°   ═════════╝" << "\n";
+			}
+			
 
 			if (numRows == 0)
 			{
@@ -829,7 +881,11 @@ void CGameController_zCatch::ChatCommandTopFetchDataAndPrint(CGameContext* GameS
 					GameServer->SendChatTarget(clientId, "There are no ranks");
 				}
 			}
-
+			else
+			{
+				std::string result = s.str();
+				SendLines(GameServer, result);
+			}
 		}
 		else
 		{
@@ -920,6 +976,10 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
             int numRows = 0;
             int rc;
 
+            // stringstream buffer to concatenate the string.
+			std::stringstream buf;
+
+
             if ((rc = sqlite3_step(pStmt)) == SQLITE_ROW)
             {
 
@@ -966,16 +1026,16 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 /**
                  * create a formatted string with newlines
                  */
-                std::stringstream buf;
                 int hours = static_cast<int>(timePlayed_stat) / 3600;
                 int seconds = (static_cast<int>(timePlayed_stat) / 60) % 60;
 
                 buf << desc << "\n";
-                buf << "║  Score: " 							<< score_stat / 100.0	<< "\n"
+                buf << "║  Score: " 						<< score_stat / 100.0	<< "\n"
                     << "║  Number of Wins: " 				<< numWins_stat			<< "\n"
                     << "║  Number of Kills: " 				<< numKills_stat 		<< "\n"
                     << "║  Number of Sudden Deaths: " 		<< numSuddenDeaths_stat	<< "\n"
                     << "║  Number of Shots: " 				<< numShots_stat		<< "\n";
+
                 if (gamemode == "Laser" || gamemode == "Everything")
                 {
                     buf << "║  Number of Wallshot Kills: " 	<< numKillsWallshot_stat << "\n";
@@ -985,49 +1045,9 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 {
                     buf << "║  Highest Spree: "	<< highestSpree_avg	<< "\n";
                 }
-                buf << "║  Time played: " 		<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << " h" << "\n";
+
+                buf << "║  Time played: " 		<< hours << ":" << (seconds < 10 ? "0" : "") << seconds << "h" << "\n";
                 buf << "╚———————————————————╝" << "\n";
-                /**
-                 * create a string from the stringstream
-                 */
-                std::string result_string = buf.str();
-
-                /**
-                 * iterators to walk over the string.
-                 */
-                auto line_beginning 	= result_string.begin();
-                auto line_end 			= result_string.begin();
-                auto it 				= result_string.begin();
-
-                /**
-                 * split at newlines and print to requesting player.
-                 */
-                while (it != result_string.end())
-                {
-                    /**
-                     * An iterator implements the dereferencing operator
-                     * 'operator*()' which is used to access the underlying 
-                     * element that the iterator currently resides at.
-                     */
-                    if ((*it) == '\n')
-                    {
-                    	/**
-                    	 * Do not include the newline character in our string.
-                    	 */
-                        line_end = it;
-                        /// Copies string from beginning to end, excluding end.
-                        std::string line(line_beginning, line_end);
-                        line_beginning = line_end + 1;
-                        GameServer->SendChatTarget(ClientID, line.c_str());
-                    }
-
-                    /**
-                     * an iterator also implements the 'operator++', 
-                     * which is, in this case, used to walk to the next 
-                     * character in the string.
-                     */
-                    it++;
-                }
 
                 ++numRows;
             }
@@ -1045,6 +1065,13 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 {
                     GameServer->SendChatTarget(ClientID, "There are no statistics available.");
                 }
+            }
+            else
+            {
+            	// no errors, send the lines.
+                std::string result_string(buf.str());
+
+            	SendLines(GameServer, result_string);
             }
 
         }
@@ -1492,6 +1519,53 @@ std::string CGameController_zCatch::GetGameModeTableName(int GameMode) {
 		}
 	
 }
+
+unsigned int CGameController_zCatch::SendLines(CGameContext* GameServer, std::string& lines, int ClientID)
+{
+	unsigned int linesSent = 0;
+    /**
+     * iterators to walk over the string.
+     */
+    auto line_beginning 	= lines.begin();
+    auto line_end 			= lines.begin();
+    auto it 				= lines.begin();
+
+    /**
+     * split at newlines and print to requesting player.
+     */
+    while (it != lines.end())
+    {
+        /**
+         * An iterator implements the dereferencing operator
+         * 'operator*()' which is used to access the underlying
+         * element that the iterator currently resides at.
+         */
+        if ((*it) == '\n')
+        {
+            /**
+             * Do not include the newline character in our string.
+             */
+            line_end = it;
+            /// Copies string from beginning to end, excluding end.
+            std::string line(line_beginning, line_end);
+            line_beginning = line_end + 1;
+            GameServer->SendChatTarget(ClientID, line.c_str());
+        }
+
+        /**
+         * an iterator also implements the 'operator++',
+         * which is, in this case, used to walk to the next
+         * character in the string.
+         */
+        it++;
+        linesSent++;
+    }
+
+    return linesSent;
+
+}
+
+
 
 
 
