@@ -85,8 +85,8 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
 				
-		static int s_Buttons[3] = {0};
-		if (DoButton_MenuTab(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_TL | CUI::CORNER_TR))
+		static CButtonContainer s_Buttons[3];
+		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
 			s_SettingsPage = i;
 	}
 	MainView.Margin(10.0f, &MainView);
@@ -489,7 +489,7 @@ void CMenus::RenderLaser(const struct CNetObj_Laser *pCurrent)
 
 void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 {
-	CUIRect LeftView, RightView, Button, Lable;
+	CUIRect LeftView, RightView, Button;
 
 	MainView.VSplitLeft(MainView.w/2, &LeftView, &RightView);
 
@@ -514,14 +514,14 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcColoredFlags, Localize("Make flags match tees colors"), g_Config.m_TcColoredFlags, &Button))
 		g_Config.m_TcColoredFlags ^= 1;
 
+	int FakeSpeedMeter = 0;
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcSpeedmeter, Localize("Display speed meter"), g_Config.m_TcSpeedmeter, &Button))
-		g_Config.m_TcSpeedmeter ^= 1;
+	DoButton_CheckBox(&FakeSpeedMeter, Localize("Display speed meter (TODO)"), FakeSpeedMeter, &Button);
 
+	int FakeAccelMeter = 0;
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	Button.VSplitLeft(15.0f, 0, &Button);
-	if(DoButton_CheckBox(&g_Config.m_TcSpeedmeterAccel, Localize("Speed meter show acceleration"), g_Config.m_TcSpeedmeterAccel, &Button))
-		g_Config.m_TcSpeedmeterAccel ^= 1;
+	DoButton_CheckBox(&FakeAccelMeter, Localize("Speed meter show acceleration (TODO)"), FakeAccelMeter, &Button);
 
 	RightView.HSplitTop(20.0f, 0, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
@@ -531,6 +531,8 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcHideCarrying, Localize("Hide flag while carrying it"), g_Config.m_TcHideCarrying, &Button))
 		g_Config.m_TcHideCarrying ^= 1;
 
+	RightView.HSplitTop(30.0f, 0, &RightView);
+	/*
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	if(DoButton_CheckBox(&g_Config.m_TcStatScreenshot, Localize("Automatically take game over stat screenshot"), g_Config.m_TcStatScreenshot, &Button))
 		g_Config.m_TcStatScreenshot ^= 1;
@@ -538,7 +540,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	char aBuf[64];
 	RightView.HSplitTop(10.0f, 0, &RightView);
 	RightView.VSplitLeft(20.0f, 0, &RightView);
-	RightView.HSplitTop(20.0f, &Lable, &Button);
+	RightView.HSplitTop(20.0f, &Label, &Button);
 	Button.VSplitRight(20.0f, &Button, 0);
 	Button.HSplitTop(20.0f, &Button, 0);
 	if(g_Config.m_TcStatScreenshotMax)
@@ -546,9 +548,9 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	else
 		str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Max Screenshots"), Localize("no limit"));
 		
-	UI()->DoLabelScaled(&Lable, aBuf, 13.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabelScaled(&Label, aBuf, 13.0f, CUI::ALIGN_LEFT);
 	g_Config.m_TcStatScreenshotMax = static_cast<int>(DoScrollbarH(&g_Config.m_TcStatScreenshotMax, &Button, g_Config.m_TcStatScreenshotMax/1000.0f)*1000.0f+0.1f);
-	
+	*/
 	
 	LeftView.HSplitTop(50.0f, &Button, &LeftView);
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
