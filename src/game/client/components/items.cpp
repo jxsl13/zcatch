@@ -160,6 +160,11 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 	float Angle = 0.0f;
 	float Size = 42.0f;
 
+	if(g_Config.m_TcHideCarrying &&
+		((pCurrent->m_Team == TEAM_RED && pCurGameDataFlag && pCurGameDataFlag->m_FlagCarrierRed == m_pClient->m_LocalClientID) ||
+		(pCurrent->m_Team == TEAM_BLUE && pCurGameDataFlag && pCurGameDataFlag->m_FlagCarrierBlue == m_pClient->m_LocalClientID)))
+		return;
+
 	Graphics()->BlendNormal();
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
