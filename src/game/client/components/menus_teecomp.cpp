@@ -48,13 +48,12 @@ void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int 
 
 void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 {
-		// todo: old, port
-		MainView.HMargin(40.0f, &MainView);
-		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
-
-	MainView.HSplitTop(10.0f, 0, &MainView);
 	CUIRect Button;
 	static int s_SettingsPage = 0;
+						
+	// Tabs (Teecomp pattern)
+	MainView.HSplitBottom(80.0f, &MainView, 0);
+	MainView.HSplitTop(14.0f, 0, &MainView);
 
 	if(s_SettingsPage != 3)
 	{
@@ -76,21 +75,20 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	// render background
 	CUIRect Tabbar;
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
-	//RenderTools()->DrawUIRect(&MainView, color_Tabbar_active, CORNER_ALL, 10.0f);
 
 	const char *pTabs[] = { Localize("Skins"), Localize("Stats"), Localize("Misc"), Localize("About") };
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
 	for(int i=0; i<NumTabs; i++)
 	{
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
-		
+				
 		static int s_Buttons[4] = {0};
-		if(DoButton_MenuTab(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_ALL))
+		if (DoButton_MenuTab(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_TL | CUI::CORNER_TR))
 			s_SettingsPage = i;
 	}
-
 	if(s_SettingsPage != 3)
 		MainView.Margin(10.0f, &MainView);
 	
@@ -432,7 +430,7 @@ void CMenus::RenderLaser(const struct CNetObj_Laser *pCurrent)
 	vec2 Out, Border;
 	
 	Graphics()->BlendNormal();
-	// Graphics()->TextureSet(-1);
+	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 	
 	//vec4 inner_color(0.15f,0.35f,0.75f,1.0f);
