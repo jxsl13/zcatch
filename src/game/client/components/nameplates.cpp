@@ -32,7 +32,11 @@ void CNamePlates::RenderNameplate(
 
 
 		char aName[64];
-		str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "");
+		if(!g_Config.m_TcNameplateScore)
+			str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "");
+		else
+			str_format(aName, sizeof(aName), "%s (%d)", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "",
+				pPlayerInfo->m_Score);
 
 		CTextCursor Cursor;
 		float tw = TextRender()->TextWidth(0, FontSize, aName, -1) + RenderTools()->GetClientIdRectSize(FontSize);
