@@ -1412,7 +1412,6 @@ void CGameClient::CClientStats::Reset()
 	m_Suicides  = 0;
 	m_BestSpree = 0;
 	m_CurrentSpree = 0;
-	m_CurrentHumiliation = 0;
 	for(int j = 0; j < NUM_WEAPONS; j++)
 	{
 		m_aFragsWith[j]  = 0;
