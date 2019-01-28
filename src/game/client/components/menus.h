@@ -575,6 +575,16 @@ private:
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 
+	// TeeComp related
+	void RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled);
+	void UiDoKeybinder(CKeyInfo& pKey, CUIRect* r);
+	void RenderSettingsTeecomp(CUIRect MainView);
+	void RenderSettingsTeecompSkins(CUIRect MainView);
+	void RenderSettingsTeecompStats(CUIRect MainView);
+	void RenderSettingsTeecompMisc(CUIRect MainView);
+	void RenderSettingsTeecompAbout(CUIRect MainView);
+	void RenderLaser(const struct CNetObj_Laser *pCurrent);
+	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);
 

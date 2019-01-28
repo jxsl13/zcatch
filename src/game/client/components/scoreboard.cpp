@@ -12,9 +12,11 @@
 #include <game/client/gameclient.h>
 #include <game/client/localization.h>
 #include <game/client/render.h>
+#include <game/client/teecomp.h>
 #include <game/client/ui.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/components/motd.h>
+#include <game/client/components/teecomp_stats.h>
 
 #include "menus.h"
 #include "scoreboard.h"
