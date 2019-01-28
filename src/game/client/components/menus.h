@@ -600,13 +600,12 @@ private:
 	void RenderSettingsTeecompSkins(CUIRect MainView);
 	void RenderSettingsTeecompStats(CUIRect MainView);
 	void RenderSettingsTeecompMisc(CUIRect MainView);
-	void RenderSettingsTeecompAbout(CUIRect MainView);
+	// void RenderSettingsTeecompAbout(CUIRect MainView);
 	void RenderLaser(const struct CNetObj_Laser *pCurrent);
-	// utilities
-	void NewLine(CUIRect *pButton, CUIRect *pView);
-	void NewLine();
-	CUIRect *m_pNewLineButton;
-	CUIRect *m_pNewLineView;
+	// void NewLine(CUIRect *pButton, CUIRect *pView);
+	// void NewLine();
+	// CUIRect *m_pNewLineButton;
+	// CUIRect *m_pNewLineView;
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);

@@ -55,7 +55,7 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	MainView.HSplitBottom(80.0f, &MainView, 0);
 	MainView.HSplitTop(14.0f, 0, &MainView);
 
-	if(s_SettingsPage != 3)
+	// if(s_SettingsPage != 3)
 	{
 		MainView.HSplitBottom(20.0f, 0, &Button);
 		Button.VSplitLeft(MainView.w/3, &Button, 0);
@@ -76,7 +76,7 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	CUIRect Tabbar;
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
 
-	const char *pTabs[] = { Localize("Skins"), Localize("Stats"), Localize("Misc"), Localize("About") };
+	const char *pTabs[] = { Localize("Skins"), Localize("Stats"), Localize("Misc")/*, Localize("About")*/ };
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
@@ -85,12 +85,11 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
 				
-		static int s_Buttons[4] = {0};
+		static int s_Buttons[3] = {0};
 		if (DoButton_MenuTab(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, CUI::CORNER_TL | CUI::CORNER_TR))
 			s_SettingsPage = i;
 	}
-	if(s_SettingsPage != 3)
-		MainView.Margin(10.0f, &MainView);
+	MainView.Margin(10.0f, &MainView);
 	
 	if(s_SettingsPage == 0)
 		RenderSettingsTeecompSkins(MainView);
@@ -98,8 +97,8 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		RenderSettingsTeecompStats(MainView);
 	else if(s_SettingsPage == 2)
 		RenderSettingsTeecompMisc(MainView);
-	else if(s_SettingsPage == 3)
-		RenderSettingsTeecompAbout(MainView);
+	// else if(s_SettingsPage == 3)
+	// 	RenderSettingsTeecompAbout(MainView);
 }
 
 // TODO Teecomp port
@@ -612,7 +611,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 		Graphics()->MapScreen(screen.x, screen.y, screen.w, screen.h); 
 	}
 }
-
+/*
 void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 {
 	CUIRect Button;
@@ -662,7 +661,6 @@ void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 	NewLine(NULL, NULL);
 }
 
-// utilities (remove?)
 void CMenus::NewLine(CUIRect *pButton, CUIRect *pView)
 {
 	m_pNewLineButton = pButton;
@@ -679,3 +677,4 @@ void CMenus::NewLine()
 		return;
 	m_pNewLineView->HSplitTop(20.0f, m_pNewLineButton, m_pNewLineView);
 }
+*/
