@@ -1,10 +1,11 @@
+#ifdef TODO
 #include <string.h>
 
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 #include <engine/graphics.h>
 
-#include <game/generated/client_data.h>
+#include <generated/client_data.h>
 
 #include <game/version.h>
 #include <game/client/ui.h>
@@ -608,3 +609,4 @@ void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 	UI()->DoLabel(&Button, Localize("Yo dawg I herd you like tabs so we put tabs in yo tabs in yo tabs"), 10.0f, -1);
 	NewLine(NULL, NULL);
 }
+#endif

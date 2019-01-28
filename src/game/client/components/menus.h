@@ -40,6 +40,15 @@ public:
 
 		const void *GetID() const { return &m_FadeStartTime; }
 	};
+	
+	typedef struct
+	{
+		CLocConstString m_Name;
+		const char *m_pCommand;
+		int m_KeyId;
+		int m_Modifier;
+		CMenus::CButtonContainer m_BC;
+	} CKeyInfo;
 
 private:
 	typedef float (*FDropdownCallback)(CUIRect View, void *pUser);
@@ -581,15 +590,6 @@ private:
 	static float RenderSettingsControlsChat(CUIRect View, void *pUser);
 	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
 
-	typedef struct
-	{
-		CLocConstString m_Name;
-		const char *m_pCommand;
-		int m_KeyId;
-		int m_Modifier;
-		CMenus::CButtonContainer m_BC;
-	} CKeyInfo;
-
 	// TeeComp related
 	void RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled);
 	void UiDoKeybinder(CKeyInfo& pKey, CUIRect* r);
@@ -614,6 +614,7 @@ private:
 
 	void SetMenuPage(int NewPage);
 public:
+
 	struct CSwitchTeamInfo
 	{
 		char m_aNotification[128];
