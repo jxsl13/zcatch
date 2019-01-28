@@ -221,6 +221,34 @@ public:
 		bool m_TeamBalance;
 		int m_PlayerSlots;
 	} m_ServerSettings;
+	
+	// TeeComp vars
+	class CClientStats
+	{
+	public:
+		CClientStats();
+		
+		int m_JoinDate;
+		bool m_Active;
+		bool m_WasActive;
+
+		int m_aFragsWith[NUM_WEAPONS];
+		int m_aDeathsFrom[NUM_WEAPONS];
+		int m_Frags;
+		int m_Deaths;
+		int m_Suicides;
+		int m_BestSpree;
+		int m_CurrentSpree;
+
+		int m_FlagGrabs;
+		int m_FlagCaptures;
+		int m_CarriersKilled;
+		int m_KillsCarrying;
+		int m_DeathsCarrying;
+
+		void Reset();
+	};
+	CClientStats m_aStats[MAX_CLIENTS];
 
 	CRenderTools m_RenderTools;
 
@@ -245,6 +273,14 @@ public:
 	virtual void OnRconLine(const char *pLine);
 	virtual void OnGameOver();
 	virtual void OnStartGame();
+
+	// TeeComp hooks
+	int m_LastGameOver;
+	int m_LastRoundStartTick;
+	int m_aLastFlagCarrier[2];
+	void OnGameRestart();
+	void OnRoundStart();
+	void OnFlagGrab(int Id);
 
 	virtual const char *GetItemName(int Type) const;
 	virtual const char *Version() const;
@@ -285,6 +321,7 @@ public:
 	class CMapImages *m_pMapimages;
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;
+	class CTeecompStats *m_pTeecompStats;
 	class CItems *m_pItems;
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;

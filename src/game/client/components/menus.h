@@ -574,6 +574,21 @@ private:
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
+	// found in menu_callback.cpp
+	static float RenderSettingsControlsMovement(CUIRect View, void *pUser);
+	static float RenderSettingsControlsWeapon(CUIRect View, void *pUser);
+	static float RenderSettingsControlsVoting(CUIRect View, void *pUser);
+	static float RenderSettingsControlsChat(CUIRect View, void *pUser);
+	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
+
+	typedef struct
+	{
+		CLocConstString m_Name;
+		const char *m_pCommand;
+		int m_KeyId;
+		int m_Modifier;
+		CMenus::CButtonContainer m_BC;
+	} CKeyInfo;
 
 	// TeeComp related
 	void RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled);
@@ -587,13 +602,6 @@ private:
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);
-
-	// found in menu_callback.cpp
-	static float RenderSettingsControlsMovement(CUIRect View, void *pUser);
-	static float RenderSettingsControlsWeapon(CUIRect View, void *pUser);
-	static float RenderSettingsControlsVoting(CUIRect View, void *pUser);
-	static float RenderSettingsControlsChat(CUIRect View, void *pUser);
-	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
 
 	void SetActive(bool Active);
 

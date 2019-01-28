@@ -5,15 +5,6 @@
 #include "binds.h"
 #include "menus.h"
 
-typedef struct
-{
-	CLocConstString m_Name;
-	const char *m_pCommand;
-	int m_KeyId;
-	int m_Modifier;
-	CMenus::CButtonContainer m_BC;
-} CKeyInfo;
-
 static CKeyInfo gs_aKeys[] =
 {
 	{ "Move left", "+left", 0, 0},		// Localize - these strings are localized within CLocConstString
