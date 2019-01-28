@@ -335,6 +335,7 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 	CUIRect Button, LeftView;
 
 	MainView.VSplitLeft(MainView.w/2, &LeftView, &MainView);
+	LeftView.VSplitRight(15.0f, &LeftView, 0);
 
 	char aBuf[64];
 	str_format(aBuf, sizeof(aBuf), "%s:",  Localize("Show in global statboard"));
@@ -489,20 +490,12 @@ void CMenus::RenderLaser(const struct CNetObj_Laser *pCurrent)
 
 void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 {
-	CUIRect LeftView, RightView, Button;
+	CUIRect LeftView, RightView, LaserView, LLeftView, LRightView, Button;
 
+	MainView.HSplitTop(MainView.h/2, &MainView, &LaserView);
 	MainView.VSplitLeft(MainView.w/2, &LeftView, &RightView);
 
-	MainView.HSplitTop(20.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, Localize("Name plates"), 16.0f, CUI::ALIGN_CENTER);
-	LeftView.HSplitTop(20.0f, 0, &LeftView);
-	RightView.HSplitTop(20.0f, 0, &RightView);
-
-	RightView.HSplitTop(20.0f, &Button, &RightView);
-	if(DoButton_CheckBox(&g_Config.m_TcNameplateScore, Localize("Show score in name plate"), g_Config.m_TcNameplateScore, &Button))
-		g_Config.m_TcNameplateScore ^= 1;
-
-	LeftView.HSplitTop(20.0f, 0, &LeftView);
+	// Left
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	UI()->DoLabel(&Button, Localize("HUD/Flag"), 16.0f, CUI::ALIGN_LEFT);
 
@@ -523,15 +516,22 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	Button.VSplitLeft(15.0f, 0, &Button);
 	DoButton_CheckBox(&FakeAccelMeter, Localize("Speed meter show acceleration (TODO)"), FakeAccelMeter, &Button);
 
+	// Right
+	RightView.HSplitTop(20.0f, &Button, &RightView);
+	UI()->DoLabel(&Button, Localize("Name plates"), 16.0f, CUI::ALIGN_LEFT);
+	
+	RightView.HSplitTop(20.0f, &Button, &RightView);
+	if(DoButton_CheckBox(&g_Config.m_TcNameplateScore, Localize("Show score in name plate"), g_Config.m_TcNameplateScore, &Button))
+		g_Config.m_TcNameplateScore ^= 1;
+
 	RightView.HSplitTop(20.0f, 0, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
-	UI()->DoLabel(&Button, Localize("Others"), 16.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabel(&Button, Localize("Other"), 16.0f, CUI::ALIGN_LEFT);
 
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	if(DoButton_CheckBox(&g_Config.m_TcHideCarrying, Localize("Hide flag while carrying it"), g_Config.m_TcHideCarrying, &Button))
 		g_Config.m_TcHideCarrying ^= 1;
 
-	RightView.HSplitTop(30.0f, 0, &RightView);
 	/*
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	if(DoButton_CheckBox(&g_Config.m_TcStatScreenshot, Localize("Automatically take game over stat screenshot"), g_Config.m_TcStatScreenshot, &Button))
@@ -552,18 +552,19 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	g_Config.m_TcStatScreenshotMax = static_cast<int>(DoScrollbarH(&g_Config.m_TcStatScreenshotMax, &Button, g_Config.m_TcStatScreenshotMax/1000.0f)*1000.0f+0.1f);
 	*/
 	
-	LeftView.HSplitTop(50.0f, &Button, &LeftView);
-	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, "Laser", 16.0f, CUI::ALIGN_RIGHT);
+	// laser
+	LaserView.HSplitTop(20.0f, &Button, &LaserView);
+	UI()->DoLabel(&Button, "Laser", 16.0f, CUI::ALIGN_CENTER);
+	LaserView.VSplitLeft(LaserView.w/2, &LLeftView, &LRightView);
 	
 	int lri, lro, lgi, lgo, lbi, lbo;
 	lri = g_Config.m_TcLaserColorInner>>16;
 	lgi = (g_Config.m_TcLaserColorInner>>8)&0xff;
 	lbi = g_Config.m_TcLaserColorInner&0xff;
 	
-	LeftView.HSplitTop(20.0f, &Button, &LeftView);
+	LLeftView.HSplitTop(20.0f, &Button, &LLeftView);
 	UI()->DoLabel(&Button, Localize("Laser inner color"), 14.0f, CUI::ALIGN_LEFT);
-	RenderRgbSliders(&LeftView, &Button, lri, lgi, lbi, true);
+	RenderRgbSliders(&LLeftView, &Button, lri, lgi, lbi, true);
 	g_Config.m_TcLaserColorInner = (lri<<16) + (lgi<<8) + lbi;
 	
 	
@@ -571,19 +572,18 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	lgo = (g_Config.m_TcLaserColorOuter>>8)&0xff;
 	lbo = g_Config.m_TcLaserColorOuter&0xff;
 	
-	RightView.HSplitTop(80.0f, &Button, &RightView);
-	RightView.HSplitTop(20.0f, &Button, &RightView);
+	LRightView.HSplitTop(20.0f, &Button, &LRightView);
 	UI()->DoLabel(&Button, Localize("Laser outer color"), 14.0f, CUI::ALIGN_LEFT);
 	
-	RenderRgbSliders(&RightView, &Button, lro, lgo, lbo, true);
+	RenderRgbSliders(&LRightView, &Button, lro, lgo, lbo, true);
 	g_Config.m_TcLaserColorOuter = (lro<<16) + (lgo<<8) + lbo;
 	
 	{ 
 		CUIRect LBut, RBut;
 		CUIRect screen = *UI()->Screen();
 		
-		LeftView.HSplitTop(20.0f, &LBut, &LeftView);
-		RightView.HSplitTop(20.0f, &RBut, &RightView);
+		LLeftView.HSplitTop(20.0f, &LBut, &LLeftView);
+		LRightView.HSplitTop(20.0f, &RBut, &LRightView);
 		
 		// Calculate world screen mapping
 		float aPoints[4];
