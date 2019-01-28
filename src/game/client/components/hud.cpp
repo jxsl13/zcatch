@@ -10,6 +10,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
 #include <game/client/render.h>
+#include <game/client/teecomp.h>
 
 #include "menus.h"
 #include "controls.h"
@@ -168,7 +169,21 @@ void CHud::RenderScoreHud()
 				// draw box
 				CUIRect Rect = {Whole-ScoreWidthMax-ImageSize-2*Split, StartY+t*20, ScoreWidthMax+ImageSize+2*Split, 18.0f};
 				Graphics()->BlendNormal();
-				RenderTools()->DrawUIRect(&Rect, t == 0 ? vec4(1.0f, 0.0f, 0.0f, 0.25f) : vec4(0.0f, 0.0f, 1.0f, 0.25f), CUI::CORNER_L, 5.0f);
+				vec4 Color;				
+				if(!g_Config.m_TcHudMatch)
+				{
+					if(t == 0)
+						Color = vec4(1.0f, 0.0f, 0.0f, 0.25f);
+					else
+						Color = vec4(0.0f, 0.0f, 1.0f, 0.25f);
+				}
+				else
+				{
+					vec3 Col = CTeecompUtils::GetTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
+														   g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+					Color = vec4(Col.r, Col.g, Col.b, 0.25f);
+				}
+				RenderTools()->DrawUIRect(&Rect, Color, CUI::CORNER_L, 5.0f);
 
 				// draw score
 				TextRender()->Text(0, Whole-ScoreWidthMax+(ScoreWidthMax-aScoreTeamWidth[t])/2-Split, StartY+t*20, 14.0f, aScoreTeam[t], -1);
