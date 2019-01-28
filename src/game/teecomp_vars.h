@@ -13,8 +13,6 @@ MACRO_CONFIG_STR(TcForcedSkin1, tc_forced_skin1, 64, "default", CFGFLAG_CLIENT|C
 MACRO_CONFIG_STR(TcForcedSkin2, tc_forced_skin2, 64, "default", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Forced skin for blue/opponents")
 
 MACRO_CONFIG_INT(TcHudMatch, tc_hud_match, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Make HUD match tees' colors")
-MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
-MACRO_CONFIG_INT(TcSpeedmeterAccel, tc_speedmeter_accel, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Speed meter shows acceleration")
 
 MACRO_CONFIG_INT(TcColoredFlags, tc_colored_flags, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Make flags colors match tees colors")
 MACRO_CONFIG_INT(TcHideCarrying, tc_hide_carrying, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Hide the flag if you're carrying it")
@@ -27,3 +25,7 @@ MACRO_CONFIG_INT(TcStatScreenshotMax, tc_stat_screenshot_max, 10, 0, 1000, CFGFL
 
 MACRO_CONFIG_INT(TcLaserColorInner, tc_laser_color_inner, 8355839, 0, 16777215, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Inner color of laser")
 MACRO_CONFIG_INT(TcLaserColorOuter, tc_laser_color_outer, 1250112, 0, 16777215, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Outer color of laser")
+
+// to port from 0.5
+MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
+MACRO_CONFIG_INT(TcSpeedmeterAccel, tc_speedmeter_accel, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Speed meter shows acceleration")
