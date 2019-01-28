@@ -19,7 +19,7 @@
 
 #include <game/client/teecomp.h>
 
-#define TEECOMP_VERSION 1.0
+#define TEECOMP_VERSION "1.0"
 
 void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled)
 {
@@ -48,6 +48,11 @@ void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int 
 
 void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 {
+		// todo: old, port
+		MainView.HMargin(40.0f, &MainView);
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
+
+	MainView.HSplitTop(10.0f, 0, &MainView);
 	CUIRect Button;
 	static int s_SettingsPage = 0;
 
@@ -63,7 +68,7 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/teeworlds/", 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf),  Localize("Teeworlds %s with TeeComp %s by spl0k"), GAME_VERSION, TEECOMP_VERSION);
+		str_format(aBuf, sizeof(aBuf), Localize("Teeworlds %s with TeeComp %s by spl0k"), GAME_VERSION, TEECOMP_VERSION);
 		UI()->DoLabel(&Button, aBuf, 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, 0);
 	}
@@ -209,7 +214,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
-			Info.m_aColors[i] = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+			Info.m_aColors[i] = vec4(r2/255.0f, g2/255.0f, b2/255.0f, 1.0f);
 		}
 	}
 	else
