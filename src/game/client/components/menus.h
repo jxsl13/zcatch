@@ -40,7 +40,7 @@ public:
 
 		const void *GetID() const { return &m_FadeStartTime; }
 	};
-	
+
 	typedef struct
 	{
 		CLocConstString m_Name;
@@ -590,15 +590,22 @@ private:
 	static float RenderSettingsControlsChat(CUIRect View, void *pUser);
 	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
 
+	// TeeComp related (TODO port)
+	int DoButton_ListRow(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
+	void UiDoKeybinder(CKeyInfo& pKey, CUIRect* r);
 	// TeeComp related
 	void RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled);
-	void UiDoKeybinder(CKeyInfo& pKey, CUIRect* r);
 	void RenderSettingsTeecomp(CUIRect MainView);
 	void RenderSettingsTeecompSkins(CUIRect MainView);
 	void RenderSettingsTeecompStats(CUIRect MainView);
 	void RenderSettingsTeecompMisc(CUIRect MainView);
 	void RenderSettingsTeecompAbout(CUIRect MainView);
 	void RenderLaser(const struct CNetObj_Laser *pCurrent);
+	// utilities
+	void NewLine(CUIRect *pButton, CUIRect *pView);
+	void NewLine();
+	CUIRect *m_pNewLineButton;
+	CUIRect *m_pNewLineView;
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);

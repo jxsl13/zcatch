@@ -1,4 +1,3 @@
-#ifdef TODO
 #include <string.h>
 
 #include <engine/shared/config.h>
@@ -19,6 +18,8 @@
 #include "items.h"
 
 #include <game/client/teecomp.h>
+
+#define TEECOMP_VERSION 1.0
 
 void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled)
 {
@@ -41,7 +42,7 @@ void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int 
 		}
 		else
 			DoScrollbarH(pColorSlider[i], pButton, 0);
-		UI()->DoLabel(&Text, pLabels[i], 15.0f, -1);
+		UI()->DoLabel(&Text, pLabels[i], 15.0f, CUI::ALIGN_LEFT);
 	}
 }
 
@@ -54,16 +55,16 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	{
 		MainView.HSplitBottom(20.0f, 0, &Button);
 		Button.VSplitLeft(MainView.w/3, &Button, 0);
-		static int s_DefaultButton = 0;
-		if(DoButton_Menu((void*)&s_DefaultButton, Localize("Reset to defaults"), 0, &Button))
+		static CButtonContainer s_DefaultButton;
+		if(DoButton_Menu(&s_DefaultButton, Localize("Reset to defaults"), 0, &Button))
 			CTeecompUtils::ResetConfig();
 
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
-		UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/teeworlds/", 10.0f, 1);
+		UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/teeworlds/", 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf),  Localize("Teeworlds %s with TeeComp %s by spl0k"), GAME_VERSION, TEECOMP_VERSION);
-		UI()->DoLabel(&Button, aBuf, 10.0f, 1);
+		UI()->DoLabel(&Button, aBuf, 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, 0);
 	}
 
@@ -98,6 +99,40 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		RenderSettingsTeecompAbout(MainView);
 }
 
+// TODO Teecomp port
+int CMenus::DoButton_ListRow(const void *pID, const char *pText, int Checked, const CUIRect *pRect)
+{
+	if(Checked)
+	{
+		CUIRect sr = *pRect;
+		sr.Margin(1.5f, &sr);
+		RenderTools()->DrawUIRect(&sr, vec4(1,1,1,0.5f), CUI::CORNER_ALL, 4.0f);
+	}
+	UI()->DoLabel(pRect, pText, pRect->h*ms_FontmodHeight, CUI::ALIGN_LEFT);
+	return UI()->DoButtonLogic(pID, pText, Checked, pRect);
+}
+// TODO Teecomp port
+void CMenus::UiDoKeybinder(CKeyInfo& pKey, CUIRect* r)
+{
+	CUIRect Label, Button;
+	r->HSplitTop(20.0f, &Button, r);
+	Button.VSplitRight(5.0f, &Button, 0);
+	Button.VSplitLeft(180.0f, &Label, &Button);
+
+	UI()->DoLabel(&Label, pKey.m_Name, 14.0f, CUI::ALIGN_LEFT);
+	int OldId = pKey.m_KeyId, OldModifier = pKey.m_Modifier, NewModifier;
+	int NewId = DoKeyReader(&pKey.m_BC, &Button, OldId, OldModifier, &NewModifier);
+	if(NewId != OldId || NewModifier != OldModifier)
+	{
+		if(OldId != 0 || NewId == 0)
+			m_pClient->m_pBinds->Bind(OldId, OldModifier, "");
+		if(NewId != 0)
+			m_pClient->m_pBinds->Bind(NewId, NewModifier, pKey.m_pCommand);
+	}
+	r->HSplitTop(5.0f, 0, r);
+}
+
+
 void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 {
 	CUIRect Button, LeftView, RightView;
@@ -116,7 +151,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		g_Config.m_TcDmColorsTeam1 ^= 1;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, -1);
+	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
 	int r1, g1, b1, r2, g2, b2;
 	r1 = g_Config.m_TcColoredTeesTeam1>>16;
 	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
@@ -124,19 +159,27 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderRgbSliders(&LeftView, &Button, r1, g1, b1, !g_Config.m_TcDmColorsTeam1);
 	g_Config.m_TcColoredTeesTeam1 = (r1<<16) + (g1<<8) + b1;
 
-	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1)));
+	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1, false)));
 	CTeeRenderInfo Info;
 	if(!g_Config.m_TcDmColorsTeam1)
 	{
-		Info.m_Texture = s->m_ColorTexture;
-		Info.m_ColorBody = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
-		Info.m_ColorFeet = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+		for(int i = 0; i < NUM_SKINPARTS; i++)
+		{
+			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
+			Info.m_aColors[i] = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+		}
+		// Info.m_ColorBody = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+		// Info.m_ColorFeet = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
 	}
 	else
 	{
-		Info.m_Texture = s->m_OrgTexture;
-		Info.m_ColorBody = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		Info.m_ColorFeet = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		for(int i = 0; i < NUM_SKINPARTS; i++)
+		{
+			Info.m_aTextures[i] = s->m_apParts[i]->m_OrgTexture;
+			Info.m_aColors[i] = vec4(1.0f, 1.0f, 1.0f, 1.0f);;
+		}
+		// Info.m_ColorBody = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		// Info.m_ColorFeet = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	Info.m_Size = UI()->Scale()*50.0f;
 
@@ -153,25 +196,29 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		g_Config.m_TcDmColorsTeam2 ^= 1;
 
 	RightView.HSplitTop(20.0f, &Button, &RightView);
-	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Enemies"):Localize("Team 2"), 14.0f, -1);
+	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Enemies"):Localize("Team 2"), 14.0f, CUI::ALIGN_LEFT);
 	r2 = g_Config.m_TcColoredTeesTeam2>>16;
 	g2 = (g_Config.m_TcColoredTeesTeam2>>8)&0xff;
 	b2 = g_Config.m_TcColoredTeesTeam2&0xff;
 	RenderRgbSliders(&RightView, &Button, r2, g2, b2, !g_Config.m_TcDmColorsTeam2);
 	g_Config.m_TcColoredTeesTeam2 = (r2<<16) + (g2<<8) + b2;
 
-	s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin2)));
+	s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin2, false)));
 	if(!g_Config.m_TcDmColorsTeam2)
 	{
-		Info.m_Texture = s->m_ColorTexture;
-		Info.m_ColorBody = vec4(r2/255.0f, g2/255.0f, b2/255.0f, 1.0f);
-		Info.m_ColorFeet = vec4(r2/255.0f, g2/255.0f, b2/255.0f, 1.0f);
+		for(int i = 0; i < NUM_SKINPARTS; i++)
+		{
+			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
+			Info.m_aColors[i] = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+		}
 	}
 	else
 	{
-		Info.m_Texture = s->m_OrgTexture;
-		Info.m_ColorBody = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		Info.m_ColorFeet = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		for(int i = 0; i < NUM_SKINPARTS; i++)
+		{
+			Info.m_aTextures[i] = s->m_apParts[i]->m_OrgTexture;
+			Info.m_aColors[i] = vec4(1.0f, 1.0f, 1.0f, 1.0f);;
+		}
 	}
 
 	Button.HSplitTop(70.0f, 0, &Button);
@@ -194,7 +241,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
-	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, 0);
+	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
 
 	RenderTools()->DrawUIRect(&SkinSelection, vec4(0,0,0,0.15f), 0, 0);
 	SkinSelection.VSplitRight(15, &SkinSelection, &Scroll);
@@ -226,7 +273,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 		Button.VMargin(5.0f, &Button);
 		Button.HSplitTop(1.0f, 0, &Button);
-		UI()->DoLabel(&Button, aBuf, 14.0f, -1);
+		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 
 		List.HSplitTop(20.0f, &Button, &List);
 	}
@@ -243,7 +290,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
-	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, 0);
+	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
 
 	RenderTools()->DrawUIRect(&SkinSelection, vec4(0,0,0,0.15f), 0, 0);
 	SkinSelection.VSplitRight(15, &SkinSelection, &Scroll);
@@ -275,7 +322,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 		Button.VMargin(5.0f, &Button);
 		Button.HSplitTop(1.0f, 0, &Button);
-		UI()->DoLabel(&Button, aBuf, 14.0f, -1);
+		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 
 		List.HSplitTop(20.0f, &Button, &List);
 	}
@@ -290,7 +337,7 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 	char aBuf[64];
 	str_format(aBuf, sizeof(aBuf), "%s:",  Localize("Show in global statboard"));
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, aBuf, 16.0f, -1);
+	UI()->DoLabel(&Button, aBuf, 16.0f, CUI::ALIGN_LEFT);
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos, Localize("Frags"), g_Config.m_TcStatboardInfos & TC_STATS_FRAGS, &Button))
@@ -337,7 +384,7 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 		g_Config.m_TcStatboardInfos ^= TC_STATS_FLAGCAPTURES;
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, Localize("Key bindings"), 16.0f, -1);
+	UI()->DoLabel(&Button, Localize("Key bindings"), 16.0f, CUI::ALIGN_LEFT);
 	char aaBuf[3][32];
 	str_format(aaBuf[0], sizeof(aaBuf[0]), "%s:", Localize("Global statboard"));
 	str_format(aaBuf[1], sizeof(aaBuf[1]), "%s:", Localize("Player board"));
@@ -348,7 +395,7 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 
 	for(int pKeyid=0; pKeyid < KEY_LAST; pKeyid++)
 	{
-		const char *Bind = m_pClient->m_pBinds->Get(pKeyid);
+		const char *Bind = m_pClient->m_pBinds->Get(pKeyid, 0); // no modifier for + commands
 		if(!Bind[0])
 			continue;
 
@@ -380,7 +427,7 @@ void CMenus::RenderLaser(const struct CNetObj_Laser *pCurrent)
 	vec2 Out, Border;
 	
 	Graphics()->BlendNormal();
-	Graphics()->TextureSet(-1);
+	// Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
 	
 	//vec4 inner_color(0.15f,0.35f,0.75f,1.0f);
@@ -445,7 +492,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	MainView.VSplitLeft(MainView.w/2, &LeftView, &RightView);
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, Localize("Name plates"), 16.0f, 0);
+	UI()->DoLabel(&Button, Localize("Name plates"), 16.0f, CUI::ALIGN_CENTER);
 	LeftView.HSplitTop(20.0f, 0, &LeftView);
 	RightView.HSplitTop(20.0f, 0, &RightView);
 
@@ -455,7 +502,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 
 	LeftView.HSplitTop(20.0f, 0, &LeftView);
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, Localize("HUD/Flag"), 16.0f, -1);
+	UI()->DoLabel(&Button, Localize("HUD/Flag"), 16.0f, CUI::ALIGN_LEFT);
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	if(DoButton_CheckBox(&g_Config.m_TcHudMatch, Localize("Make HUD match tees colors"), g_Config.m_TcHudMatch, &Button))
@@ -476,7 +523,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 
 	RightView.HSplitTop(20.0f, 0, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
-	UI()->DoLabel(&Button, Localize("Others"), 16.0f, -1);
+	UI()->DoLabel(&Button, Localize("Others"), 16.0f, CUI::ALIGN_LEFT);
 
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	if(DoButton_CheckBox(&g_Config.m_TcHideCarrying, Localize("Hide flag while carrying it"), g_Config.m_TcHideCarrying, &Button))
@@ -497,13 +544,13 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	else
 		str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Max Screenshots"), Localize("no limit"));
 		
-	UI()->DoLabelScaled(&Lable, aBuf, 13.0f, -1);
+	UI()->DoLabelScaled(&Lable, aBuf, 13.0f, CUI::ALIGN_LEFT);
 	g_Config.m_TcStatScreenshotMax = static_cast<int>(DoScrollbarH(&g_Config.m_TcStatScreenshotMax, &Button, g_Config.m_TcStatScreenshotMax/1000.0f)*1000.0f+0.1f);
 	
 	
 	LeftView.HSplitTop(50.0f, &Button, &LeftView);
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, "Laser", 16.0f, 1);
+	UI()->DoLabel(&Button, "Laser", 16.0f, CUI::ALIGN_RIGHT);
 	
 	int lri, lro, lgi, lgo, lbi, lbo;
 	lri = g_Config.m_TcLaserColorInner>>16;
@@ -511,7 +558,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	lbi = g_Config.m_TcLaserColorInner&0xff;
 	
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	UI()->DoLabel(&Button, Localize("Laser inner color"), 14.0f, -1);
+	UI()->DoLabel(&Button, Localize("Laser inner color"), 14.0f, CUI::ALIGN_LEFT);
 	RenderRgbSliders(&LeftView, &Button, lri, lgi, lbi, true);
 	g_Config.m_TcLaserColorInner = (lri<<16) + (lgi<<8) + lbi;
 	
@@ -522,7 +569,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	
 	RightView.HSplitTop(80.0f, &Button, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
-	UI()->DoLabel(&Button, Localize("Laser outer color"), 14.0f, -1);
+	UI()->DoLabel(&Button, Localize("Laser outer color"), 14.0f, CUI::ALIGN_LEFT);
 	
 	RenderRgbSliders(&RightView, &Button, lro, lgo, lbo, true);
 	g_Config.m_TcLaserColorOuter = (lro<<16) + (lgo<<8) + lbo;
@@ -536,7 +583,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 		
 		// Calculate world screen mapping
 		float aPoints[4];
-		RenderTools()->MapscreenToWorld(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, Graphics()->ScreenAspect(), 1.0f, aPoints);
+		RenderTools()->MapScreenToWorld(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, Graphics()->ScreenAspect(), 1.0f, aPoints);
 		aPoints[2] = aPoints[2] - aPoints[0];
 		aPoints[3] = aPoints[3] - aPoints[1];
 		aPoints[0] = 0.0f;
@@ -569,44 +616,63 @@ void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 	
 	char aBuf[32];
 	MainView.HSplitTop(52.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, "TeeComp", 48.0f, 0);
+	UI()->DoLabel(&Button, "TeeComp", 48.0f, CUI::ALIGN_CENTER);
+
 	NewLine(&Button, &MainView);
 	Button.VSplitRight(Button.w/3, 0, &Button);
 	str_format(aBuf, sizeof(aBuf), "%s %s", Localize("Version"), TEECOMP_VERSION);
-	UI()->DoLabel(&Button, aBuf, 14.0f, -1);
+	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	NewLine();
 	Button.VSplitRight(Button.w/3, 0, &Button);
 	str_format(aBuf, sizeof(aBuf), "%s %s", Localize("For Teeworlds"), GAME_VERSION);
-	UI()->DoLabel(&Button, aBuf, 14.0f, -1);
+	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	NewLine();
 	Button.VSplitRight(Button.w/3, 0, &Button);
 	str_format(aBuf, sizeof(aBuf), "%s %s %s", Localize("Compiled"), __DATE__, __TIME__);
-	UI()->DoLabel(&Button, aBuf, 14.0f, -1);
+	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 
-	MainView.HSplitTop(40.0f, 0, &MainView);
 	NewLine();
-	UI()->DoLabel(&Button, Localize("By Alban 'spl0k' FERON"), 14.0f, 0);
 	NewLine();
-	UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/", 14.0f, 0);
+	NewLine();
+	UI()->DoLabel(&Button, Localize("By Alban 'spl0k' FERON"), 14.0f, CUI::ALIGN_CENTER);
+	NewLine();
+	UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/", 14.0f, CUI::ALIGN_CENTER);
 
-	MainView.HSplitTop(20.0f, 0, &MainView);
 	NewLine();
-	UI()->DoLabel(&Button, Localize("Special thanks to:"), 16.0f, 0);
 	NewLine();
-	UI()->DoLabel(&Button, "Sd`", 14.0f, 0);
+	UI()->DoLabel(&Button, Localize("Special thanks to:"), 16.0f, CUI::ALIGN_CENTER);
 	NewLine();
-	UI()->DoLabel(&Button, "Tho", 14.0f, 0);
+	UI()->DoLabel(&Button, "Sd`", 14.0f, CUI::ALIGN_CENTER);
 	NewLine();
-	UI()->DoLabel(&Button, "Eve", 14.0f, 0);
+	UI()->DoLabel(&Button, "Tho", 14.0f, CUI::ALIGN_CENTER);
 	NewLine();
-	UI()->DoLabel(&Button, Localize("some other MonkeyStyle members"), 14.0f, 0);
+	UI()->DoLabel(&Button, "Eve", 14.0f, CUI::ALIGN_CENTER);
 	NewLine();
-	UI()->DoLabel(&Button, Localize("and the Teeworlds.com community"), 14.0f, 0);
+	UI()->DoLabel(&Button, Localize("some other MonkeyStyle members"), 14.0f, CUI::ALIGN_CENTER);
+	NewLine();
+	UI()->DoLabel(&Button, Localize("and the Teeworlds.com community"), 14.0f, CUI::ALIGN_CENTER);
 
 	MainView.HSplitBottom(10.0f, &MainView, &Button);
-	UI()->DoLabel(&Button, Localize("so you can set while u set while u set options"), 10.0f, -1);
+	UI()->DoLabel(&Button, Localize("so you can set while u set while u set options"), 10.0f, CUI::ALIGN_LEFT);
 	MainView.HSplitBottom(10.0f, &MainView, &Button);
-	UI()->DoLabel(&Button, Localize("Yo dawg I herd you like tabs so we put tabs in yo tabs in yo tabs"), 10.0f, -1);
+	UI()->DoLabel(&Button, Localize("Yo dawg I herd you like tabs so we put tabs in yo tabs in yo tabs"), 10.0f, CUI::ALIGN_LEFT);
 	NewLine(NULL, NULL);
 }
-#endif
+
+// utilities (remove?)
+void CMenus::NewLine(CUIRect *pButton, CUIRect *pView)
+{
+	m_pNewLineButton = pButton;
+	m_pNewLineView = pView;
+	
+	if(m_pNewLineButton == NULL || m_pNewLineView == NULL)
+		return;
+	NewLine();
+}
+
+void CMenus::NewLine()
+{
+	if(m_pNewLineButton == NULL || m_pNewLineView == NULL)
+		return;
+	m_pNewLineView->HSplitTop(20.0f, m_pNewLineButton, m_pNewLineView);
+}
