@@ -26,6 +26,6 @@ MACRO_CONFIG_INT(TcStatScreenshotMax, tc_stat_screenshot_max, 10, 0, 1000, CFGFL
 MACRO_CONFIG_INT(TcLaserColorInner, tc_laser_color_inner, 8355839, 0, 16777215, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Inner color of laser")
 MACRO_CONFIG_INT(TcLaserColorOuter, tc_laser_color_outer, 1250112, 0, 16777215, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Outer color of laser")
 
-// to port from 0.5
+// Not implemented to port from 0.5
 MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
 MACRO_CONFIG_INT(TcSpeedmeterAccel, tc_speedmeter_accel, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Speed meter shows acceleration")
