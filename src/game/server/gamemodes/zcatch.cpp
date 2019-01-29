@@ -295,10 +295,18 @@ int CGameController_zCatch::OnCharacterDeath(class CCharacter *pVictim, class CP
 		for(int i = 0; i < MAX_CLIENTS; i++)
 			if(GameServer()->m_apPlayers[i] && !GameServer()->m_apPlayers[i]->m_SpecExplicit)
 				++numPlayers;
-		/* you can at max get that many points as there are players playing */
-		pKiller->m_Score += min(victim->m_zCatchNumKillsInARow + 1, numPlayers);
-		++pKiller->m_Kills;
-		++victim->m_Deaths;
+
+		/*
+		 * Previously you got not one score per kill, 
+		 * but score based on the enemies your victim has caught:
+		 * 
+		 * pKiller->m_Score += min(victim->m_zCatchNumKillsInARow + 1, numPlayers);
+		 */	
+		
+		// Now you get one score per enemy killed.
+		pKiller->m_Score += 1;	
+		pKiller->m_Kills += 1;
+		victim->m_Deaths += 1;
 		/* Check if the killer has been already killed and is in spectator (victim may died through wallshot) */
 		if(pKiller->GetTeam() != TEAM_SPECTATORS && (!pVictim->m_KillerLastDieTickBeforceFiring || pVictim->m_KillerLastDieTickBeforceFiring == pKiller->m_DieTick))
 		{
