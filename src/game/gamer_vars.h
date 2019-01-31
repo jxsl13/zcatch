@@ -19,6 +19,8 @@ MACRO_CONFIG_INT(ClGhud, cl_ghud, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Gamer H
 MACRO_CONFIG_INT(ClNoHud, cl_nohud, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Remove HUD")
 MACRO_CONFIG_INT(ClNoAmmoWarning, cl_noammo_warning, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Prints a red and yellow warning when you use all your ammo")
 
+MACRO_CONFIG_INT(ClShowAdmins, cl_show_admins, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display admins in the scoreboard")
+
 // Positions
 // MACRO_CONFIG_STR(ClRedbaseMsg, cl_redbase_msg, 64, "I am at the RED BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the red base")
 // MACRO_CONFIG_STR(ClBluebaseMsg, cl_bluebase_msg, 64, "I am at the BLUE BASE", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Message to send when being at the blue base")
