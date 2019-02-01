@@ -484,6 +484,22 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			m_pClient->m_pCountryFlags->Render(m_pClient->m_aClients[pInfo->m_ClientID].m_Country, &CFColor,
 				CountryFlagOffset, y + 3.0f, 30.0f, LineHeight-5.0f);
 
+			// gamer detection
+			if(g_Config.m_ClClientRecognition && 
+				m_pClient->m_LocalClientID != pInfo->m_ClientID && // not for the local client
+				(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")))
+			{
+				// gamer symbol
+				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);
+				Graphics()->QuadsBegin();
+				RenderTools()->SelectSprite(SPRITE_GAMERICON);
+				// Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.75f*ColorAlpha);
+				IGraphics::CQuadItem QuadItem(CountryFlagOffset + 30.0f-10.0f, y, 10, 10);
+				Graphics()->QuadsDrawTL(&QuadItem, 1);
+				Graphics()->QuadsEnd();
+			}
+
 			// flag
 			if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && m_pClient->m_Snap.m_pGameDataFlag &&
 				(m_pClient->m_Snap.m_pGameDataFlag->m_FlagCarrierRed == pInfo->m_ClientID ||
@@ -547,22 +563,18 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 				TextRender()->SetCursor(&Cursor, Cursor.m_X, y+Spacing, FontSize, TEXTFLAG_RENDER);
 				TextRender()->TextEx(&Cursor, "\xE2\x9C\x93", str_length("\xE2\x9C\x93"));
 			}
+
+			// admin detection
+			if(g_Config.m_ClShowAdmins && (pInfo->m_pPlayerInfo->m_PlayerFlags&PLAYERFLAG_ADMIN))
+			{
+				if(HighlightedLine)
+					TextRender()->TextOutlineColor(0.1f, 0.0f, 0.0f, 0.5f);
+				TextRender()->TextColor(1.0f, 0.1f, 0.1f, ColorAlpha);
+				TextRender()->SetCursor(&Cursor, Cursor.m_X+1, y+Spacing, FontSize, TEXTFLAG_RENDER);
+				TextRender()->TextEx(&Cursor, "*", str_length("*"));
+			}
 			TextRender()->TextColor(TextColor.r, TextColor.g, TextColor.b, ColorAlpha);
 			TextRender()->TextOutlineColor(OutlineColor.r, OutlineColor.g, OutlineColor.b, OutlineColor.a);
-
-			// gamer detection
-			if(g_Config.m_ClClientRecognition && 
-				(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
-				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")))
-			{
-				// gamer symbol
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);
-				Graphics()->QuadsBegin();
-				RenderTools()->SelectSprite(SPRITE_GAMERICON);
-				IGraphics::CQuadItem QuadItem(Cursor.m_X+1, y+1, 10, 10);
-				Graphics()->QuadsDrawTL(&QuadItem, 1);
-				Graphics()->QuadsEnd();
-			}
 
 			// clan
 			tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[pInfo->m_ClientID].m_aClan, -1/*, TEXTFLAG_STOP_AT_END, ClanLength*/);

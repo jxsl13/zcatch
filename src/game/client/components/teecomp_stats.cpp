@@ -10,8 +10,6 @@
 #include <generated/client_data.h>
 #include "teecomp_stats.h"
 
-#define TCRENDER
-
 CTeecompStats::CTeecompStats()
 {
 	m_Mode = 0;
@@ -222,7 +220,6 @@ void CTeecompStats::OnMessage(int MsgType, void *pRawMsg)
 
 void CTeecompStats::OnRender()
 {
-#ifdef TCRENDER
 	// auto stat screenshot stuff
 	if(g_Config.m_TcStatScreenshot)
 	{
@@ -248,12 +245,10 @@ void CTeecompStats::OnRender()
 			RenderIndividualStats();
 			break;
 	}
-#endif
 }
 
 void CTeecompStats::RenderGlobalStats()
 {
-#ifdef TCRENDER
 	if(m_Mode != 1)
 		return;
 
@@ -262,36 +257,17 @@ void CTeecompStats::RenderGlobalStats()
 	float w = 250.0f;
 	float h = 750.0f;
 
-	// const CNetObj_PlayerInfo *apPlayers[MAX_CLIENTS] = {0};
 	int apPlayers[MAX_CLIENTS] = {0};
 	int NumPlayers = 0;
 	int i;
-	// for(i=0; i<Client()->SnapNumItems(IClient::SNAP_CURRENT); i++)
-	// {
-	// 	IClient::CSnapItem Item;
-	// 	const void *pData = Client()->SnapGetItem(IClient::SNAP_CURRENT, i, &Item);
-
-	// 	if(Item.m_Type == NETOBJTYPE_PLAYERINFO)
-	// 	{
-	// 		const CNetObj_PlayerInfo *pInfo = (const CNetObj_PlayerInfo *)pData;
-
-	// 		if(!m_pClient->m_aStats[pInfo->m_ClientID].m_Active)
-	// 			continue;
-
-	// 		apPlayers[NumPlayers] = pInfo;
-	// 		NumPlayers++;
-	// 	}
-	// }
 	for(i=0; i<MAX_CLIENTS; i++)
 	{
-		// if(!m_pClient->m_aStats[i].m_Active)
 		if(!m_pClient->m_aClients[i].m_Active)
 			continue;
 
 		apPlayers[NumPlayers] = i;
 		NumPlayers++;
 	}
-	// Dunedune: the game ALWAYS detects numplayers=0 FFS WHY?
 
 	for(int i=0; i<9; i++)
 		if(g_Config.m_TcStatboardInfos & (1<<i))
@@ -302,7 +278,7 @@ void CTeecompStats::RenderGlobalStats()
 				w += 100;
 		}
 
-	if(/*m_pClient->m_Snap.m_pGameData && */m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 		w += 100;
 
 	bool aDisplayWeapon[NUM_WEAPONS] = {false};
@@ -311,7 +287,6 @@ void CTeecompStats::RenderGlobalStats()
 		w += 10;
 		for(i=0; i<NumPlayers; i++)
 		{
-			// const CGameClient::CClientStats pStats = m_pClient->m_aStats[apPlayers[i]->m_ClientID];
 			const CGameClient::CClientStats pStats = m_pClient->m_aStats[apPlayers[i]];
 			for(int j=0; j<NUM_WEAPONS; j++)
 				aDisplayWeapon[j] = aDisplayWeapon[j] || pStats.m_aFragsWith[j] || pStats.m_aDeathsFrom[j];
@@ -394,19 +369,13 @@ void CTeecompStats::RenderGlobalStats()
 	}
 	for(int j=0; j<NumPlayers; j++)
 	{
-		// const CNetObj_PlayerInfo *pInfo = apPlayers[j];
-		// const CGameClient::CClientStats Stats = m_pClient->m_aStats[pInfo->m_ClientID];
 		const CGameClient::CClientStats Stats = m_pClient->m_aStats[apPlayers[j]];		
 
-		// if(pInfo->m_Local)
 		if(apPlayers[j] == m_pClient->m_LocalClientID)
 		{
 			// background so it's easy to find the local player
-			// Graphics()->TextureSet(-1);
-			{
-				CUIRect Rect = {x, y, w-20, LineHeight*0.95f};
-				RenderTools()->DrawRoundRect(&Rect, vec4(1,1,1,0.25f), 17.0f);
-			}
+			CUIRect Rect = {x, y, w-20, LineHeight*0.95f};
+			RenderTools()->DrawRoundRect(&Rect, vec4(1,1,1,0.25f), 17.0f);
 		}
 
 		CTeeRenderInfo Teeinfo = m_pClient->m_aClients[apPlayers[j]].m_RenderInfo;
@@ -425,7 +394,6 @@ void CTeecompStats::RenderGlobalStats()
 		TextRender()->SetCursor(&Cursor, x+64, y, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 220;
 		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
-		//TextRender()->Text(0, x+64, y, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
 
 		px = 325;
 		if(g_Config.m_TcStatboardInfos & TC_STATS_FRAGS)
@@ -515,10 +483,8 @@ void CTeecompStats::RenderGlobalStats()
 		}
 		y += LineHeight;
 	}
-#endif
 }
 
-#ifdef TCRENDER
 void CTeecompStats::RenderIndividualStats()
 {
 	if(m_Mode != 2)
@@ -689,5 +655,3 @@ void CTeecompStats::AutoStatScreenshot()
 	/*if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		Client()->AutoStatScreenshot_Start();*/
 }
-
-#endif
