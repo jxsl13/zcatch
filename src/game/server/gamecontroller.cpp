@@ -610,9 +610,9 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 		}
 		break;
 	case IGS_END_ROUND:
-		if(DoWincheckMatch())
-			break;
 	case IGS_END_MATCH:
+		if(GameState == IGS_END_ROUND && DoWincheckMatch())
+			break;
 		// only possible when game is running or over
 		if(m_GameState == IGS_GAME_RUNNING || m_GameState == IGS_END_MATCH || m_GameState == IGS_END_ROUND || m_GameState == IGS_GAME_PAUSED)
 		{
@@ -655,6 +655,16 @@ void IGameController::StartRound()
 		SetGameState(IGS_START_COUNTDOWN);
 	else
 		SetGameState(IGS_WARMUP_GAME, TIMER_INFINITE);
+}
+
+void IGameController::SwapTeamscore()
+{
+	if(!IsTeamplay())
+		return;
+
+	int Score = m_aTeamscore[TEAM_RED];
+	m_aTeamscore[TEAM_RED] = m_aTeamscore[TEAM_BLUE];
+	m_aTeamscore[TEAM_BLUE] = Score;
 }
 
 // general

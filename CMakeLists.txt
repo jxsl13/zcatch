@@ -65,6 +65,7 @@ if(TARGET_OS STREQUAL "windows")
 endif()
 
 option(CLIENT "Compile client" ON)
+option(DOWNLOAD_DEPENDENCIES "Download dependencies (only available on Windows)" ${AUTO_DEPENDENCIES_DEFAULT})
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
 
@@ -85,6 +86,28 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 
 set(SERVER_EXECUTABLE teeworlds_srv CACHE STRING "Name of the built server executable")
 set(CLIENT_EXECUTABLE teeworlds CACHE STRING "Name of the build client executable")
+
+########################################################################
+# Download dependencies
+########################################################################
+
+find_package(PythonInterp)
+if(DOWNLOAD_DEPENDENCIES)
+  if(PYTHON_EXECUTABLE AND TARGET_OS STREQUAL "windows" AND TARGET_BITS)
+    set(DOWNLOADS)
+    foreach(d freetype sdl)
+      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/other/${d}/${TARGET_OS}/lib${TARGET_BITS}")
+        list(APPEND DOWNLOADS ${d})
+      endif()
+    endforeach()
+    if(DOWNLOADS)
+      message(STATUS "Downloading Freetype and SDL 2")
+      execute_process(COMMAND ${PYTHON_EXECUTABLE} scripts/download.py ${DOWNLOADS}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      )
+    endif()
+  endif()
+endif()
 
 ########################################################################
 # Compiler flags
@@ -110,7 +133,13 @@ endfunction()
 if(NOT MSVC)
   # Protect the stack pointer.
   # -fstack-protector-all doesn't work on MinGW.
-  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-all)
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-strong)
+
+  # Protect the stack from clashing.
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-clash-protection)
+
+  # Control-flow protection. Should protect against ROP.
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fcf-protection)
 
   # Inaccurate floating point numbers cause problems on mingw-w64-gcc when
   # compiling for x86, might cause problems elsewhere. So don't store floats
@@ -257,7 +286,6 @@ find_package(ZLIB)
 find_package(Freetype)
 find_package(Git)
 find_package(Pnglite)
-find_package(PythonInterp)
 find_package(SDL2)
 find_package(Threads)
 find_package(Wavpack)
@@ -1407,6 +1435,7 @@ endif()
 
 set_src(MASTERSRV_SRC GLOB src/mastersrv mastersrv.cpp mastersrv.h)
 set_src(VERSIONSRV_SRC GLOB src/versionsrv mapversions.h versionsrv.cpp versionsrv.h)
+list(APPEND VERSIONSRV_SRC ${PROJECT_BINARY_DIR}/src/generated/nethash.cpp)
 
 set(TARGET_MASTERSRV mastersrv)
 set(TARGET_VERSIONSRV versionsrv)
@@ -1774,6 +1803,7 @@ foreach(target ${TARGETS})
   if(DEFINE_FORTIFY_SOURCE)
     target_compile_definitions(${target} PRIVATE $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>) # Detect some buffer overflows.
   endif()
+  target_compile_definitions(${target} PRIVATE _GLIBCXX_ASSERTIONS) # Enable run-time bounds-checking for the STL
 endforeach()
 
 foreach(target ${TARGETS_LINK})

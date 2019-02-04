@@ -257,7 +257,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 		Graphics()->QuadsEnd();
 
 		// marker
-		vec2 Marker = vec2(Sat/2.0f*UI()->Scale(), Lgt/2.0f*UI()->Scale());
+		vec2 Marker = vec2(Sat/2.0f, Lgt/2.0f);
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -301,7 +301,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 			RenderTools()->DrawUIRect(&Label, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 			Label.VSplitLeft((Label.w-160.0f)/2.0f, &Label, &Button);
 			Label.y += 2.0f;
-			UI()->DoLabelScaled(&Label, apNames[i], SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+			UI()->DoLabel(&Label, apNames[i], SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 			// button <
 			Button.VSplitLeft(Button.h, &Button, &Bar);
@@ -386,7 +386,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 			// bar marker
 			Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
-			IGraphics::CQuadItem QuadItem(Bar.x + min(127.0f, *apVars[i]/2.0f)*UI()->Scale(), Bar.y, UI()->PixelSize(), Bar.h);
+			IGraphics::CQuadItem QuadItem(Bar.x + min(127.0f, *apVars[i]/2.0f), Bar.y, UI()->PixelSize(), Bar.h);
 			Graphics()->QuadsDrawTL(&QuadItem, 1);
 			Graphics()->QuadsEnd();
 
@@ -402,7 +402,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 			char aBuf[16];
 			str_format(aBuf, sizeof(aBuf), "%d", *apVars[i]);
 			Label.y += 2.0f;
-			UI()->DoLabelScaled(&Label, aBuf, SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+			UI()->DoLabel(&Label, aBuf, SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 			// logic
 			float X;
@@ -761,12 +761,12 @@ void CMenus::RenderLanguageSelection(CUIRect MainView, bool Header)
 			{
 				TextRender()->TextColor(0.0f, 0.0f, 0.0f, 1.0f);
 				TextRender()->TextOutlineColor(1.0f, 1.0f, 1.0f, 0.25f);
-				UI()->DoLabelScaled(&Item.m_Rect, r.front().m_Name, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Item.m_Rect, r.front().m_Name, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 				TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 			}
 			else
-				UI()->DoLabelScaled(&Item.m_Rect, r.front().m_Name, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Item.m_Rect, r.front().m_Name, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 		}
 	}
 
@@ -853,12 +853,12 @@ void CMenus::RenderThemeSelection(CUIRect MainView, bool Header)
 			{
 				TextRender()->TextColor(0.0f, 0.0f, 0.0f, 1.0f);
 				TextRender()->TextOutlineColor(1.0f, 1.0f, 1.0f, 0.25f);
-				UI()->DoLabelScaled(&Item.m_Rect, aName, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Item.m_Rect, aName, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 				TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 			}
 			else
-				UI()->DoLabelScaled(&Item.m_Rect, aName, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Item.m_Rect, aName, Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
 		}
 	}
 
@@ -1315,7 +1315,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 		Left.VSplitMid(&Label, &Left);
 		Label.y += 17.0f;
-		UI()->DoLabelScaled(&Label, Localize("Normal:"), ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Label, Localize("Normal:"), ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 		RenderTools()->DrawUIRect(&Left, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 
@@ -1343,7 +1343,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 		Right.VSplitLeft(Right.w/3.0f+SpacingW/2.0f, &Label, &Right);
 		Label.y += 17.0f;
-		UI()->DoLabelScaled(&Label, Localize("Team:"), ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Label, Localize("Team:"), ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 		Right.VSplitMid(&Left, &Right);
 		Left.VSplitRight(SpacingW/2.0f, &Left, 0);
@@ -1436,70 +1436,46 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	BottomView.HSplitTop(20.f, 0, &BottomView);
 
-	// split scrollbar from main view
-	CUIRect Scroll;
-	MainView.VSplitRight(20.0f, &MainView, &Scroll);
-	RenderTools()->DrawUIRect(&Scroll, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
-
 	const float HeaderHeight = 20.0f;
-	const float ItemHeight = 20.0f+2.0f;
-	const float MainViewH = MainView.h;
 
-	// make scrollbar
-	static int s_ScrollBar = 0;
-	static int s_ScrollNum = 0;
-	static float s_ScrollValue = 0.f;
-	static float TotalHeight = 0.f;
-	Scroll.HMargin(5.0f, &Scroll);
-	s_ScrollValue = DoScrollbarV(&s_ScrollBar, &Scroll, s_ScrollValue);
+	static CScrollRegion s_ScrollRegion;
+	vec2 ScrollOffset(0, 0);
+	BeginScrollRegion(&s_ScrollRegion, &MainView, &ScrollOffset);
+	MainView.y += ScrollOffset.y;
 
-	UI()->ClipEnable(&MainView);
-	if(TotalHeight - MainView.h > 0)
-		MainView.y -= s_ScrollValue*(TotalHeight - MainView.h);
-
-	TotalHeight = 0.f;
 	static int s_MovementDropdown = 0;
 	static bool s_MovementActive = true;
+	CUIRect LastExpandRect;
 	float Split = DoIndependentDropdownMenu(&s_MovementDropdown, &MainView, Localize("Movement"), HeaderHeight, RenderSettingsControlsMovement, &s_MovementActive);
 
-	TotalHeight += Split+10.0f;
-	MainView.HSplitTop(Split+10.0f, 0, &MainView);
+	MainView.HSplitTop(Split+10.0f, &LastExpandRect, &MainView);
+	ScrollRegionAddRect(&s_ScrollRegion, LastExpandRect);
 	static int s_WeaponDropdown = 0;
 	static bool s_WeaponActive = true;
 	Split = DoIndependentDropdownMenu(&s_WeaponDropdown, &MainView, Localize("Weapon"), HeaderHeight, RenderSettingsControlsWeapon, &s_WeaponActive);
 
-	TotalHeight += Split+10.0f;
-	MainView.HSplitTop(Split+10.0f, 0, &MainView);
+	MainView.HSplitTop(Split+10.0f, &LastExpandRect, &MainView);
+	ScrollRegionAddRect(&s_ScrollRegion, LastExpandRect);
 	static int s_VotingDropdown = 0;
 	static bool s_VotingActive = true;
 	Split = DoIndependentDropdownMenu(&s_VotingDropdown, &MainView, Localize("Voting"), HeaderHeight, RenderSettingsControlsVoting, &s_VotingActive);
 
-	TotalHeight += Split+10.0f;
-	MainView.HSplitTop(Split+10.0f, 0, &MainView);
+	MainView.HSplitTop(Split+10.0f, &LastExpandRect, &MainView);
+	ScrollRegionAddRect(&s_ScrollRegion, LastExpandRect);
 	static int s_ChatDropdown = 0;
 	static bool s_ChatActive = true;
 	Split = DoIndependentDropdownMenu(&s_ChatDropdown, &MainView, Localize("Chat"), HeaderHeight, RenderSettingsControlsChat, &s_ChatActive);
 
-	TotalHeight += Split+10.0f;
-	MainView.HSplitTop(Split+10.0f, 0, &MainView);
+	MainView.HSplitTop(Split+10.0f, &LastExpandRect, &MainView);
+	ScrollRegionAddRect(&s_ScrollRegion, LastExpandRect);
 	static int s_MiscDropdown = 0;
 	static bool s_MiscActive = true;
 	Split = DoIndependentDropdownMenu(&s_MiscDropdown, &MainView, Localize("Misc"), HeaderHeight, RenderSettingsControlsMisc, &s_MiscActive);
-	TotalHeight += Split;
-	UI()->ClipDisable();
 
-	// handle scrolling
-	float ProperHeight = (TotalHeight-5*HeaderHeight-40.0f);
-	s_ScrollNum = /*ceil*/((ProperHeight-MainViewH)/ItemHeight);
-	if(s_ScrollNum <= 0)
-		s_ScrollNum = 1;
-	// We could && UI()->MouseInside(&MainView)), but that does not work well because the controls settings menu got holes
-	if(Input()->KeyPress(KEY_MOUSE_WHEEL_UP))
-		s_ScrollValue -= 3.0f/s_ScrollNum; // will be set to 0 by clamp if scrollnum is too small
-	if(Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN))
-		s_ScrollValue += 3.0f/s_ScrollNum; // will be set to 1 by clamp if scrollnum is too small
-	s_ScrollValue = clamp(s_ScrollValue, 0.f, 1.f);
+	MainView.HSplitTop(Split+10.0f, &LastExpandRect, &MainView);
+	ScrollRegionAddRect(&s_ScrollRegion, LastExpandRect);
+
+	EndScrollRegion(&s_ScrollRegion);
 
 	// reset button
 	float Spacing = 3.0f;
@@ -1548,7 +1524,7 @@ bool CMenus::DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 				TextRender()->TextColor(0.0f, 0.0f, 0.0f, 1.0f);
 				TextRender()->TextOutlineColor(1.0f, 1.0f, 1.0f, 0.25f);
 				Item.m_Rect.y += 2.0f;
-				UI()->DoLabelScaled(&Item.m_Rect, aBuf, Item.m_Rect.h*ms_FontmodHeight*0.8f,
+				UI()->DoLabel(&Item.m_Rect, aBuf, Item.m_Rect.h*ms_FontmodHeight*0.8f,
 									CUI::ALIGN_CENTER);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 				TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
@@ -1556,7 +1532,7 @@ bool CMenus::DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 			else
 			{
 				Item.m_Rect.y += 2.0f;
-				UI()->DoLabelScaled(&Item.m_Rect, aBuf, Item.m_Rect.h*ms_FontmodHeight*0.8f,
+				UI()->DoLabel(&Item.m_Rect, aBuf, Item.m_Rect.h*ms_FontmodHeight*0.8f,
 									CUI::ALIGN_CENTER);
 			}
 		}
@@ -2035,7 +2011,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		RenderTools()->DrawUIRect(&RestartWarning, vec4(1.0f, 1.0f, 1.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 		// text
-		TextRender()->TextColor(0.973f, 0.863f, 0.207, 1.0f);
+		TextRender()->TextColor(0.973f, 0.863f, 0.207f, 1.0f);
 		RestartWarning.y += 2.0f;
 		if(m_NeedRestartGraphics || m_NeedRestartSound)
 			UI()->DoLabel(&RestartWarning, Localize("You must restart the game for all settings to take effect."), RestartWarning.h*ms_FontmodHeight*0.75f, CUI::ALIGN_CENTER);

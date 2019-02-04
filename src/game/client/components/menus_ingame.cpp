@@ -84,7 +84,7 @@ void CMenus::RenderGame(CUIRect MainView)
 		CUIRect Bar;
 		MainView.HSplitBottom(NoteHeight, &MainView, &Bar);
 		Bar.HMargin(15.0f, &Bar);
-		UI()->DoLabelScaled(&Bar, Info.m_aNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Bar, Info.m_aNotification, 14.0f, CUI::ALIGN_CENTER);
 	}
 
 	// buttons
@@ -719,7 +719,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		MainView.HSplitTop(45.0f, &Bar, &MainView);
 		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
 		Bar.HMargin(15.0f, &Bar);
-		UI()->DoLabelScaled(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
 	}
 
@@ -769,7 +769,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		// only print notice
 		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 		MainView.HMargin(15.0f, &MainView);
-		UI()->DoLabelScaled(&MainView, pNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&MainView, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
 	}
 
@@ -860,10 +860,10 @@ void CMenus::RenderServerControl(CUIRect MainView)
 				Extended.HSplitTop(20.0f, &Bottom, &Extended);
 				Bottom.VSplitLeft(5.0f, 0, &Bottom);
 				Bottom.VSplitLeft(250.0f, &Button, &Bottom);
-				UI()->DoLabelScaled(&Button, Localize("Vote description:"), 14.0f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Button, Localize("Vote description:"), 14.0f, CUI::ALIGN_LEFT);
 
 				Bottom.VSplitLeft(20.0f, 0, &Button);
-				UI()->DoLabelScaled(&Button, Localize("Vote command:"), 14.0f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Button, Localize("Vote command:"), 14.0f, CUI::ALIGN_LEFT);
 
 				static char s_aVoteDescription[64] = {0};
 				static char s_aVoteCommand[512] = {0};

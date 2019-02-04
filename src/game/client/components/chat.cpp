@@ -382,6 +382,10 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 		g_Config.m_ClFilterchat == 2 ||
 		(m_pClient->m_LocalClientID != ClientID && g_Config.m_ClFilterchat == 1 && !m_pClient->m_aClients[ClientID].m_Friend))))
 		return;
+	if(Mode == CHAT_WHISPER && (TargetID == -1 || !m_pClient->m_aClients[TargetID].m_Active || // unknown client
+		m_pClient->m_aClients[TargetID].m_ChatIgnore ||	g_Config.m_ClFilterchat == 2 ||
+		(m_pClient->m_LocalClientID != TargetID && g_Config.m_ClFilterchat == 1 && !m_pClient->m_aClients[TargetID].m_Friend)))
+		return;
 
 	// trim right and set maximum length to 128 utf8-characters
 	int Length = 0;
@@ -597,9 +601,9 @@ void CChat::OnRender()
 		}
 
 		// draw a background box
-		const vec4 CRCWhite(1, 1, 1, 0.25);
-		const vec4 CRCTeam(0.4, 1, 0.4, 0.4);
-		const vec4 CRCWhisper(0, 0.5, 1, 0.5);
+		const vec4 CRCWhite(1.0f, 1.0f, 1.0f, 0.25f);
+		const vec4 CRCTeam(0.4f, 1.0f, 0.4f, 0.4f);
+		const vec4 CRCWhisper(0.0f, 0.5f, 1.0f, 0.5f);
 
 		vec4 CatRectColor = CRCWhite;
 		if(m_Mode == CHAT_TEAM)
