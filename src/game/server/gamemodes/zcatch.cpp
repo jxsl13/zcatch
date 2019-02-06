@@ -1053,7 +1053,7 @@ void CGameController_zCatch::ChatCommandStatsFetchDataAndPrint(CGameContext* Gam
                 int seconds = (static_cast<int>(timePlayed_stat) / 60) % 60;
 
                 s << desc << "\n";
-                s << "║  Score: " 							<< score_stat / 100.0	<< "\n"
+                s << "║  Score: " 							<< (score_stat / 100.0)	<< "\n"
                     << "║  Number of Wins: " 				<< numWins_stat			<< "\n"
                     << "║  Number of Kills: " 				<< numKills_stat 		<< "\n";
 
@@ -1143,8 +1143,6 @@ void CGameController_zCatch::OnChatCommandStats(CPlayer *pPlayer, const char *cm
 void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* GameServer, int clientId, char *name, bool sendToEveryone)
 {
 
-	dbg_msg("TEST", "TEST: %f", pointsToEnemiesKilled(enemiesKilledToPoints(15)));
-
 	std::string rankedName(name);
 	std::string requestingName(GameServer->Server()->ClientName(clientId));
 
@@ -1231,7 +1229,7 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s << std::fixed;
 					if (score % 100){	s << std::fixed << std::setprecision(2);	}
 					else { 				s << std::fixed << std::setprecision(0);	}
-					s << score / 100.0;
+					s << (score / 100.0);
 					s << "  and to next Rank: ";
 					s << std::fixed;
 					if (scoreToNextRank % 100){	s << std::setprecision(2);	}
