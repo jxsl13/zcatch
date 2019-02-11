@@ -64,10 +64,9 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 			CTeecompUtils::ResetConfig();
 
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
-		UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/teeworlds/", 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("Teeworlds %s with TeeComp %s by spl0k"), GAME_VERSION, TEECOMP_VERSION);
+		str_format(aBuf, sizeof(aBuf), Localize("Teeworlds %s with TeeComp %s"), GAME_VERSION, TEECOMP_VERSION);
 		UI()->DoLabel(&Button, aBuf, 10.0f, CUI::ALIGN_RIGHT);
 		MainView.HSplitBottom(10.0f, &MainView, 0);
 	}
