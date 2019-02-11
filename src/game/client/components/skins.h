@@ -69,7 +69,7 @@ public:
 
 	vec3 GetColorV3(int v) const;
 	vec4 GetColorV4(int v, bool UseAlpha) const;
-	int GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part) const;
+	int GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part, int TeamColor = -1) const; // last param for teecomp
 
 private:
 	int m_ScanningPart;

@@ -366,13 +366,16 @@ vec4 CSkins::GetColorV4(int v, bool UseAlpha) const
 	return vec4(r.r, r.g, r.b, Alpha);
 }
 
-int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part) const
+int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part, int TeamColor) const
 {
 	static const int s_aTeamColors[3] = {0xC4C34E, 0x00FF6B, 0x9BFF6B};
 
-	int TeamHue = (s_aTeamColors[Team+1]>>16)&0xff;
-	int TeamSat = (s_aTeamColors[Team+1]>>8)&0xff;
-	int TeamLgt = s_aTeamColors[Team+1]&0xff;
+	if(TeamColor == -1) // no color set, use default ones
+		TeamColor = s_aTeamColors[Team+1];		
+
+	int TeamHue = (TeamColor>>16)&0xff;
+	int TeamSat = (TeamColor>>8)&0xff;
+	int TeamLgt = TeamColor&0xff;
 	int PartSat = (PartColor>>8)&0xff;
 	int PartLgt = PartColor&0xff;
 

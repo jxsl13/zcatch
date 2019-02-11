@@ -1489,7 +1489,10 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 		for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
 			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
-			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+			// int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+			int Col = CTeecompUtils::GetTeamColorInt(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
+				g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, Col); // teecomp
 			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
 		}
 	}
