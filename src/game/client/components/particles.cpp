@@ -3,6 +3,7 @@
 #include <base/math.h>
 #include <engine/graphics.h>
 #include <engine/demo.h>
+#include <engine/shared/config.h>
 
 #include <generated/client_data.h>
 #include <game/client/render.h>
@@ -135,6 +136,9 @@ void CParticles::Update(float TimePassed)
 void CParticles::OnRender()
 {
 	if(Client()->State() < IClient::STATE_ONLINE)
+		return;
+
+	if(g_Config.m_GfxMinimapMode)
 		return;
 
 	static int64 LastTime = 0;

@@ -226,6 +226,28 @@ void CPlayers::RenderPlayer(
 
 	RenderInfo.m_GotAirJump = Player.m_Jumped&2?0:1;
 
+	// Gamer: minimap
+	if(g_Config.m_GfxMinimapMode)
+	{
+		if(m_pClient->m_LocalClientID == ClientID)
+		{
+			const int Size = 48;
+			bool flash = time_get()/(time_freq()/2)%2 == 0;
+			
+			Graphics()->TextureClear();
+			Graphics()->QuadsBegin();
+			if(flash)
+				Graphics()->SetColor(0.9, 0.2f, 0.2f, 1);
+			else
+				Graphics()->SetColor(0.2, 0.5f, 0.2f, 1);
+			IGraphics::CQuadItem QuadItem(Position.x-Size/2, Position.y-Size/2, Size, Size);
+			Graphics()->QuadsDrawTL(&QuadItem, 1);
+			Graphics()->SetColor(1,1,1,1);
+			Graphics()->QuadsEnd();
+		}
+		return;
+	}	
+
 	bool Stationary = Player.m_VelX <= 1 && Player.m_VelX >= -1;
 	bool InAir = !Collision()->CheckPoint(Player.m_X, Player.m_Y+16);
 	bool WantOtherDir = (Player.m_Direction == -1 && Vel.x > 0) || (Player.m_Direction == 1 && Vel.x < 0);

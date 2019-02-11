@@ -248,6 +248,7 @@ void CGameClient::OnConsoleInit()
 	// add the some console commands
 	Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
 	Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
+	Console()->Register("+minimap", "", CFGFLAG_CLIENT, ConMinimap, this, "Show the minimap"); // Gamer: minimap
 	Console()->Register("ready_change", "", CFGFLAG_CLIENT, ConReadyChange, this, "Change ready state");
 
 	Console()->Chain("add_friend", ConchainFriendUpdate, this);
@@ -1621,6 +1622,11 @@ void CGameClient::ConTeam(IConsole::IResult *pResult, void *pUserData)
 void CGameClient::ConKill(IConsole::IResult *pResult, void *pUserData)
 {
 	((CGameClient*)pUserData)->SendKill();
+}
+
+void CGameClient::ConMinimap(IConsole::IResult *pResult, void *pUserData)
+{
+	g_Config.m_GfxMinimapMode = pResult->GetInteger(0) != 0;
 }
 
 void CGameClient::ConReadyChange(IConsole::IResult *pResult, void *pUserData)

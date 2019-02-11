@@ -163,6 +163,9 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 
 void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent, const CNetObj_GameDataFlag *pPrevGameDataFlag, const CNetObj_GameDataFlag *pCurGameDataFlag)
 {
+	if(g_Config.m_GfxMinimapMode)
+		return;
+
 	float Angle = 0.0f;
 	float Size = 42.0f;
 
