@@ -84,7 +84,7 @@ void CMenus::RenderGame(CUIRect MainView)
 		CUIRect Bar;
 		MainView.HSplitBottom(NoteHeight, &MainView, &Bar);
 		Bar.HMargin(15.0f, &Bar);
-		UI()->DoLabelScaled(&Bar, Info.m_aNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Bar, Info.m_aNotification, 14.0f, CUI::ALIGN_CENTER);
 	}
 
 	// buttons
@@ -699,9 +699,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	const char *pNotification = 0;
 	char aBuf[64];
 
-	if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_SPECTATORS)
-		pNotification = Localize("Spectators aren't allowed to start a vote.");
-	else if(m_pClient->m_pVoting->IsVoting())
+	if(m_pClient->m_pVoting->IsVoting())
 		pNotification = Localize("Wait for current vote to end before calling a new one.");
 	else if(m_pClient->m_pVoting->CallvoteBlockTime() != 0)
 	{
@@ -719,7 +717,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		MainView.HSplitTop(45.0f, &Bar, &MainView);
 		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
 		Bar.HMargin(15.0f, &Bar);
-		UI()->DoLabelScaled(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
 	}
 
@@ -769,9 +767,12 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		// only print notice
 		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 		MainView.HMargin(15.0f, &MainView);
-		UI()->DoLabelScaled(&MainView, pNotification, 14.0f, CUI::ALIGN_CENTER);
+		UI()->DoLabel(&MainView, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
 	}
+
+	if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_SPECTATORS)
+		pNotification = Localize("Spectators aren't allowed to start a vote.");
 
 	// render background
 	MainView.HSplitBottom(90.0f+2*20.0f, &MainView, &Extended);
@@ -780,7 +781,8 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	bool doCallVote = false;
 	// render page
 	if(s_ControlPage == 0)
-		doCallVote = RenderServerControlServer(MainView); // double click triggers vote
+		// double click triggers vote if not spectating
+		doCallVote = RenderServerControlServer(MainView) && m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team != TEAM_SPECTATORS; 
 	else if(s_ControlPage == 1)
 		RenderServerControlKick(MainView, false);
 	else if(s_ControlPage == 2)
@@ -791,33 +793,35 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	Extended.HSplitTop(20.0f, &Note, &Extended);
 	Extended.HSplitTop(20.0f, &Bottom, &Extended);
 	{
-		Bottom.VSplitRight(120.0f, &Bottom, &Button);
-
-		// render kick reason
-		CUIRect Reason, ClearButton, Label;
-		Bottom.VSplitRight(40.0f, &Bottom, 0);
-		Bottom.VSplitRight(160.0f, &Bottom, &Reason);
-		Reason.VSplitRight(Reason.h, &Reason, &ClearButton);
-		const char *pLabel = Localize("Reason:");
-		float w = TextRender()->TextWidth(0, Reason.h*ms_FontmodHeight*0.8f, pLabel, -1);
-		Reason.VSplitLeft(w + 10.0f, &Label, &Reason);
-		Label.y += 2.0f;
-		UI()->DoLabel(&Label, pLabel, Reason.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
-		static float s_Offset = 0.0f;
-		DoEditBox(&m_aCallvoteReason, &Reason, m_aCallvoteReason, sizeof(m_aCallvoteReason), Reason.h*ms_FontmodHeight*0.8f, &s_Offset, false, CUI::CORNER_L);
-
-		// clear button
-		{
-			static CButtonContainer s_ClearButton;
-			float Fade = ButtonFade(&s_ClearButton, 0.6f);
-			RenderTools()->DrawUIRect(&ClearButton, vec4(1.0f, 1.0f, 1.0f, 0.33f+(Fade/0.6f)*0.165f), CUI::CORNER_R, 3.0f);
-			Label = ClearButton;
+		if(Authed || m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team != TEAM_SPECTATORS){
+			Bottom.VSplitRight(120.0f, &Bottom, &Button);
+			
+			// render kick reason
+			CUIRect Reason, ClearButton, Label;
+			Bottom.VSplitRight(40.0f, &Bottom, 0);
+			Bottom.VSplitRight(160.0f, &Bottom, &Reason);
+			Reason.VSplitRight(Reason.h, &Reason, &ClearButton);
+			const char *pLabel = Localize("Reason:");
+			float w = TextRender()->TextWidth(0, Reason.h*ms_FontmodHeight*0.8f, pLabel, -1);
+			Reason.VSplitLeft(w + 10.0f, &Label, &Reason);
 			Label.y += 2.0f;
-			UI()->DoLabel(&Label, "x", Label.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
-			if(UI()->DoButtonLogic(s_ClearButton.GetID(), "x", 0, &ClearButton))
-				m_aCallvoteReason[0] = 0;
-		}
+			UI()->DoLabel(&Label, pLabel, Reason.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+			static float s_Offset = 0.0f;
+			DoEditBox(&m_aCallvoteReason, &Reason, m_aCallvoteReason, sizeof(m_aCallvoteReason), Reason.h*ms_FontmodHeight*0.8f, &s_Offset, false, CUI::CORNER_L);
 
+			// clear button
+			{
+				static CButtonContainer s_ClearButton;
+				float Fade = ButtonFade(&s_ClearButton, 0.6f);
+				RenderTools()->DrawUIRect(&ClearButton, vec4(1.0f, 1.0f, 1.0f, 0.33f+(Fade/0.6f)*0.165f), CUI::CORNER_R, 3.0f);
+				Label = ClearButton;
+				Label.y += 2.0f;
+				UI()->DoLabel(&Label, "x", Label.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+				if(UI()->DoButtonLogic(s_ClearButton.GetID(), "x", 0, &ClearButton))
+					m_aCallvoteReason[0] = 0;
+			}
+		}
+ 
 		if(pNotification == 0)
 		{
 			// call vote
@@ -825,10 +829,10 @@ void CMenus::RenderServerControl(CUIRect MainView)
 			if(DoButton_Menu(&s_CallVoteButton, Localize("Call vote"), 0, &Button) || doCallVote)
 				HandleCallvote(s_ControlPage, false);
 		}
-		else
+		else if (!Authed)
 		{
 			// print notice
-			UI()->DoLabel(&Note, pNotification, Note.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT, Note.w);
+			UI()->DoLabel(&Note, pNotification, Note.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 		}
 
 		// extended features (only available when authed in rcon)
@@ -860,10 +864,10 @@ void CMenus::RenderServerControl(CUIRect MainView)
 				Extended.HSplitTop(20.0f, &Bottom, &Extended);
 				Bottom.VSplitLeft(5.0f, 0, &Bottom);
 				Bottom.VSplitLeft(250.0f, &Button, &Bottom);
-				UI()->DoLabelScaled(&Button, Localize("Vote description:"), 14.0f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Button, Localize("Vote description:"), 14.0f, CUI::ALIGN_LEFT);
 
 				Bottom.VSplitLeft(20.0f, 0, &Button);
-				UI()->DoLabelScaled(&Button, Localize("Vote command:"), 14.0f, CUI::ALIGN_LEFT);
+				UI()->DoLabel(&Button, Localize("Vote command:"), 14.0f, CUI::ALIGN_LEFT);
 
 				static char s_aVoteDescription[64] = {0};
 				static char s_aVoteCommand[512] = {0};

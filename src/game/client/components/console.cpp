@@ -647,7 +647,7 @@ void CGameConsole::Toggle(int Type)
 		{
 			Input()->MouseModeRelative();
 			m_pClient->m_pMenus->UseMouseButtons(true);
-			m_pClient->OnRelease();
+			// m_pClient->OnRelease(); // gamer
 			m_ConsoleState = CONSOLE_CLOSING;
 		}
 	}

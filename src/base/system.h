@@ -14,6 +14,12 @@
 extern "C" {
 #endif
 
+#ifdef __GNUC__
+#define GNUC_ATTRIBUTE(x) __attribute__(x)
+#else
+#define GNUC_ATTRIBUTE(x)
+#endif
+
 /* Group: Debug */
 /*
 
@@ -68,7 +74,8 @@ void dbg_break();
 	See Also:
 		<dbg_assert>
 */
-void dbg_msg(const char *sys, const char *fmt, ...);
+void dbg_msg(const char *sys, const char *fmt, ...)
+GNUC_ATTRIBUTE((format(printf, 2, 3)));
 
 /* Group: Memory */
 
@@ -825,7 +832,8 @@ int str_length(const char *str);
 		- The strings are treated as zero-terminated strings.
 		- Garantees that dst string will contain zero-termination.
 */
-void str_format(char *buffer, int buffer_size, const char *format, ...);
+void str_format(char *buffer, int buffer_size, const char *format, ...)
+GNUC_ATTRIBUTE((format(printf, 3, 4)));
 
 /*
 	Function: str_sanitize_strong
@@ -1157,6 +1165,19 @@ void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user);
 		in a failure if b or a does not exist.
 */
 int fs_makedir(const char *path);
+
+/*
+	Function: fs_makedir_recursive
+		Recursively create directories
+
+	Parameters:
+		path - Path to create
+
+	Returns:
+		Returns 0 on success. Negative value on failure.
+*/
+int fs_makedir_recursive(const char *path);
+
 
 /*
 	Function: fs_storage_path

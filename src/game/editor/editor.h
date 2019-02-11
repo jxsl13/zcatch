@@ -3,7 +3,7 @@
 #ifndef GAME_EDITOR_EDITOR_H
 #define GAME_EDITOR_EDITOR_H
 
-#include <math.h>
+#include <algorithm>
 
 #include <base/math.h>
 #include <base/system.h>
@@ -67,7 +67,7 @@ public:
 
 	void Resort()
 	{
-		sort(m_lPoints.all());
+		std::stable_sort(&m_lPoints[0], &m_lPoints[m_lPoints.size()]);
 		FindTopBottom(0xf);
 	}
 
@@ -286,6 +286,7 @@ public:
 	char m_aName[128];
 	unsigned char m_aTileFlags[256];
 	class IAutoMapper *m_pAutoMapper;
+	bool operator<(const CEditorImage &Other) const { return str_comp(m_aName, Other.m_aName); }
 };
 
 class CEditorMap
@@ -352,7 +353,7 @@ public:
 		if(Index1 < 0 || Index1 >= m_lGroups.size()) return Index0;
 		if(Index0 == Index1) return Index0;
 		m_Modified = true;
-		swap(m_lGroups[Index0], m_lGroups[Index1]);
+		tl_swap(m_lGroups[Index0], m_lGroups[Index1]);
 		return Index1;
 	}
 

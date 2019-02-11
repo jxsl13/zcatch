@@ -138,6 +138,106 @@ private:
 	//static void demolist_listdir_callback(const char *name, int is_dir, void *user);
 	//static void demolist_list_callback(const CUIRect *rect, int index, void *user);
 
+	struct CScrollRegionParams
+	{
+		float m_ScrollbarWidth;
+		float m_ScrollbarMargin;
+		float m_SliderMinHeight;
+		float m_ScrollSpeed;
+		vec4 m_ClipBgColor;
+		vec4 m_ScrollbarBgColor;
+		vec4 m_RailBgColor;
+		vec4 m_SliderColor;
+		vec4 m_SliderColorHover;
+		vec4 m_SliderColorGrabbed;
+		int m_Flags;
+
+		enum {
+			FLAG_CONTENT_STATIC_WIDTH = 0x1
+		};
+
+		CScrollRegionParams()
+		{
+			m_ScrollbarWidth = 20;
+			m_ScrollbarMargin = 5;
+			m_SliderMinHeight = 25;
+			m_ScrollSpeed = 5;
+			m_ClipBgColor = vec4(0.0f, 0.0f, 0.0f, 0.5f);
+			m_ScrollbarBgColor = vec4(0.0f, 0.0f, 0.0f, 0.5f);
+			m_RailBgColor = vec4(1.0f, 1.0f, 1.0f, 0.25f);
+			m_SliderColor = vec4(0.8f, 0.8f, 0.8f, 1.0f);
+			m_SliderColorHover = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			m_SliderColorGrabbed = vec4(0.9f, 0.9f, 0.9f, 1.0f);
+			m_Flags = 0;
+		}
+	};
+
+	struct CScrollRegion
+	{
+		float m_ScrollY;
+		float m_ContentH;
+		float m_RequestScrollY; // [0, ContentHeight]
+		CUIRect m_ClipRect;
+		CUIRect m_OldClipRect;
+		CUIRect m_RailRect;
+		CUIRect m_LastAddedRect; // saved for ScrollHere()
+		vec2 m_MouseGrabStart;
+		vec2 m_ContentScrollOff;
+		bool m_WasClipped;
+		CScrollRegionParams m_Params;
+
+		enum {
+			SCROLLHERE_KEEP_IN_VIEW=0,
+			SCROLLHERE_TOP,
+			SCROLLHERE_BOTTOM,
+		};
+
+		CScrollRegion()
+		{
+			m_ScrollY = 0;
+			m_ContentH = 0;
+			m_RequestScrollY = -1;
+			m_ContentScrollOff = vec2(0,0);
+			m_WasClipped = false;
+			m_Params = CScrollRegionParams();
+		}
+	};
+
+	// Scroll region
+	/*
+
+	Usage:
+		-- Initialization --
+		static CScrollRegion s_ScrollRegion;
+		vec2 ScrollOffset(0, 0);
+		BeginScrollRegion(&s_ScrollRegion, &ScrollRegionRect, &ScrollOffset);
+		Content = ScrollRegionRect;
+		Content.y += ScrollOffset.y;
+
+		-- "Register" your content rects --
+		CUIRect Rect;
+		Content.HSplitTop(SomeValue, &Rect, &Content);
+		ScrollRegionAddRect(&s_ScrollRegion, Rect);
+
+		-- [Optionnal] Knowing if a rect is clipped --
+		ScrollRegionIsRectClipped(&s_ScrollRegion, Rect);
+
+		-- [Optionnal] Scroll to a rect (to the last added rect)--
+		...
+		ScrollRegionAddRect(&s_ScrollRegion, Rect);
+		ScrollRegionScrollHere(&s_ScrollRegion, Option);
+
+		-- End --
+		EndScrollRegion(&s_ScrollRegion);
+
+	*/
+
+	void BeginScrollRegion(CScrollRegion* pSr, CUIRect* pClipRect, vec2* pOutOffset, const CScrollRegionParams* pParams = 0);
+	void EndScrollRegion(CScrollRegion* pSr);
+	void ScrollRegionAddRect(CScrollRegion* pSr, CUIRect Rect);
+	void ScrollRegionScrollHere(CScrollRegion* pSr, int Option = CScrollRegion::SCROLLHERE_KEEP_IN_VIEW);
+	bool ScrollRegionIsRectClipped(CScrollRegion* pSr, const CUIRect& Rect);
+
 	enum
 	{
 		POPUP_NONE=0,
@@ -227,7 +327,7 @@ private:
 		bool m_HasDay;
 		bool m_HasNight;
 		IGraphics::CTextureHandle m_IconTexture;
-		bool operator<(const CTheme &Other) { return m_Name < Other.m_Name; }
+		bool operator<(const CTheme &Other) const { return m_Name < Other.m_Name; }
 	};
 	sorted_array<CTheme> m_lThemes;
 
@@ -319,7 +419,7 @@ private:
 		bool m_Valid;
 		CDemoHeader m_Info;
 
-		bool operator<(const CDemoItem &Other) { return !str_comp(m_aFilename, "..") ? true : !str_comp(Other.m_aFilename, "..") ? false :
+		bool operator<(const CDemoItem &Other) const { return !str_comp(m_aFilename, "..") ? true : !str_comp(Other.m_aFilename, "..") ? false :
 														m_IsDir && !Other.m_IsDir ? true : !m_IsDir && Other.m_IsDir ? false :
 														str_comp_filenames(m_aFilename, Other.m_aFilename) < 0; }
 	};
@@ -352,7 +452,7 @@ private:
 			m_pServerInfo = 0;
 		}
 
-		bool operator<(const CFriendItem &Other)
+		bool operator<(const CFriendItem &Other) const
 		{
 			if(m_aName[0] && !Other.m_aName[0])
 				return true;

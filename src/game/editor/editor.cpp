@@ -161,7 +161,7 @@ int CLayerGroup::SwapLayers(int Index0, int Index1)
 	if(Index1 < 0 || Index1 >= m_lLayers.size()) return Index0;
 	if(Index0 == Index1) return Index0;
 	m_pMap->m_Modified = true;
-	swap(m_lLayers[Index0], m_lLayers[Index1]);
+	tl_swap(m_lLayers[Index0], m_lLayers[Index1]);
 	return Index1;
 }
 
@@ -290,8 +290,6 @@ int CEditor::DoEditBox(void *pID, const CUIRect *pRect, char *pStr, unsigned Str
 	static int s_AtIndex = 0;
 	static bool s_DoScroll = false;
 	static float s_ScrollStart = 0.0f;
-
-	FontSize *= UI()->Scale();
 
 	if(UI()->LastActiveItem() == pID)
 	{
@@ -2090,7 +2088,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 									// move up
 									if(m_SelectedQuad < pQuadLayer->m_lQuads.size()-1)
 									{
-										swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad+1]);
+										tl_swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad+1]);
 										m_SelectedQuad++;
 									}
 								}
@@ -2099,7 +2097,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 									// move down
 									if(m_SelectedQuad > 0)
 									{
-										swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad-1]);
+										tl_swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad-1]);
 										m_SelectedQuad--;
 									}
 								}
@@ -2109,7 +2107,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 									int NumQuads = pQuadLayer->m_lQuads.size();
 									while(m_SelectedQuad < NumQuads-1)
 									{
-										swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad+1]);
+										tl_swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad+1]);
 										m_SelectedQuad++;
 									}
 								}
@@ -2118,7 +2116,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 									// move to back
 									while(m_SelectedQuad > 0)
 									{
-										swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad-1]);
+										tl_swap(pQuadLayer->m_lQuads[m_SelectedQuad], pQuadLayer->m_lQuads[m_SelectedQuad-1]);
 										m_SelectedQuad--;
 									}
 								}
@@ -2824,14 +2822,6 @@ int CEditor::PopupImage(CEditor *pEditor, CUIRect View)
 	return 0;
 }
 
-static int CompareImageName(const void *pObject1, const void *pObject2)
-{
-	CEditorImage *pImage1 = *(CEditorImage**)pObject1;
-	CEditorImage *pImage2 = *(CEditorImage**)pObject2;
-
-	return str_comp(pImage1->m_aName, pImage2->m_aName);
-}
-
 static int *gs_pSortedIndex = 0;
 static void ModifySortedIndex(int *pIndex)
 {
@@ -2854,7 +2844,7 @@ void CEditor::SortImages()
 		array<CEditorImage*> lTemp = array<CEditorImage*>(m_Map.m_lImages);
 		gs_pSortedIndex = new int[lTemp.size()];
 
-		qsort(m_Map.m_lImages.base_ptr(), m_Map.m_lImages.size(), sizeof(CEditorImage*), CompareImageName);
+		std::stable_sort(&m_Map.m_lImages[0], &m_Map.m_lImages[m_Map.m_lImages.size()]);
 
 		for(int OldIndex = 0; OldIndex < lTemp.size(); OldIndex++)
 			for(int NewIndex = 0; NewIndex < m_Map.m_lImages.size(); NewIndex++)
@@ -3517,7 +3507,6 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 		static int sEnvelopeEditorID = 0;
 		static int s_ActiveChannels = 0xf;
 
-		if(pEnvelope)
 		{
 			CUIRect Button;
 
@@ -3578,23 +3567,20 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 		if(UI()->HotItem() == &sEnvelopeEditorID)
 		{
 			// do stuff
-			if(pEnvelope)
+			if(UI()->MouseButtonClicked(1))
 			{
-				if(UI()->MouseButtonClicked(1))
-				{
-					// add point
-					int Time = (int)(((UI()->MouseX()-View.x)*TimeScale)*1000.0f);
-					float aChannels[4];
-					pEnvelope->Eval(Time/1000.0f, aChannels);
-					pEnvelope->AddPoint(Time,
-						f2fx(aChannels[0]), f2fx(aChannels[1]),
-						f2fx(aChannels[2]), f2fx(aChannels[3]));
-					m_Map.m_Modified = true;
-				}
-
-				m_ShowEnvelopePreview = SHOWENV_SELECTED;
-				m_pTooltip = "Press right mouse button to create a new point";
+				// add point
+				int Time = (int)(((UI()->MouseX()-View.x)*TimeScale)*1000.0f);
+				float aChannels[4];
+				pEnvelope->Eval(Time/1000.0f, aChannels);
+				pEnvelope->AddPoint(Time,
+					f2fx(aChannels[0]), f2fx(aChannels[1]),
+					f2fx(aChannels[2]), f2fx(aChannels[3]));
+				m_Map.m_Modified = true;
 			}
+
+			m_ShowEnvelopePreview = SHOWENV_SELECTED;
+			m_pTooltip = "Press right mouse button to create a new point";
 		}
 
 		vec3 aColors[] = {vec3(1,0.2f,0.2f), vec3(0.2f,1,0.2f), vec3(0.2f,0.2f,1), vec3(1,1,0.2f)};
