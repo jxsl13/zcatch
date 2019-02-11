@@ -18,6 +18,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/teecomp.h>
 
 #include "menus.h"
 #include "motd.h"
@@ -126,7 +127,14 @@ void CMenus::RenderGame(CUIRect MainView)
 					str_copy(aBuf, Localize("locked"), sizeof(aBuf));
 			}
 			else
-				str_copy(aBuf, Localize(Team != TEAM_RED ? "Join red" : "Joined red"), sizeof(aBuf)); // Localize("Join red");Localize("Joined red");
+				//str_copy(aBuf, Localize(Team != TEAM_RED ? "Join red" : "Joined red"), sizeof(aBuf)); // Localize("Join red");Localize("Joined red");
+			{
+				if(Team == TEAM_SPECTATORS || g_Config.m_TcColoredTeesMethod == 0)
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam1));
+				else
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
+				//str_format(aBuf, sizeof(aBuf), "%s", Localize(aBuf)); // todo teecomp
+			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);
@@ -152,7 +160,11 @@ void CMenus::RenderGame(CUIRect MainView)
 					str_copy(aBuf, Localize("locked"), sizeof(aBuf));
 			}
 			else
-				str_copy(aBuf, Localize(Team != TEAM_BLUE ? "Join blue" : "Joined blue"), sizeof(aBuf)); // Localize("Join blue");Localize("Joined blue");
+				//str_copy(aBuf, Localize(Team != TEAM_BLUE ? "Join blue" : "Joined blue"), sizeof(aBuf)); // Localize("Join blue");Localize("Joined blue");
+			{
+				str_format(aBuf, sizeof(aBuf), Team != TEAM_BLUE ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
+				//str_format(aBuf, sizeof(aBuf), "%s", Localize(aBuf)); // todo teecomp
+			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);

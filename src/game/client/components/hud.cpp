@@ -213,9 +213,23 @@ void CHud::RenderScoreHud()
 					{
 						// draw flag
 						Graphics()->BlendNormal();
-						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+						if(g_Config.m_TcColoredFlags)
+							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+						else
+							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 						Graphics()->QuadsBegin();
 						RenderTools()->SelectSprite(t==0?SPRITE_FLAG_RED:SPRITE_FLAG_BLUE);
+						
+						if(g_Config.m_TcColoredFlags)
+						{
+							vec3 Col = CTeecompUtils::GetTeamColor(t,
+																   m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
+																   g_Config.m_TcColoredTeesTeam1,
+																   g_Config.m_TcColoredTeesTeam2,
+																   g_Config.m_TcColoredTeesMethod);
+							Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+						}
+
 						IGraphics::CQuadItem QuadItem(Whole-ScoreWidthMax-ImageSize, StartY+1.0f+t*20, ImageSize/2, ImageSize);
 						Graphics()->QuadsDrawTL(&QuadItem, 1);
 						Graphics()->QuadsEnd();

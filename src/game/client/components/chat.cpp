@@ -15,6 +15,7 @@
 
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
+#include <game/client/teecomp.h>
 
 #include "menus.h"
 #include "chat.h"
@@ -902,9 +903,27 @@ void CChat::OnRender()
 		else if(Line.m_Mode == CHAT_TEAM)
 			TextColor = ColorTeamPre;
 		else if(Line.m_NameColor == TEAM_RED)
-			TextColor = ColorRed;
+		{
+			// if(!m_pClient->m_Snap.m_pLocalInfo)
+			// 	TextColor = ColorRed;
+			// else
+			{
+				vec3 TColor = CTeecompUtils::GetTeamColor(0, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
+					g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);
+			}
+		}
 		else if(Line.m_NameColor == TEAM_BLUE)
-			TextColor = ColorBlue;
+		{
+			// if(!m_pClient->m_Snap.m_pLocalInfo)
+			// 	TextColor = ColorBlue;
+			// else
+			{
+				vec3 TColor = CTeecompUtils::GetTeamColor(1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
+					g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);
+			}	
+		}
 		else if(Line.m_NameColor == TEAM_SPECTATORS)
 			TextColor = ColorSpec;
 		else

@@ -17,6 +17,7 @@
 #include <generated/client_data.h>
 
 #include <game/version.h>
+#include <game/client/teecomp.h>
 #include "localization.h"
 #include "render.h"
 
@@ -98,9 +99,9 @@ const char *CGameClient::GetTeamName(int Team, bool Teamplay) const
 	if(Teamplay)
 	{
 		if(Team == TEAM_RED)
-			return Localize("red team", "'X joined the <red team>' (server message)");
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam1)); // todo teecomp fix for tccoloredteesmethod
 		else if(Team == TEAM_BLUE)
-			return Localize("blue team", "'X joined the <blue team>' (server message)");
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam2)); // todo teecomp fix for tccoloredteesmethod
 	}
 	else if(Team == 0)
 		return Localize("game", "'X joined the <game>' (server message)");
@@ -1490,6 +1491,17 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
 			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
 			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+		}
+	}
+	else if(g_Config.m_TcForceSkinTeam2 && ClientID != pGameClient->m_LocalClientID) // Force DM skin
+	{
+		const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(max(0, pGameClient->m_pSkins->Find(g_Config.m_TcForcedSkin2, false)));
+		for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			if(pSkin->m_aUseCustomColors[p])
+				m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+			else
+				m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
 		}
 	}
 }
