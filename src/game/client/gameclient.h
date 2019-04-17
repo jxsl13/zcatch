@@ -59,6 +59,7 @@ class CGameClient : public IGameClient
 	static void ConTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConKill(IConsole::IResult *pResult, void *pUserData);
 	static void ConReadyChange(IConsole::IResult *pResult, void *pUserData);
+	static void ConchainSkinChange(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainFriendUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainXmasHatUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
@@ -170,10 +171,10 @@ public:
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
 		int m_Country;
-		char m_aaSkinPartNames[6][24];
-		int m_aUseCustomColors[6];
-		int m_aSkinPartColors[6];
-		int m_SkinPartIDs[6];
+		char m_aaSkinPartNames[NUM_SKINPARTS][24];
+		int m_aUseCustomColors[NUM_SKINPARTS];
+		int m_aSkinPartColors[NUM_SKINPARTS];
+		int m_SkinPartIDs[NUM_SKINPARTS];
 		int m_Team;
 		int m_Emoticon;
 		int m_EmoticonStart;
@@ -188,6 +189,7 @@ public:
 		bool m_Friend;
 
 		void UpdateRenderInfo(CGameClient *pGameClient, int ClientID, bool UpdateSkinInfo);
+		void UpdateBotRenderInfo(CGameClient *pGameClient, int ClientID);
 		void Reset(CGameClient *pGameClient, int CLientID);
 	};
 
@@ -197,6 +199,7 @@ public:
 	bool m_MuteServerBroadcast;
 	float m_TeamChangeTime;
 	bool m_IsXmasDay;
+	float m_LastSkinChangeTime;
 
 	struct CGameInfo
 	{
@@ -296,7 +299,6 @@ public:
 	virtual const char *Version() const;
 	virtual const char *NetVersion() const;
 	virtual int ClientVersion() const;
-	const char *GetTeamName(int Team, bool Teamplay) const;
 	static void GetPlayerLabel(char* aBuf, int BufferSize, int ClientID, const char* ClientName);
 	bool IsXmas() const;
 
@@ -311,6 +313,7 @@ public:
 	void SendStartInfo();
 	void SendKill();
 	void SendReadyChange();
+	void SendSkinChange();
 
 	// pointers to all systems
 	class CAnnouncers *m_pAnnouncers;

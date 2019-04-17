@@ -657,7 +657,7 @@ int CGraphicsBackend_SDL_OpenGL::Init(const char *pName, int *Screen, int *pWidt
 	m_NumScreens = SDL_GetNumVideoDisplays();
 	if(m_NumScreens > 0)
 	{
-		clamp(*Screen, 0, m_NumScreens-1);
+		*Screen = clamp(*Screen, 0, m_NumScreens-1);
 		if(SDL_GetDisplayBounds(*Screen, &ScreenPos) != 0)
 		{
 			dbg_msg("gfx", "unable to retrieve screen information: %s", SDL_GetError());
@@ -672,17 +672,14 @@ int CGraphicsBackend_SDL_OpenGL::Init(const char *pName, int *Screen, int *pWidt
 	}
 
 	// store desktop resolution for settings reset button
-	SDL_DisplayMode DisplayMode;
-	if(SDL_GetDesktopDisplayMode(*Screen, &DisplayMode))
+	if(!GetDesktopResolution(*Screen, pDesktopWidth, pDesktopHeight))
 	{
 		dbg_msg("gfx", "unable to get desktop resolution: %s", SDL_GetError());
 		return -1;
 	}
-	*pDesktopWidth = DisplayMode.w;
-	*pDesktopHeight = DisplayMode.h;
 
 	// use desktop resolution as default resolution
-	if (*pWidth == 0 || *pWidth == 0)
+	if (*pWidth == 0 || *pHeight == 0)
 	{
 		*pWidth = *pDesktopWidth;
 		*pHeight = *pDesktopHeight;
@@ -702,6 +699,9 @@ int CGraphicsBackend_SDL_OpenGL::Init(const char *pName, int *Screen, int *pWidt
 #else
 		SdlFlags |= SDL_WINDOW_FULLSCREEN;
 #endif
+
+	if(Flags&IGraphicsBackend::INITFLAG_X11XRANDR)
+		SDL_SetHint(SDL_HINT_VIDEO_X11_XRANDR, "1");
 
 	// set gl attributes
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -844,6 +844,17 @@ bool CGraphicsBackend_SDL_OpenGL::SetWindowScreen(int Index)
 int CGraphicsBackend_SDL_OpenGL::GetWindowScreen()
 {
 	return SDL_GetWindowDisplayIndex(m_pWindow);
+}
+
+bool CGraphicsBackend_SDL_OpenGL::GetDesktopResolution(int Index, int *pDesktopWidth, int* pDesktopHeight)
+{
+	SDL_DisplayMode DisplayMode;
+	if(SDL_GetDesktopDisplayMode(Index, &DisplayMode))
+		return false;
+
+	*pDesktopWidth = DisplayMode.w;
+	*pDesktopHeight = DisplayMode.h;
+	return true;
 }
 
 int CGraphicsBackend_SDL_OpenGL::WindowActive()

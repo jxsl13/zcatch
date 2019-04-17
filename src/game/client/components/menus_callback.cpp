@@ -46,6 +46,7 @@ static CKeyInfo gs_aKeys[] =
 	{ "Respawn", "kill", 0, 0},
 	{ "Ready", "ready_change", 0, 0},
 	{ "Add demo marker", "add_demomarker", 0, 0},
+	{ "Toggle sounds", "snd_toggle", 0, 0},
 };
 
 /*	This is for scripts/update_localization.py to work, don't remove!

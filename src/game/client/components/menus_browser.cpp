@@ -32,9 +32,9 @@ CMenus::CColumn CMenus::ms_aBrowserCols[] = {  // Localize("Server"); Localize("
 	{COL_BROWSER_PING,		IServerBrowser::SORT_PING,			"Ping",		1, 40.0f,  0, {0}, {0}, CUI::ALIGN_CENTER},
 };
 
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterStandard = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_PURE|IServerBrowser::FILTER_PURE_MAP, 999, -1, 0, {0}, 0};
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterFavorites = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_FAVORITE, 999, -1, 0, {0}, 0};
-CServerFilterInfo CMenus::CBrowserFilter::ms_FilterAll = {IServerBrowser::FILTER_COMPAT_VERSION, 999, -1, 0, {0}, 0};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterStandard = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_PURE|IServerBrowser::FILTER_PURE_MAP, 999, -1, 0, {{0}}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterFavorites = {IServerBrowser::FILTER_COMPAT_VERSION|IServerBrowser::FILTER_FAVORITE, 999, -1, 0, {{0}}, {0}};
+CServerFilterInfo CMenus::CBrowserFilter::ms_FilterAll = {IServerBrowser::FILTER_COMPAT_VERSION, 999, -1, 0, {{0}}, {0}};
 
 
 // filters
@@ -931,7 +931,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	float ButtonHeight = 20.0f;
 
 	// background
-	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// split scrollbar from view
 	CUIRect Scroll;
@@ -1328,7 +1328,7 @@ void CMenus::RenderServerbrowserSidebar(CUIRect View)
 	CUIRect Header, Button;
 
 	// background
-	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// handle Tab key
 	if(m_TabPressed)
@@ -1681,8 +1681,9 @@ void CMenus::RenderServerbrowserFilterTab(CUIRect View)
 		NewSortHash = FilterInfo.m_SortHash^IServerBrowser::FILTER_COMPAT_VERSION;
 
 	ServerFilter.HSplitTop(LineSize, &Button, &ServerFilter);
+	const bool Locked = pFilter->Custom() == CBrowserFilter::FILTER_STANDARD;
 	static int s_BrFilterPure = 0;
-	if(DoButton_CheckBox(&s_BrFilterPure, Localize("Standard gametype"), FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE, &Button) && pFilter->Custom() != CBrowserFilter::FILTER_STANDARD)
+	if(DoButton_CheckBox(&s_BrFilterPure, Localize("Standard gametype"), FilterInfo.m_SortHash&IServerBrowser::FILTER_PURE, &Button, Locked))
 		NewSortHash = FilterInfo.m_SortHash^IServerBrowser::FILTER_PURE;
 
 	ServerFilter.HSplitTop(LineSize, &Button, &ServerFilter);
@@ -2022,7 +2023,7 @@ void CMenus::RenderDetailScoreboard(CUIRect View, const CServerInfo *pInfo, int 
 		}
 		else
 		{
-			float Width = RowWidth * ceil(pInfo->m_NumClients / RowCount);
+			float Width = RowWidth * ((pInfo->m_NumClients+RowCount-1) / RowCount);
 			static float s_ScrollValue = 0.0f;
 			if(Width > View.w)
 			{
@@ -2172,7 +2173,7 @@ void CMenus::RenderServerbrowserBottomBox(CUIRect MainView)
 	float ButtonWidth = MainView.w/2.0f-Spacing/2.0f;
 
 	// render background
-	RenderTools()->DrawUIRect4(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), vec4(0.0f, 0.0f, 0.0f, 0.25f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
+	RenderTools()->DrawUIRect4(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
 
 	// back to main menu
 	CUIRect Button;

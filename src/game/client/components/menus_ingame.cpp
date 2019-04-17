@@ -53,7 +53,7 @@ void CMenus::RenderGame(CUIRect MainView)
 		return;
 
 	char aBuf[128];
-	CSwitchTeamInfo Info = { 0 };
+	CSwitchTeamInfo Info = {{0}};
 	GetSwitchTeamInfo(&Info);
 	CUIRect Button, ButtonRow, GButtonRow, Label, Title;
 
@@ -67,8 +67,8 @@ void CMenus::RenderGame(CUIRect MainView)
 	bool MapIsCleared = (g_Config.m_GfxGameTiles >= 2);
 	float NoteHeight = !Info.m_aNotification[0] ? 0.0f : 45.0f;
 	float GNoteHeight = AutomapperMenusHeight && MapIsCleared ? Spacing + 15.0f : 0.0f;
-	MainView.HSplitTop(20.0f+20.0f+20.0f+AutomapperMenusHeight+2*Spacing+ NoteHeight +  GNoteHeight, &MainView, 0);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
+	MainView.HSplitTop(20.0f+20.0f+20.0f+AutomapperMenusHeight+2*Spacing+ NoteHeight + GNoteHeight, &MainView, 0);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// game options
 	MainView.HSplitTop(20.0f, &Label, &MainView);
@@ -308,7 +308,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	CUIRect Label, Row;
 	MainView.HSplitBottom(80.0f, &MainView, 0);
 	MainView.HSplitTop(20.0f, 0, &MainView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	// player options
 	MainView.HSplitTop(ButtonHeight, &Label, &MainView);
@@ -449,7 +449,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	// render background
 	MainView.HSplitBottom(80.0f, &MainView, 0);
 	MainView.HSplitTop(20.0f, 0, &MainView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 
 	CUIRect ServerInfo, GameInfo, Motd, Label;
 
@@ -499,7 +499,7 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	{
 		if(IsFavorite)
 			ServerBrowser()->RemoveFavorite(&CurrentServerInfo);
-			else
+		else
 			ServerBrowser()->AddFavorite(&CurrentServerInfo);
 	}
 
@@ -715,7 +715,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		// only print notice
 		CUIRect Bar;
 		MainView.HSplitTop(45.0f, &Bar, &MainView);
-		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
+		RenderTools()->DrawUIRect(&Bar, vec4(0.0f, 0.0f, 0.0f, 0.25f+g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 		Bar.HMargin(15.0f, &Bar);
 		UI()->DoLabel(&Bar, pNotification, 14.0f, CUI::ALIGN_CENTER);
 		return;
@@ -760,7 +760,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	{
 		MainView.HSplitTop(20.0f+45.0f, &MainView, 0);
 	}
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_B, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	if(pNotification && !Authed)
 	{
@@ -827,7 +827,10 @@ void CMenus::RenderServerControl(CUIRect MainView)
 			// call vote
 			static CButtonContainer s_CallVoteButton;
 			if(DoButton_Menu(&s_CallVoteButton, Localize("Call vote"), 0, &Button) || doCallVote)
+			{
 				HandleCallvote(s_ControlPage, false);
+				m_aCallvoteReason[0] = 0;
+			}
 		}
 		else if (!Authed)
 		{
@@ -848,7 +851,10 @@ void CMenus::RenderServerControl(CUIRect MainView)
 			Bottom.VSplitLeft(120.0f, &Button, &Bottom);
 			static CButtonContainer s_ForceVoteButton;
 			if(DoButton_Menu(&s_ForceVoteButton, Localize("Force vote"), 0, &Button))
+			{
 				HandleCallvote(s_ControlPage, true);
+				m_aCallvoteReason[0] = 0;
+			}
 
 			if(s_ControlPage == 0)
 			{

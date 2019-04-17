@@ -913,6 +913,18 @@ int str_check_pathname(const char* str);
 void str_clean_whitespaces(char *str);
 
 /*
+	Function: str_clean_whitespaces_simple
+		Removes leading and trailing spaces
+
+	Parameters:
+		str - String to clean up
+
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+*/
+void str_clean_whitespaces_simple(char *str);
+
+/*
 	Function: str_skip_to_whitespace
 		Skips leading non-whitespace characters(all but ' ', '\t', '\n', '\r').
 
@@ -927,6 +939,12 @@ void str_clean_whitespaces(char *str);
 		- The strings are treated as zero-terminated strings.
 */
 char *str_skip_to_whitespace(char *str);
+
+/*
+	Function: str_skip_to_whitespace_const
+		See str_skip_to_whitespace.
+*/
+const char *str_skip_to_whitespace_const(const char *str);
 
 /*
 	Function: str_skip_whitespaces
@@ -1440,6 +1458,15 @@ int secure_random_init();
 		length - Length of the buffer.
 */
 void secure_random_fill(void *bytes, unsigned length);
+
+/*
+	Function: pid
+		Gets the process ID of the current process
+
+	Returns:
+		The process ID of the current process.
+*/
+int pid();
 
 #ifdef __cplusplus
 }

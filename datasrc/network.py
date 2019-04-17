@@ -3,7 +3,7 @@ from datatypes import *
 Pickups = Enum("PICKUP", ["HEALTH", "ARMOR", "GRENADE", "SHOTGUN", "LASER", "NINJA"])
 Emotes = Enum("EMOTE", ["NORMAL", "PAIN", "HAPPY", "SURPRISE", "ANGRY", "BLINK"])
 Emoticons = Enum("EMOTICON", ["OOP", "EXCLAMATION", "HEARTS", "DROP", "DOTDOT", "MUSIC", "SORRY", "GHOST", "SUSHI", "SPLATTEE", "DEVILTEE", "ZOMG", "ZZZ", "WTF", "EYES", "QUESTION"])
-Votes = Enum("VOTE", ["UNKNOWN", "START_OP", "START_KICK", "START_SPEC", "END_ABORT", "END_PASS", "END_FAIL"]) # todo: add RUN_OP, RUN_KICK, RUN_SPEC; rem UNKNOWN
+Votes = Enum("VOTE", ["UNKNOWN", "START_OP", "START_KICK", "START_SPEC", "END_ABORT", "END_PASS", "END_FAIL"]) # todo 0.8: add RUN_OP, RUN_KICK, RUN_SPEC; rem UNKNOWN
 ChatModes = Enum("CHAT", ["NONE", "ALL", "TEAM", "WHISPER"])
 
 PlayerFlags = Flags("PLAYERFLAG", ["ADMIN", "CHATTING", "SCOREBOARD", "READY", "DEAD", "WATCHING", "BOT"])
@@ -15,7 +15,9 @@ GameMsgIDs = Enum("GAMEMSG", ["TEAM_SWAP", "SPEC_INVALIDID", "TEAM_SHUFFLE", "TE
 							
 							"TEAM_ALL", "TEAM_BALANCE_VICTIM", "CTF_GRAB",
 							
-							"CTF_CAPTURE"])
+							"CTF_CAPTURE",
+							
+							"GAME_PAUSED"]) # todo 0.8: sort (1 para)
 
 
 RawHeader = '''
@@ -43,6 +45,14 @@ enum
 	SPEC_FLAGRED,
 	SPEC_FLAGBLUE,
 	NUM_SPECMODES,
+
+	SKINPART_BODY = 0,
+	SKINPART_MARKING,
+	SKINPART_DECORATION,
+	SKINPART_HANDS,
+	SKINPART_FEET,
+	SKINPART_EYES,
+	NUM_SKINPARTS,
 };
 '''
 
@@ -407,5 +417,19 @@ Messages = [
 		NetStringStrict("m_Value"),
 		NetStringStrict("m_Reason"),
 		NetBool("m_Force"),
+	]),
+
+	# todo 0.8: move up
+	NetMessage("Sv_SkinChange", [
+		NetIntRange("m_ClientID", 0, 'MAX_CLIENTS-1'),
+		NetArray(NetStringStrict("m_apSkinPartNames"), 6),
+		NetArray(NetBool("m_aUseCustomColors"), 6),
+		NetArray(NetIntAny("m_aSkinPartColors"), 6),
+	]),
+
+	NetMessage("Cl_SkinChange", [
+		NetArray(NetStringStrict("m_apSkinPartNames"), 6),
+		NetArray(NetBool("m_aUseCustomColors"), 6),
+		NetArray(NetIntAny("m_aSkinPartColors"), 6),
 	]),
 ]

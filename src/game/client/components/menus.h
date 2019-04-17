@@ -58,8 +58,8 @@ private:
 	void DoButton_MenuTabTop_Dummy(const char *pText, int Checked, const CUIRect *pRect, float Alpha);
 	int DoButton_Customize(CButtonContainer *pBC, IGraphics::CTextureHandle Texture, int SpriteID, const CUIRect *pRect, float ImageRatio);
 
-	int DoButton_CheckBox_Common(const void *pID, const char *pText, const char *pBoxText, const CUIRect *pRect, bool Checked=false);
-	int DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
+	int DoButton_CheckBox_Common(const void *pID, const char *pText, const char *pBoxText, const CUIRect *pRect, bool Checked=false, bool Locked=false);
+	int DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect, bool Locked=false);
 	int DoButton_CheckBox_Number(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	// Gamer
 	void DoButton_BinaryCheckBox(int *pConfig, const char *pText, const CUIRect *pRect); // This automatically does Localize on pText
@@ -302,6 +302,7 @@ private:
 	bool m_PopupActive;
 	int m_ActiveListBox;
 	bool m_BrowsePageChosen;
+	bool m_SkinModified;
 
 	// images
 	struct CMenuImage
@@ -372,11 +373,9 @@ private:
 	static float ms_ButtonHeight;
 	static float ms_ListheaderHeight;
 	static float ms_FontmodHeight;
-	static float ms_BackgroundAlpha;
 
 	// for settings
 	bool m_NeedRestartPlayer;
-	bool m_NeedRestartTee;
 	bool m_NeedRestartGraphics;
 	bool m_NeedRestartSound;
 	int m_TeePartSelected;

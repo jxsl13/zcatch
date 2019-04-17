@@ -744,6 +744,7 @@ int CGraphics_Threaded::IssueInit()
 	if(g_Config.m_GfxFullscreen) Flags |= IGraphicsBackend::INITFLAG_FULLSCREEN;
 	if(g_Config.m_GfxVsync) Flags |= IGraphicsBackend::INITFLAG_VSYNC;
 	if(g_Config.m_DbgResizable) Flags |= IGraphicsBackend::INITFLAG_RESIZABLE;
+	if(g_Config.m_GfxUseX11XRandRWM) Flags |= IGraphicsBackend::INITFLAG_X11XRANDR;
 
 	return m_pBackend->Init("Teeworlds", &g_Config.m_GfxScreen, &g_Config.m_GfxScreenWidth, &g_Config.m_GfxScreenHeight, g_Config.m_GfxFsaaSamples, Flags, &m_DesktopScreenWidth, &m_DesktopScreenHeight);
 }
@@ -893,7 +894,13 @@ void CGraphics_Threaded::SetWindowBordered(bool State)
 
 bool CGraphics_Threaded::SetWindowScreen(int Index)
 {
-	return m_pBackend->SetWindowScreen(Index);
+	if(m_pBackend->SetWindowScreen(Index))
+	{
+		// update resolution info
+		m_pBackend->GetDesktopResolution(Index, &m_DesktopScreenWidth, &m_DesktopScreenHeight);
+		return true;
+	}
+	return false;
 }
 
 int CGraphics_Threaded::GetWindowScreen()
