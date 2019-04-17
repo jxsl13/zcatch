@@ -912,7 +912,7 @@ void CMenus::RenderServerBrowse(CUIRect MainView)
 	{
 		CUIRect Button;
 		MainView.HSplitTop(45.0f, &MainView, 0);
-		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f+ms_BackgroundAlpha), CUI::CORNER_ALL, 10.0f);
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f+g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 10.0f);
 
 		MainView.HSplitTop(10.0f, 0, &MainView);
 		MainView.HSplitTop(25.0f, &MainView, 0);
