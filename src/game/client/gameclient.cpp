@@ -261,6 +261,7 @@ void CGameClient::OnConsoleInit()
 	// add the some console commands
 	Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
 	Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
+	Console()->Register("+minimap", "", CFGFLAG_CLIENT, ConMinimap, this, "Show the minimap"); // Gamer: minimap
 	Console()->Register("ready_change", "", CFGFLAG_CLIENT, ConReadyChange, this, "Change ready state");
 
 	Console()->Chain("add_friend", ConchainFriendUpdate, this);
@@ -746,7 +747,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 				return;
 			}
 
-			if(m_LocalClientID != -1 && !pMsg->m_Silent)
+			if(m_LocalClientID != -1 && !(pMsg->m_Silent && !g_Config.m_ClShowSilentMessages))
 			{
 				DoEnterMessage(pMsg->m_pName, pMsg->m_ClientID, pMsg->m_Team);
 
@@ -795,7 +796,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 			return;
 		}
 
-		if(!pMsg->m_Silent)
+		if(!(pMsg->m_Silent && !g_Config.m_ClShowSilentMessages))
 		{
 			DoLeaveMessage(m_aClients[pMsg->m_ClientID].m_aName, pMsg->m_ClientID, pMsg->m_pReason);
 
@@ -882,7 +883,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 			}
 		}
 
-		if(pMsg->m_Silent == 0)
+		if(!(pMsg->m_Silent && !g_Config.m_ClShowSilentMessages))
 		{
 			DoTeamChangeMessage(m_aClients[pMsg->m_ClientID].m_aName, pMsg->m_ClientID, pMsg->m_Team);
 		}
@@ -1777,6 +1778,11 @@ void CGameClient::ConKill(IConsole::IResult *pResult, void *pUserData)
 	CGameClient *pClient = static_cast<CGameClient *>(pUserData);
 	if(pClient->Client()->State() == IClient::STATE_ONLINE)
 		pClient->SendKill();
+}
+
+void CGameClient::ConMinimap(IConsole::IResult *pResult, void *pUserData)
+{
+	g_Config.m_GfxMinimapMode = pResult->GetInteger(0) != 0;
 }
 
 void CGameClient::ConReadyChange(IConsole::IResult *pResult, void *pUserData)

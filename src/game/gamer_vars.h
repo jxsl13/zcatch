@@ -6,6 +6,7 @@ MACRO_CONFIG_INT(GfxAutomapDoodads, gfx_automap_doodads, 1, 0, 1, CFGFLAG_CLIENT
 MACRO_CONFIG_STR(GfxAutomapLayer, gfx_automap_layer, 255, "grass", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Layer to use for the automapper")
 
 MACRO_CONFIG_INT(GfxClearColor, gfx_clear_color, 0, 0, 0xFFFFFF, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Color to use to clear the screen")
+MACRO_CONFIG_INT(GfxMinimapMode, gfx_minimap_mode, 0, 0, 1, CFGFLAG_CLIENT, "Show minimap (use +minimap)")
 
 // Healthbar
 MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 0, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
@@ -43,6 +44,8 @@ MACRO_CONFIG_INT(ClAnnouncersLegend, cl_announcers_legend, 1, 0, 1, CFGFLAG_CLIE
 // Chat
 MACRO_CONFIG_INT(ClTextSize, cl_text_size, 100, 50, 200, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Chat size (%)")
 MACRO_CONFIG_INT(ClTextColors, cl_text_colors, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render text colors")
+
+MACRO_CONFIG_INT(ClShowSilentMessages, cl_show_silent_messages, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Force show all server messages, including \"silent\" ones")
 // MACRO_CONFIG_INT(ClArrows, cl_arrows, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Arrows")
 // MACRO_CONFIG_INT(ClNoCustomForArrows, cl_no_custom_for_arrows, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Do not use custom team colors for arrows")
 
