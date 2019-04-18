@@ -1094,6 +1094,19 @@ void CGameClient::OnNewSnapshot()
 			{
 				m_Snap.m_pGameDataFlag = (const CNetObj_GameDataFlag *)pData;
 				m_Snap.m_GameDataFlagSnapID = Item.m_ID;
+
+				// stats
+				{
+					static int s_FlagCarrierRed = FLAG_ATSTAND;
+					static int s_FlagCarrierBlue = FLAG_ATSTAND;
+					if(s_FlagCarrierRed == FLAG_ATSTAND && m_Snap.m_pGameDataFlag->m_FlagCarrierRed >= 0)
+						OnFlagGrab(TEAM_RED);
+					else if(s_FlagCarrierBlue == FLAG_ATSTAND && m_Snap.m_pGameDataFlag->m_FlagCarrierBlue >= 0)
+						OnFlagGrab(TEAM_BLUE);
+
+					s_FlagCarrierRed = m_Snap.m_pGameDataFlag->m_FlagCarrierRed;
+					s_FlagCarrierBlue = m_Snap.m_pGameDataFlag->m_FlagCarrierBlue;
+				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_FLAG)
 				m_Snap.m_paFlags[Item.m_ID%2] = (const CNetObj_Flag *)pData;
