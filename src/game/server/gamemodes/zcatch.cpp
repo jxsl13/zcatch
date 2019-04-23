@@ -1647,25 +1647,38 @@ unsigned int CGameController_zCatch::SendLines(CGameContext* GameServer, std::st
 
  int CGameController_zCatch::enemiesKilledToPoints(int enemies)
  {
+ 	// this is the possible maximum value reachable
+ 	// so any enemies value between 0 and max (15) 
+ 	// will be normalized between 0.0 and 1.0
  	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
  	
+ 	// e^(enemies/5)
  	double e = std::exp(enemies / 5.0);
 
+ 	// Points between 0.0 and 1.0. For MAX_CLIENTS - 1 this value will be 1.0
  	double normalized_points = e / normalize_factor;
 
- 	return static_cast<int>(100.0 * normalized_points);
+ 	// cast points to an integer.
+ 	return static_cast<int>(normalized_points);
  }
  double CGameController_zCatch::pointsToEnemiesKilled(int points)
  {
+ 	// factor that's used to reverse the normalization
  	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
 
+ 	// points * 100 are put into the database
+ 	// thus we need to devide them by 100 in order to get the floating
+ 	// point value we need.
  	double normalized_points = points / 100.0;
 
+ 	// reverse the squeezing of the value between 0.0 and 1.0
  	double unnormalized_points = normalized_points * normalize_factor;
 
+ 	// reverse exp() function
  	double ln = std::log(unnormalized_points);
 
- 	int enemies = ln * 5;
+ 	// reverse the adjustment of the exp(x/5) curve.
+ 	int enemies = static_cast<int>(ln * 5.0);
  	return enemies;
  }
 
