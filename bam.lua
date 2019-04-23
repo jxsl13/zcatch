@@ -352,15 +352,11 @@ if platform == "macosx" then
 		debug_settings_x86 = debug_settings:Copy()
 		debug_settings_x86.config_name = "debug_x86"
 		debug_settings_x86.config_ext = "_x86_d"
-		debug_settings_x86.cc.flags:Add("-arch i386")
-		debug_settings_x86.link.flags:Add("-arch i386")
 		debug_settings_x86.cc.defines:Add("CONF_DEBUG")
 
 		release_settings_x86 = release_settings:Copy()
 		release_settings_x86.config_name = "release_x86"
 		release_settings_x86.config_ext = "_x86"
-		release_settings_x86.cc.flags:Add("-arch i386")
-		release_settings_x86.link.flags:Add("-arch i386")
 		release_settings_x86.cc.defines:Add("CONF_RELEASE")
 	
 		x86_d = build(debug_settings_x86)
