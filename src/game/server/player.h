@@ -10,6 +10,7 @@
 #include <vector>
 #include <bitset>
 #include <algorithm>
+#include <map>
 
 // player object
 class CPlayer
@@ -76,6 +77,28 @@ public:
      * client versions.
      */
     void AddClientVersion(int version){m_ClientVersions.insert(version);};
+
+    /**
+     * Key = MessageID
+     * Value = How many of these messages were received?
+     */
+    std::map<int, int> m_WeirdClientMessages;
+
+    /**
+     * @brief      Adds a weird message tat was received by the server.
+     *			   Increases data(counter, how many were received) that's within the map.
+     * @param[in]  MessageID  The message id
+     */
+    void AddWeirdMessage(int MessageID);
+
+    /**
+     * @brief      Gets the unique weird messages occurrences.
+     *
+     * @return     Returns the a sorted(by key values) vector of unknown messageIDs and
+     * 				how often those were sent by that particular player.
+     */
+    const std::vector<std::pair<int, int>> GetUniqueWeirdMessageOccurrences() const;
+
 
 	// used for snapping to just update latency if the scoreboard is active
 	int m_aActLatency[MAX_CLIENTS];

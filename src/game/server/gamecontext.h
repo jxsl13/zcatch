@@ -24,7 +24,7 @@
 
 
 #define MAX_MUTES 35
-#define ZCATCH_VERSION "0.6.0"
+#define ZCATCH_VERSION "0.6.1"
 
 /*
 	Tick
@@ -287,6 +287,10 @@ public:
 
 	static void ConClientVersions(IConsole::IResult *pResult, void *pUserData);
 	static void ConClientVersionsById(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConWeirdMessages(IConsole::IResult *pResult, void *pUserData);
+	static void ConWeirdMessagesById(IConsole::IResult *pResult, void *pUserData);
+
 
 	// zCatch/TeeVi: hard mode
 	std::vector<HardMode> GetHardModes() { return std::vector<HardMode>(m_HardModes.begin(), m_HardModes.end()); };

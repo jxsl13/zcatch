@@ -686,5 +686,45 @@ const std::vector<int> CPlayer::GetUniqueClientVersions() const
 	return v;
 }
 
+void CPlayer::AddWeirdMessage(int MessageID)
+{	
+	// if key doesn't exist in map
+	if(!m_WeirdClientMessages.count(MessageID))
+	{
+		// first time we see that weird message ID, we
+		// create a new key-value-pair and insert it into the map.
+		m_WeirdClientMessages.emplace(MessageID, 1);
+	}
+	else
+	{
+		// MessageID already exists as key in our map.
+		// we get a reference returned, that we can simply increment.
+		m_WeirdClientMessages.at(MessageID) += 1;
+	}
+}
 
+const std::vector<std::pair<int, int>> CPlayer::GetUniqueWeirdMessageOccurrences() const
+{	
+	// vector containing key & value pairs
+ 	std::vector<std::pair<int, int>> v;
+
+ 	for (auto& key_value_pair : m_WeirdClientMessages)
+ 	{
+ 		// fill vector with data
+ 		v.emplace_back(key_value_pair.first, key_value_pair.second);
+ 	}
+
+ 	// sort vector based on key values
+ 	// anonymous function (lambda/closure)
+    std::sort(
+        v.begin(),
+        v.end(),
+    	[](const std::pair<int, int>& x, const std::pair<int, int>& y) 
+    	{
+    		return x.first < y.first;
+    	}
+    );
+
+    return v;
+}
 

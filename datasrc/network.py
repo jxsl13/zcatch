@@ -340,4 +340,7 @@ Messages = [
 		NetStringStrict("m_Value"),
 		NetStringStrict("m_Reason"),
 	]),
+	NetMessage("Cl_Version", [
+		NetIntAny("m_ClientVersionNumber"),
+		])
 ]
