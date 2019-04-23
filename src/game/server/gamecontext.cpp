@@ -894,6 +894,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 	// sets player's client version.
 	if(pPlayer){
+		// DDRace Client version Flag
 		if (MsgID == (NETMSGTYPE_CL_CALLVOTE + 1))
 		{
 			int Version = pUnpacker->GetInt();
@@ -1696,7 +1697,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				(pPlayer->m_LastKillTry+Server()->TickSpeed()*3 > Server()->Tick()))
 			return;
 
-		if(pPlayer->HasZCatchVictims())
+		// if releasing is enabled and the player has caught someone.
+		if(g_Config.m_SvAllowRelease == 1 && pPlayer->HasZCatchVictims())
 		{
 			int lastVictim = pPlayer->LastZCatchVictim();
 			pPlayer->ReleaseZCatchVictim(CPlayer::ZCATCH_RELEASE_ALL, 1, true);

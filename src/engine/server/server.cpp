@@ -1128,7 +1128,12 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 						SendRconLine(ClientID, "Wrong password.");
 					}
 				}
+			} 
+			else
+			{
+				
 			}
+
 		}
 		else if(Msg == NETMSG_RCON_AUTH)
 		{
