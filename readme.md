@@ -76,23 +76,23 @@ EXTENSION OF THE LICENSE as of the modification done by John Behm, a.k.a. jxsl13
 
 I. Stated individual ...
     1. ...  solely hosts teeworlds vanilla servers and only servers of THIS mod 
-    		and/or DERIVED modifications of zCatch or zCatch/Teevi.
+    	and/or DERIVED modifications of zCatch or zCatch/Teevi.
     2. ...  does not host any servers of any other games nor teeworlds modification.
     3. ...  is not part of the administration nor partaking in any other supporting 
-    		role of any centralized hosting community of multiple modificationss/games
-    		(simply playing those mods or partaking in events is not considered as a 
-    		supporting role).
+    	role of any centralized hosting community of multiple modificationss/games
+    	(simply playing those mods or partaking in events is not considered as a 
+    	supporting role).
 
 II. In contrast to I. those conditions are also alternatively met if...
 	1. ...  the individual is either hosting the servers him-/herself or as part of a 
-			clan
+		clan
 	2. ...  the hosted servers are neither DDRace, any DDRace based racing modifications
-			nor DDNet's zCatch.
+		nor DDNet's zCatch.
 	3. ...  the individual or the clan as a whole do not host more than 10 servers in
 		total excluding this modification.
 	4. ...  the server name is strictly either their nickname, clan name, some made-up
-			name, any combination of the previous ones, but in any case a name, that is 
-			not associated with any of in I. 3. stated communities.
+		name, any combination of the previous ones, but in any case a name, that is 
+		not associated with any of in I. 3. stated communities.
   
 
 Any modification of this software is to be published under EXACTLY THIS SAME LICENSE and
