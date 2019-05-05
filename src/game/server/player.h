@@ -99,6 +99,11 @@ public:
      */
     const std::vector<std::pair<int, int>> GetUniqueWeirdMessageOccurrences() const;
 
+    bool m_IsMousePositionVisible;
+
+    void EnableCursorVisibility(){m_IsMousePositionVisible = true;}
+    void DisableCursorVisibility(){m_IsMousePositionVisible = false;}
+    bool IsCursorVisible() { return m_IsMousePositionVisible;}
 
 	// used for snapping to just update latency if the scoreboard is active
 	int m_aActLatency[MAX_CLIENTS];

@@ -2690,6 +2690,88 @@ void CGameContext::ConWeirdMessagesById(IConsole::IResult *pResult, void *pUserD
 		}
 }
 
+void CGameContext::ConShowCursorPositionByID(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	int id(pResult->GetInteger(0));
+	char aBuf[128];
+
+    // check if id is valid.
+    if (id < 0 || id >= MAX_CLIENTS)
+    {
+        // the given id is in the invalid range.
+        // print this information to the admin remote console.
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", "Invalid id.");
+        // don't do anything anymore.
+        return;
+    }
+
+    if (pSelf->m_apPlayers[id])
+    {
+        std::string name(pSelf->Server()->ClientName(id));
+        std::string clan(pSelf->Server()->ClientClan(id));
+        pSelf->m_apPlayers[id]->EnableCursorVisibility();
+        str_format(aBuf, sizeof(aBuf), "Enabling cursor tracking for player: ID:%2d '%s' '%s':", id, name.c_str(), clan.c_str());
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", aBuf);
+
+    }
+    else
+    {
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", "No such player id online.");
+    }
+}
+
+void CGameContext::ConHideCursorPositionByID(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	int id(pResult->GetInteger(0));
+	char aBuf[128];
+
+    // check if id is valid.
+    if (id < 0 || id >= MAX_CLIENTS)
+    {
+        // the given id is in the invalid range.
+        // print this information to the admin remote console.
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", "Invalid id.");
+        // don't do anything anymore.
+        return;
+    }
+
+    if (pSelf->m_apPlayers[id])
+    {
+        std::string name(pSelf->Server()->ClientName(id));
+        std::string clan(pSelf->Server()->ClientClan(id));
+        pSelf->m_apPlayers[id]->DisableCursorVisibility();
+        str_format(aBuf, sizeof(aBuf), "Disabled cursor tracking for player: ID:%2d '%s' '%s':", id, name.c_str(), clan.c_str());
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", aBuf);
+
+    }
+    else
+    {
+        pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", "No such player id online.");
+    }
+}
+
+void CGameContext::ConResetCursorPositionVisibility(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = static_cast<CGameContext *>(pUserData);
+	char aBuf[128];
+
+    for (int id = 0; id < MAX_CLIENTS; ++id)
+    {
+        if (pSelf->m_apPlayers[id] && pSelf->m_apPlayers[id]->IsCursorVisible())
+        {
+            std::string name(pSelf->Server()->ClientName(id));
+            std::string clan(pSelf->Server()->ClientClan(id));
+            pSelf->m_apPlayers[id]->DisableCursorVisibility();
+            str_format(aBuf, sizeof(aBuf), "Disabled cursor tracking for player: ID:%2d '%s' '%s':", id, name.c_str(), clan.c_str());
+            pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Cursor position", aBuf);
+
+        }
+    }
+}
+
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -2721,6 +2803,10 @@ void CGameContext::OnConsoleInit()
 
 	Console()->Register("weird_messages_all", "", CFGFLAG_SERVER, ConWeirdMessages, this, "Show a list of non-regular message ids sent by each client & their occurrences.");
 	Console()->Register("weird_messages_id", "", CFGFLAG_SERVER, ConWeirdMessagesById, this, "Show a list of non-regular message ids sent by one client(ID) & their occurrences.");
+
+	Console()->Register("cursor_show_id", "i", CFGFLAG_SERVER, ConShowCursorPositionByID, this, "Shows the current player's cursor position indicated by a laser.");
+    Console()->Register("cursor_hide_id", "i", CFGFLAG_SERVER, ConHideCursorPositionByID, this, "Hides the current player's cursor position.");
+    Console()->Register("cursor_reset_all", "", CFGFLAG_SERVER, ConResetCursorPositionVisibility, this, "Hides all visible cursor position indicators.");
 
 	Console()->Register("add_vote", "sr", CFGFLAG_SERVER, ConAddVote, this, "Add a voting option");
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");

@@ -291,6 +291,10 @@ public:
 	static void ConWeirdMessages(IConsole::IResult *pResult, void *pUserData);
 	static void ConWeirdMessagesById(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConShowCursorPositionByID(IConsole::IResult *pResult, void *pUserData);
+	static void ConHideCursorPositionByID(IConsole::IResult *pResult, void *pUserData);
+	static void ConResetCursorPositionVisibility(IConsole::IResult *pResult, void *pUserData);
+
 
 	// zCatch/TeeVi: hard mode
 	std::vector<HardMode> GetHardModes() { return std::vector<HardMode>(m_HardModes.begin(), m_HardModes.end()); };

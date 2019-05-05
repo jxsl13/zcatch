@@ -5,6 +5,7 @@
 #include <vector> // std::vector
 #include <engine/shared/config.h>
 #include "player.h"
+#include "game/server/entities/fakelaser.h"
 
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
@@ -62,6 +63,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_CurrentTarget.y = 0;
 	m_LastTarget.x = 0;
 	m_LastTarget.y = 0;
+
+	m_IsMousePositionVisible = false;
 }
 
 CPlayer::~CPlayer()
@@ -231,6 +234,27 @@ void CPlayer::Snap(int SnappingClient)
 	pPlayerInfo->m_ClientID = m_ClientID;
 	pPlayerInfo->m_Score = m_Score;
 	pPlayerInfo->m_Team = m_Team;
+
+    // Snapping Client receives the Snapshot
+    // if receiving player is an admin and the currently 
+    // looked at player is being tracked.
+    if (m_IsMousePositionVisible && m_pCharacter && Server()->IsAuthed(SnappingClient))
+    {
+        // If it's an admin, we want to send
+        // this players cursor position to that admin.
+
+        auto pWorld = &(GameServer()->m_World);
+
+        vec2 pos = m_pCharacter->m_Pos;
+        vec2 cursor = pos + m_LastTarget;
+        int laserOwner = m_ClientID;
+        int visibilityTarget = SnappingClient;
+        /**
+         * Register a fake laser that's drawn from pos to cursor
+         * pass laser owner's id and only show the laser to the "visibility target"
+         */
+        new CFakeLaser(pWorld, pos, cursor, laserOwner, visibilityTarget);
+    }
 
 	if(m_ClientID == SnappingClient)
 		pPlayerInfo->m_Local = 1;
