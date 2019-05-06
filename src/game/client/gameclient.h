@@ -201,6 +201,7 @@ public:
 	float m_TeamChangeTime;
 	bool m_IsXmasDay;
 	float m_LastSkinChangeTime;
+	bool m_IsEasterDay;
 
 	struct CGameInfo
 	{
@@ -257,6 +258,32 @@ public:
 	};
 	CClientStats m_aStats[MAX_CLIENTS];
 
+	// stats
+	class CClientStats
+	{
+	public:
+		CClientStats();
+		
+		int m_JoinDate;
+
+		int m_aFragsWith[NUM_WEAPONS];
+		int m_aDeathsFrom[NUM_WEAPONS];
+		int m_Frags;
+		int m_Deaths;
+		int m_Suicides;
+		int m_BestSpree;
+		int m_CurrentSpree;
+
+		int m_FlagGrabs;
+		int m_FlagCaptures;
+		int m_CarriersKilled;
+		int m_KillsCarrying;
+		int m_DeathsCarrying;
+
+		void Reset();
+	};
+	CClientStats m_aStats[MAX_CLIENTS];
+
 	CRenderTools m_RenderTools;
 
 	void OnReset();
@@ -280,14 +307,6 @@ public:
 	virtual void OnRconLine(const char *pLine);
 	virtual void OnGameOver();
 	virtual void OnStartGame();
-
-	// TeeComp hooks
-	int m_LastGameOver;
-	int m_LastRoundStartTick;
-	int m_aLastFlagCarrier[2];
-	void OnGameRestart();
-	void OnRoundStart();
-	void OnFlagGrab(int Id);
 	
 	// Gamer hooks
 	bool m_FirstBlood;
@@ -296,12 +315,23 @@ public:
 	virtual bool IsInstagib() const { return m_Instagib; }
 	// void RegisterStats();
 
+	// stats hooks (Teecomp)
+	// int m_aLastFlagCarrier[2];
+	int m_LastGameOver;
+	int m_LastRoundStartTick;
+	void OnGameRestart();
+	void OnRoundStart();
+	void OnFlagGrab(int Id);
+
 	virtual const char *GetItemName(int Type) const;
 	virtual const char *Version() const;
 	virtual const char *NetVersion() const;
+	virtual const char *NetVersionHashUsed() const;
+	virtual const char *NetVersionHashReal() const;
 	virtual int ClientVersion() const;
 	static void GetPlayerLabel(char* aBuf, int BufferSize, int ClientID, const char* ClientName);
 	bool IsXmas() const;
+	bool IsEaster() const;
 
 	//
 	void DoEnterMessage(const char *pName, int ClientID, int Team);
@@ -337,7 +367,7 @@ public:
 	// class CHud *m_pHud;
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;
-	class CTeecompStats *m_pTeecompStats;
+	class CStats *m_pStats;
 	class CItems *m_pItems;
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;

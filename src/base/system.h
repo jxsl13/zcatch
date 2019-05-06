@@ -505,6 +505,16 @@ int time_houroftheday();
 */
 int time_isxmasday();
 
+/*
+	Function: time_iseasterday
+		Checks if today is in between Good Friday and Easter Monday (Gregorian calendar)
+
+	Returns:
+		1 - if it's egg time
+		0 - if not
+*/
+int time_iseasterday();
+
 /* Group: Network General */
 typedef struct
 {
@@ -1358,6 +1368,32 @@ int str_isspace(char c);
 char str_uppercase(char c);
 unsigned str_quickhash(const char *str);
 
+/*
+	Function: str_utf8_is_whitespace
+		Check if the unicode is an utf8 whitespace.
+
+	Parameters:
+		code - unicode.
+
+	Returns:
+		Returns 1 on success, 0 on failure.
+*/
+int str_utf8_is_whitespace(int code);
+
+/*
+	Function: str_utf8_skip_whitespaces
+		Skips leading utf8 whitespace characters.
+
+	Parameters:
+		str - Pointer to the string.
+
+	Returns:
+		Pointer to the first non-whitespace character found
+		within the string.
+
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+*/
 char *str_utf8_skip_whitespaces(char *str);
 
 /*

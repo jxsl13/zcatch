@@ -5,7 +5,7 @@ file(STRINGS src/game/version.h VERSION_LINE
   REGEX GAME_RELEASE_VERSION
 )
 
-if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
+if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+|[0-9]+\\.[0-9]+)\"")
   set(VERSION_MAJOR ${CMAKE_MATCH_1})
   set(VERSION_MINOR ${CMAKE_MATCH_2})
   set(VERSION_PATCH ${CMAKE_MATCH_3})
@@ -389,7 +389,10 @@ elseif(TARGET_OS STREQUAL "mac")
   set(PLATFORM_LIBS ${CARBON})
 else()
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS GL GLU X11)
+  find_package(OpenGL)
+  find_package(X11)
+  set(PLATFORM_CLIENT_LIBS ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${X11_X11_LIB})
+  set(PLATFORM_CLIENT_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR} ${X11_X11_INCLUDE_PATH})
   if(TARGET_OS STREQUAL "linux")
     set(PLATFORM_LIBS rt) # clock_gettime for glibc < 2.17
   else()
@@ -868,7 +871,6 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/breton.json
   languages/bulgarian.json
   languages/catalan.json
-  languages/chinese.json
   languages/chuvash.json
   languages/czech.json
   languages/danish.json
@@ -902,6 +904,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/slovenian.json
   languages/spanish.json
   languages/swedish.json
+  languages/traditional_chinese.json
   languages/turkish.json
   languages/ukrainian.json
   mapres/bg_cloud1.png
@@ -912,6 +915,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   mapres/desert_mountains.png
   mapres/desert_mountains2.png
   mapres/desert_sun.png
+  mapres/easter.png
   mapres/generic_deathtiles.png
   mapres/generic_lamps.png
   mapres/generic_shadows.png
@@ -1341,6 +1345,8 @@ if(CLIENT)
     components/sounds.h
     components/spectator.cpp
     components/spectator.h
+    components/stats.cpp
+    components/stats.h
     components/voting.cpp
     components/voting.h
     gameclient.cpp
@@ -1386,6 +1392,11 @@ if(CLIENT)
 
   if(TARGET_OS STREQUAL "windows")
     set(CLIENT_ICON "other/icons/${CLIENT_EXECUTABLE}.rc")
+    if(NOT MINGW)
+      set(CLIENT_MANIFEST "other/manifest/teeworlds.manifest")
+    else()
+      set(CLIENT_MANIFEST "other/manifest/teeworlds.rc")
+    endif()
   else()
     set(CLIENT_ICON)
   endif()
