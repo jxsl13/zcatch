@@ -1,3 +1,6 @@
+#ifndef GAME_CLIENT_STATS_H
+#define GAME_CLIENT_STATS_H
+
 #include <game/client/component.h>
 
 enum {
@@ -17,7 +20,17 @@ enum {
 class CStats: public CComponent
 {
 private:
-	int m_Active;
+	// int m_Mode;
+	int m_StatsClientID;
+	// bool m_ScreenshotTaken;
+	// int64 m_ScreenshotTime;
+	// static void ConKeyStats(IConsole::IResult *pResult, void *pUserData);
+	// static void ConKeyNext(IConsole::IResult *pResult, void *pUserData);
+	void RenderGlobalStats();
+	void RenderIndividualStats();
+	void CheckStatsClientID();
+	// void AutoStatScreenshot();
+	int m_Mode;
 	static void ConKeyStats(IConsole::IResult *pResult, void *pUserData);
 
 public:
@@ -26,4 +39,7 @@ public:
 	virtual void OnConsoleInit();
 	virtual void OnRender();
 	virtual void OnMessage(int MsgType, void *pRawMsg);
+	bool IsActive();
 };
+
+#endif

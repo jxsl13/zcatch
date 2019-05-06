@@ -227,7 +227,7 @@ public:
 		int m_PlayerSlots;
 	} m_ServerSettings;
 	
-	// TeeComp vars
+	// Teecomp stats
 	class CClientStats
 	{
 	public:
@@ -245,34 +245,8 @@ public:
 		int m_BestSpree;
 		int m_CurrentSpree;
 		
-		// Not used for the scoreboard, only for humiliations
+		// Gamer: not used for the scoreboard, only for humiliations
 		int m_CurrentHumiliation;
-
-		int m_FlagGrabs;
-		int m_FlagCaptures;
-		int m_CarriersKilled;
-		int m_KillsCarrying;
-		int m_DeathsCarrying;
-
-		void Reset();
-	};
-	CClientStats m_aStats[MAX_CLIENTS];
-
-	// stats
-	class CClientStats
-	{
-	public:
-		CClientStats();
-		
-		int m_JoinDate;
-
-		int m_aFragsWith[NUM_WEAPONS];
-		int m_aDeathsFrom[NUM_WEAPONS];
-		int m_Frags;
-		int m_Deaths;
-		int m_Suicides;
-		int m_BestSpree;
-		int m_CurrentSpree;
 
 		int m_FlagGrabs;
 		int m_FlagCaptures;

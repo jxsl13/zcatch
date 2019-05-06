@@ -3,6 +3,7 @@
 #include <engine/graphics.h>
 #include <engine/serverbrowser.h>
 #include <game/client/animstate.h>
+#include <game/client/components/announcers.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
 #include <generated/client_data.h>
@@ -10,29 +11,176 @@
 
 CStats::CStats()
 {
-	m_Active = false;
+	m_Mode = 0;
+	m_StatsClientID = -1;
 }
 
 void CStats::OnReset()
 {
 	for(int i=0; i<MAX_CLIENTS; i++)
 		m_pClient->m_aStats[i].Reset();
-	m_Active = false;
+	m_Mode = 0;
+	m_StatsClientID = -1;
 }
 
 void CStats::ConKeyStats(IConsole::IResult *pResult, void *pUserData)
 {
-	((CStats *)pUserData)->m_Active = pResult->GetInteger(0) != 0;
+	((CStats *)pUserData)->m_Mode = pResult->GetInteger(0) != 0;
 }
+/*
+void CStats::ConKeyNext(IConsole::IResult *pResult, void *pUserData)
+{
+	CStats *pStats = (CStats *)pUserData;
+	if(pStats->m_Mode != 2)
+		return;
+
+	if(pResult->GetInteger(0) == 0)
+	{
+		pStats->m_StatsClientID++;
+		pStats->m_StatsClientID %= MAX_CLIENTS;
+		pStats->CheckStatsClientID();
+	}
+}*/
 
 void CStats::OnConsoleInit()
 {
 	Console()->Register("+stats", "", CFGFLAG_CLIENT, ConKeyStats, this, "Show stats");
+	// Console()->Register("+next_stats", "", CFGFLAG_CLIENT, ConKeyNext, this, "Next player Stats");
 }
+
+bool CStats::IsActive()
+{
+	return (m_Mode > 0);
+}
+
+void CStats::CheckStatsClientID()
+{
+	if(m_StatsClientID == -1)
+		m_StatsClientID = m_pClient->m_LocalClientID;
+
+	int Prev = m_StatsClientID;
+	while(!m_pClient->m_aStats[m_StatsClientID].m_Active)
+	{
+		m_StatsClientID++;
+		m_StatsClientID %= MAX_CLIENTS;
+		if(m_StatsClientID == Prev)
+		{
+			m_StatsClientID = -1;
+			m_Mode = 0;
+			break;
+		}
+	}
+}
+
+/*
+void CTeecompStats::CheckStatsClientID()
+{
+	if(m_StatsClientID == -1)
+		m_StatsClientID = m_pClient->m_LocalClientID;
+
+	int Prev = m_StatsClientID;
+	while(!m_pClient->m_aStats[m_StatsClientID].m_Active)
+	{
+		m_StatsClientID++;
+		m_StatsClientID %= MAX_CLIENTS;
+		if(m_StatsClientID == Prev)
+		{
+			m_StatsClientID = -1;
+			m_Mode = 0;
+			break;
+		}
+	}
+}
+*/
 
 void CStats::OnMessage(int MsgType, void *pRawMsg)
 {
 	if(MsgType == NETMSGTYPE_SV_KILLMSG)
+	{
+		CNetMsg_Sv_KillMsg *pMsg = (CNetMsg_Sv_KillMsg *)pRawMsg;
+		CGameClient::CClientStats *pStats = m_pClient->m_aStats;
+
+		// HolyShit sound
+		if(g_Config.m_ClGSound && m_pClient->m_LocalClientID == pMsg->m_Victim && pStats[pMsg->m_Victim].m_CurrentSpree >= 5)
+		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "Ended (%d kills)", pStats[pMsg->m_Victim].m_CurrentSpree);
+			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_HOLYSHIT, 0);
+					m_pClient->m_pAnnouncers->Announce("HOLY SHIT", aBuf, 2.0f);
+		}			
+			
+		// Humiliation is not about selfkilling
+		if(pMsg->m_Victim != pMsg->m_Killer && pMsg->m_Victim == m_pClient->m_LocalClientID)
+		{
+			if(pStats[pMsg->m_Victim].m_CurrentSpree)
+				pStats[pMsg->m_Victim].m_CurrentHumiliation = 1;
+			else
+				pStats[pMsg->m_Victim].m_CurrentHumiliation++;
+			if(pStats[pMsg->m_Victim].m_CurrentHumiliation % 7 == 0)
+			{
+				m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_HUMILIATION, 0);
+				m_pClient->m_pAnnouncers->Announce("HUMILIATION", "Killed 7 times in a row", 3.5f);
+			}
+		}
+		
+		pStats[pMsg->m_Victim].m_Deaths++;
+		pStats[pMsg->m_Victim].m_CurrentSpree = 0;
+		if(pMsg->m_Weapon >= 0)
+			pStats[pMsg->m_Victim].m_aDeathsFrom[pMsg->m_Weapon]++;
+		if(pMsg->m_ModeSpecial & 1)
+			pStats[pMsg->m_Victim].m_DeathsCarrying++;
+		if(pMsg->m_Victim != pMsg->m_Killer)
+		{
+			pStats[pMsg->m_Killer].m_Frags++;
+			pStats[pMsg->m_Killer].m_CurrentSpree++;
+
+			// play spree sounds
+			if(g_Config.m_ClGSound && m_pClient->m_LocalClientID == pMsg->m_Killer && pStats[pMsg->m_Killer].m_CurrentSpree % 5 == 0)
+			{
+				pStats[pMsg->m_Killer].m_CurrentHumiliation = 0;
+				int SpreeType = pStats[pMsg->m_Killer].m_CurrentSpree/5 - 1;
+				switch(SpreeType)
+				{
+				case 0:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_KILLING, 0);
+					m_pClient->m_pAnnouncers->Announce("KILLING SPREE", "5 kills in a row", 3.5f);
+					break;
+				case 1:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_RAMPAGE, 0);
+					m_pClient->m_pAnnouncers->Announce("RAMPAGE", "10 kills in a row", 1.5f);
+					break;
+				case 2:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_DOMINATING, 0);
+					m_pClient->m_pAnnouncers->Announce("DOMINATING", "15 kills in a row", 3.0f);
+					break;
+				case 3:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_UNSTOPPABLE, 0);
+					m_pClient->m_pAnnouncers->Announce("UNSTOPPABLE", "20 kills in a row", 3.0f);
+					break;
+				case 4:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_GODLIKE, 0);
+					m_pClient->m_pAnnouncers->Announce("GODLIKE", "25 kills in a row", 2.5f);
+					break;
+				case 5:
+					m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_SPREE_WICKEDSICK, 0);
+					m_pClient->m_pAnnouncers->Announce("WICKED SICK", "30 kills in a row", 1.8f);
+					break;
+				}
+			}
+
+			if(pStats[pMsg->m_Killer].m_CurrentSpree > pStats[pMsg->m_Killer].m_BestSpree)
+				pStats[pMsg->m_Killer].m_BestSpree = pStats[pMsg->m_Killer].m_CurrentSpree;
+			if(pMsg->m_Weapon >= 0)
+				pStats[pMsg->m_Killer].m_aFragsWith[pMsg->m_Weapon]++;
+			if(pMsg->m_ModeSpecial & 1)
+				pStats[pMsg->m_Killer].m_CarriersKilled++;
+			if(pMsg->m_ModeSpecial & 2)
+				pStats[pMsg->m_Killer].m_KillsCarrying++;
+		}
+		else
+			pStats[pMsg->m_Victim].m_Suicides++;
+	}
+/*	if(MsgType == NETMSGTYPE_SV_KILLMSG)
 	{
 		CNetMsg_Sv_KillMsg *pMsg = (CNetMsg_Sv_KillMsg *)pRawMsg;
 		CGameClient::CClientStats *pStats = m_pClient->m_aStats;
@@ -59,12 +207,44 @@ void CStats::OnMessage(int MsgType, void *pRawMsg)
 		}
 		else
 			pStats[pMsg->m_Victim].m_Suicides++;
-	}
+	}*/
 }
 
 void CStats::OnRender()
 {
-	if(!m_Active)
+	/*
+	// auto stat screenshot stuff
+	if(g_Config.m_TcStatScreenshot)
+	{
+		if(m_ScreenshotTime < 0 && m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMESTATEFLAG_GAMEOVER)
+			m_ScreenshotTime = time_get()+time_freq()*3;
+
+		if(m_ScreenshotTime > -1 && m_ScreenshotTime < time_get())
+			m_Mode = 1;
+
+		if(!m_ScreenshotTaken && m_ScreenshotTime > -1 && m_ScreenshotTime+time_freq()/5 < time_get())
+		{
+			AutoStatScreenshot();
+			m_ScreenshotTaken = true;
+		}
+	}
+
+	switch(m_Mode)
+	{
+		case 1:
+			RenderGlobalStats();
+			break;
+		case 2:
+			RenderIndividualStats();
+			break;
+	}*/
+	RenderGlobalStats();
+}
+
+
+void CStats::RenderGlobalStats()
+{
+	if(!m_Mode)
 		return;
 
 	float Width = 400*3.0f*Graphics()->ScreenAspect();
@@ -308,6 +488,172 @@ void CStats::OnRender()
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
+		y += LineHeight;
+	}
+}
+
+// unused yet
+void CStats::RenderIndividualStats()
+{
+	if(m_Mode != 2)
+		return;
+	CheckStatsClientID();
+	if(m_Mode != 2)
+		return;
+	int m_ClientID = m_StatsClientID;
+	float Width = 400*3.0f*Graphics()->ScreenAspect();
+	float Height = 400*3.0f;
+	float w = 1200.0f;
+	float x = Width/2-w/2;
+	float y = 100.0f;
+	float xo = 200.0f;
+	float FontSize = 30.0f;
+	float LineHeight = 40.0f;
+	const CGameClient::CClientStats m_aStats = m_pClient->m_aStats[m_ClientID];
+
+	Graphics()->MapScreen(0, 0, Width, Height);
+
+	// header with name and score
+	Graphics()->BlendNormal();
+	// Graphics()->TextureSet(-1);
+	{
+		CUIRect Rect = {x-10.f, y-10.f, w, 120.0f};
+		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+	}
+
+	CTeeRenderInfo Teeinfo = m_pClient->m_aClients[m_ClientID].m_RenderInfo;
+	Teeinfo.m_Size *= 1.5f;
+	RenderTools()->RenderTee(CAnimState::GetIdle(), &Teeinfo, EMOTE_NORMAL, vec2(1,0), vec2(x+xo+32, y+36));
+	TextRender()->Text(0, x+xo+128, y, 48.0f, m_pClient->m_aClients[m_ClientID].m_aName, -1);
+
+	char aBuf[64];
+	if(g_Config.m_TcStatId)
+	{
+		str_format(aBuf, sizeof(aBuf), "%d", m_ClientID);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+	}
+
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Score"), m_pClient->m_Snap.m_paPlayerInfos[m_ClientID]->m_Score);
+	TextRender()->Text(0, x+xo, y+64, FontSize, aBuf, -1);
+	int Seconds = (float)(Client()->GameTick()-m_aStats.m_JoinDate)/Client()->GameTickSpeed();
+	str_format(aBuf, sizeof(aBuf), "%s: %02d:%02d", Localize("Time played"), Seconds/60, Seconds%60);
+	TextRender()->Text(0, x+xo+256, y+64, FontSize, aBuf, -1);
+
+	y += 150.0f;
+
+	// Frags, etc. stats
+	Graphics()->BlendNormal();
+	// Graphics()->TextureSet(-1);
+	{
+		CUIRect Rect = {x-10.f, y-10.f, w, 100.0f};
+		RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+	}
+
+	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(1.0f,1.0f,1.0f,1.0f);
+	RenderTools()->SelectSprite(SPRITE_EYES);
+	IGraphics::CQuadItem QuadItem(x+xo/2, y+40, 128, 128);
+	Graphics()->QuadsDraw(&QuadItem, 1);
+	Graphics()->QuadsEnd();
+
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Frags"), m_aStats.m_Frags);
+	TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Deaths"), m_aStats.m_Deaths);
+	TextRender()->Text(0, x+xo+200.0f, y, FontSize, aBuf, -1);
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Suicides"), m_aStats.m_Suicides);
+	TextRender()->Text(0, x+xo+400.0f, y, FontSize, aBuf, -1);
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Spree"), m_aStats.m_CurrentSpree);
+	TextRender()->Text(0, x+xo+600.0f, y, FontSize, aBuf, -1);
+	y += LineHeight;
+
+	if(m_aStats.m_Deaths == 0)
+		str_format(aBuf, sizeof(aBuf), "%s: --", Localize("Ratio"));
+	else
+		str_format(aBuf, sizeof(aBuf), "%s: %.2f", Localize("Ratio"), (float)(m_aStats.m_Frags)/m_aStats.m_Deaths);
+	TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Net"), m_aStats.m_Frags-m_aStats.m_Deaths);
+	TextRender()->Text(0, x+xo+200.0f, y, FontSize, aBuf, -1);
+	float Fpm = (float)(m_aStats.m_Frags*60)/((float)(Client()->GameTick()-m_aStats.m_JoinDate)/Client()->GameTickSpeed());
+	str_format(aBuf, sizeof(aBuf), "%s: %.1f", Localize("FPM"), Fpm);
+	TextRender()->Text(0, x+xo+400.0f, y, FontSize, aBuf, -1);
+	str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Best spree"), m_aStats.m_BestSpree);
+	TextRender()->Text(0, x+xo+600.0f, y, FontSize, aBuf, -1);
+	y+= LineHeight + 30.0f;
+
+	// Weapon stats
+	bool aDisplayWeapon[NUM_WEAPONS] = {false};
+	int NumWeaps = 0;
+	for(int i=0; i<NUM_WEAPONS; i++)
+		if(m_aStats.m_aFragsWith[i] || m_aStats.m_aDeathsFrom[i])
+		{
+			aDisplayWeapon[i] = true;
+			NumWeaps++;
+		}
+
+	if(NumWeaps)
+	{
+		Graphics()->BlendNormal();
+		// Graphics()->TextureSet(-1);
+		{
+			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*(1+NumWeaps)+20.0f};
+			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+		}
+
+		TextRender()->Text(0, x+xo, y, FontSize, Localize("Frags"), -1);
+		TextRender()->Text(0, x+xo+200.0f, y, FontSize, Localize("Deaths"), -1);
+		y += LineHeight;
+
+		for(int i=0; i<NUM_WEAPONS; i++)
+		{
+			if(!aDisplayWeapon[i])
+				continue;
+
+			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+			Graphics()->QuadsBegin();
+			RenderTools()->SelectSprite(g_pData->m_Weapons.m_aId[i].m_pSpriteBody, 0);
+			RenderTools()->DrawSprite(x+xo/2, y+24, g_pData->m_Weapons.m_aId[i].m_VisualSize);
+			Graphics()->QuadsEnd();
+
+			str_format(aBuf, sizeof(aBuf), "%d", m_aStats.m_aFragsWith[i]);
+			TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+			str_format(aBuf, sizeof(aBuf), "%d", m_aStats.m_aDeathsFrom[i]);
+			TextRender()->Text(0, x+xo+200.0f, y, FontSize, aBuf, -1);
+			y += LineHeight;
+		}
+		y += 30.0f;
+	}
+
+	// Flag stats
+	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS)
+	{
+		Graphics()->BlendNormal();
+		// Graphics()->TextureSet(-1);
+		{
+			CUIRect Rect = {x-10.f, y-10.f, w, LineHeight*5+20.0f};
+			RenderTools()->DrawRoundRect(&Rect, vec4(0,0,0,0.5f), 17.0f);
+		}
+
+		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+		Graphics()->QuadsBegin();
+		RenderTools()->SelectSprite(SPRITE_FLAG_RED);
+		RenderTools()->DrawSprite(x+xo/2, y+100.0f, 192);
+		Graphics()->QuadsEnd();
+
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Grabs"), m_aStats.m_FlagGrabs);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+		y += LineHeight;
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Captures"), m_aStats.m_FlagCaptures);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+		y += LineHeight;
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Kills holding flag"), m_aStats.m_KillsCarrying);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+		y += LineHeight;
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Deaths with flag"), m_aStats.m_DeathsCarrying);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
+		y += LineHeight;
+		str_format(aBuf, sizeof(aBuf), "%s: %d", Localize("Carriers killed"), m_aStats.m_CarriersKilled);
+		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
 		y += LineHeight;
 	}
 }

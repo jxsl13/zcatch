@@ -678,19 +678,19 @@ void CHud::RenderHealthAndAmmo(const CNetObj_Character *pCharacter)
 		
 		// Dunedune
 		str_format(Text, sizeof(Text), "%d", pCharacter->m_Health);
-		w = TextRender()->TextWidth(0, 8, Text, -1);
+		w = TextRender()->TextWidth(0, 8, Text, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, x+16-w/2, y, 8.0f, TEXTFLAG_RENDER);
 		TextRender()->TextEx(&Cursor, Text, -1);
 		
 		str_format(Text, sizeof(Text), "%d", pCharacter->m_Armor);
-		w = TextRender()->TextWidth(0, 8, Text, -1);
+		w = TextRender()->TextWidth(0, 8, Text, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, x+16-w/2, y+12.0f, 8.0f, TEXTFLAG_RENDER);
 		TextRender()->TextEx(&Cursor, Text, -1);
 		
 		if(pCharacter->m_Weapon%NUM_WEAPONS && pCharacter->m_Weapon%NUM_WEAPONS!=5)
 		{
 			str_format(Text, sizeof(Text), "%d", pCharacter->m_AmmoCount);
-			w = TextRender()->TextWidth(0, 8, Text, -1);
+			w = TextRender()->TextWidth(0, 8, Text, -1, -1.0f);
 			if(!pCharacter->m_AmmoCount && pCharacter->m_Weapon%NUM_WEAPONS!=4)
 			{
 				if(g_Config.m_ClNoAmmoWarning)

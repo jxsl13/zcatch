@@ -64,7 +64,7 @@ void CAnnouncers::OnRender()
 		int ClTextColors = g_Config.m_ClTextColors;
 		g_Config.m_ClTextColors = 1;
 		
-		float w = TextRender()->TextWidth(0, txtSize, Text, -1);
+		float w = TextRender()->TextWidth(0, txtSize, Text, -1, -1.0f);
 		
 		if(!g_Config.m_ClAnnouncersShadows)
 			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.0f);

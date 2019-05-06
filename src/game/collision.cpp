@@ -62,8 +62,7 @@ int CCollision::GetTile(int x, int y) const
 
 bool CCollision::IsTile(int x, int y, int Flag) const
 {
-	// return GetTile(x, y) <= COLFLAG_MAXGAME && (GetTile(x, y)&COLFLAG_SOLID);
-	return GetTile(x, y)&Flag;
+	return GetTile(x, y) <= COLFLAG_MAXGAME && GetTile(x, y)&Flag;
 }
 
 // TODO: rewrite this smarter!

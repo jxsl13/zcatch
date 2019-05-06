@@ -206,7 +206,6 @@ void CGameClient::OnConsoleInit()
 	m_pMapimages = &::gs_MapImages;
 	m_pVoting = &::gs_Voting;
 	// m_pHud = &::gs_Hud; // for announcers
-	m_pTeecompStats = &::gs_TeecompStats;
 	m_pScoreboard = &::gs_Scoreboard;
 	m_pItems = &::gs_Items;
 	m_pMapLayersBackGround = &::gs_MapLayersBackGround;
@@ -1595,58 +1594,6 @@ void CGameClient::CClientData::UpdateBotRenderInfo(CGameClient *pGameClient, int
 		m_RenderInfo.m_BotTexture.Invalidate();
 		m_RenderInfo.m_BotColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	}
-}
-
-void CGameClient::OnRoundStart()
-{
-	for(int i=0; i<MAX_CLIENTS; i++)
-		m_aStats[i].Reset();
-}
-
-void CGameClient::OnFlagGrab(int ID)
-{
-	if(ID == TEAM_RED)
-		m_aStats[m_Snap.m_pGameDataFlag->m_FlagCarrierRed].m_FlagGrabs++;
-	else
-		m_aStats[m_Snap.m_pGameDataFlag->m_FlagCarrierBlue].m_FlagGrabs++;
-}
-
-CGameClient::CClientStats::CClientStats()
-{
-	m_JoinDate  = 0;
-	m_Frags     = 0;
-	m_Deaths    = 0;
-	m_Suicides  = 0;
-	for(int j = 0; j < NUM_WEAPONS; j++)
-	{
-		m_aFragsWith[j]  = 0;
-		m_aDeathsFrom[j] = 0;
-	}
-	m_FlagGrabs      = 0;
-	m_FlagCaptures   = 0;
-	m_CarriersKilled = 0;
-	m_KillsCarrying  = 0;
-	m_DeathsCarrying = 0;
-}
-
-void CGameClient::CClientStats::Reset()
-{
-	m_JoinDate  = 0;
-	m_Frags     = 0;
-	m_Deaths    = 0;
-	m_Suicides  = 0;
-	m_BestSpree = 0;
-	m_CurrentSpree = 0;
-	for(int j = 0; j < NUM_WEAPONS; j++)
-	{
-		m_aFragsWith[j]  = 0;
-		m_aDeathsFrom[j] = 0;
-	}
-	m_FlagGrabs      = 0;
-	m_FlagCaptures   = 0;
-	m_CarriersKilled = 0;
-	m_KillsCarrying  = 0;
-	m_DeathsCarrying = 0;
 }
 
 void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int ClientID, bool UpdateSkinInfo)

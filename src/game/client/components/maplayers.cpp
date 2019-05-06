@@ -212,7 +212,6 @@ void CMapLayers::OnShutdown()
 		mem_free(m_pEggTiles);
 		m_pEggTiles = 0;
 	}
->>>>>>> ee147dedd631a5a430695beac40a666f92a75825
 }
 
 void CMapLayers::LoadEnvPoints(const CLayers *pLayers, array<CEnvPoint>& lEnvPoints)
