@@ -299,6 +299,9 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		DoButton_BinaryCheckBox(&g_Config.m_ClSwapChatSounds, "Swap normal/highlight chat sounds", &Button);
 	}
 		
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClDiscreetWhispers, "Discreet whispering", &Button);
+
 	/*NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClArrows, "Use arrows in place of chat", &Button);
 		

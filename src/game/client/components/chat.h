@@ -132,6 +132,7 @@ public:
 	~CChat();
 
 	bool IsActive() const { return m_Mode != CHAT_NONE; }
+	bool IsWhispering() const { return m_Mode == CHAT_WHISPER; }
 
 	void AddLine(int ClientID, int Team, const char *pLine, int TargetID = -1);
 

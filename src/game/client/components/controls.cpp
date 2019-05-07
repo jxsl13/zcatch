@@ -112,7 +112,7 @@ int CControls::SnapInput(int *pData)
 	bool Send = false;
 
 	// update player state
-	if(m_pClient->m_pChat->IsActive())
+	if(m_pClient->m_pChat->IsActive() && !(g_Config.m_ClDiscreetWhispers && m_pClient->m_pChat->IsWhispering()))
 		m_InputData.m_PlayerFlags = PLAYERFLAG_CHATTING;
 	else
 		m_InputData.m_PlayerFlags = 0;
