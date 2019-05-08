@@ -299,6 +299,8 @@ private:
 	bool m_UseMouseButtons;
 	vec2 m_MousePos;
 	vec2 m_PrevMousePos;
+	bool m_CursorActive;
+	bool m_PrevCursorActive;
 	bool m_PopupActive;
 	int m_ActiveListBox;
 	bool m_BrowsePageChosen;
@@ -624,6 +626,7 @@ private:
 	// found in menus_demo.cpp
 	void RenderDemoPlayer(CUIRect MainView);
 	void RenderDemoList(CUIRect MainView);
+	static float RenderDemoDetails(CUIRect View, void *pUser);
 
 	// found in menus_start.cpp
 	void RenderStartMenu(CUIRect MainView);
@@ -679,6 +682,7 @@ private:
 	void RenderSettingsControls(CUIRect MainView);
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);
+	void RenderSettingsStats(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 
 	// Gamer
@@ -728,6 +732,8 @@ private:
 	static float RenderSettingsControlsWeapon(CUIRect View, void *pUser);
 	static float RenderSettingsControlsVoting(CUIRect View, void *pUser);
 	static float RenderSettingsControlsChat(CUIRect View, void *pUser);
+	static float RenderSettingsControlsScoreboard(CUIRect View, void *pUser);
+	static float RenderSettingsControlsStats(CUIRect View, void *pUser);
 	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
 
 	void SetActive(bool Active);
@@ -740,6 +746,8 @@ private:
 	void ToggleMusic();
 
 	void SetMenuPage(int NewPage);
+
+	bool CheckHotKey(int Key);
 public:
 	struct CSwitchTeamInfo
 	{

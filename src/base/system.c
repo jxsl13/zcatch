@@ -1549,7 +1549,7 @@ int fs_makedir_recursive(const char *path)
 	for(i = 1; i < len; i++)
 	{
 		char b = buffer[i];
-		if(b == '/' || b == '\\')
+		if(b == '/' || (b == '\\' && buffer[i-1] != ':'))
 		{
 			buffer[i] = 0;
 			if(fs_makedir(buffer) < 0)
@@ -1729,6 +1729,44 @@ int time_isxmasday()
 	time_info = localtime(&time_data);
 	if(time_info->tm_mon == 11 && time_info->tm_mday >= 24 && time_info->tm_mday <= 31)
 		return 1;
+	return 0;
+}
+
+int time_iseasterday()
+{
+	time_t time_data_now, time_data;
+	struct tm *time_info;
+	int Y, a, b, c, d, e, f, g, h, i, k, L, m, month, day, day_offset;
+
+	time(&time_data_now);
+	time_info = localtime(&time_data_now);
+
+	// compute Easter day (Sunday) using https://en.wikipedia.org/w/index.php?title=Computus&oldid=890710285#Anonymous_Gregorian_algorithm
+	Y = time_info->tm_year + 1900;
+	a = Y % 19;
+	b = Y / 100;
+	c = Y % 100;
+	d = b / 4;
+	e = b % 4;
+	f = (b + 8) / 25;
+	g = (b - f + 1) / 3;
+	h = (19 * a + b - d - g + 15) % 30;
+	i = c / 4;
+	k = c % 4;
+	L = (32 + 2 * e + 2 * i - h - k) % 7;
+	m = (a + 11 * h + 22 * L) / 451;
+	month = (h + L - 7 * m + 114) / 31;
+	day = ((h + L - 7 * m + 114) % 31) + 1;
+
+	// (now-1d ≤ easter ≤ now+2d) <=> (easter-2d ≤ now ≤ easter+1d) <=> (Good Friday ≤ now ≤ Easter Monday)
+	for(day_offset = -1; day_offset <= 2; day_offset++)
+	{
+		time_data = time_data_now + day_offset*(60*60*24);
+		time_info = localtime(&time_data);
+
+		if(time_info->tm_mon == month-1 && time_info->tm_mday == day)
+			return 1;
+	}
 	return 0;
 }
 
@@ -2145,6 +2183,17 @@ char str_uppercase(char c)
 int str_toint(const char *str) { return atoi(str); }
 float str_tofloat(const char *str) { return atof(str); }
 
+int str_utf8_is_whitespace(int code)
+{
+	// check if unicode is not empty
+	if(code > 0x20 && code != 0xA0 && code != 0x034F && (code < 0x2000 || code > 0x200F) && (code < 0x2028 || code > 0x202F) &&
+		(code < 0x205F || code > 0x2064) && (code < 0x206A || code > 0x206F) && (code < 0xFE00 || code > 0xFE0F) &&
+		code != 0xFEFF && (code < 0xFFF9 || code > 0xFFFC))
+	{
+		return 0;
+	}
+	return 1;
+}
 
 char *str_utf8_skip_whitespaces(char *str)
 {
@@ -2156,10 +2205,7 @@ char *str_utf8_skip_whitespaces(char *str)
 		str_old = str;
 		code = str_utf8_decode((const char **)&str);
 
-		// check if unicode is not empty
-		if(code > 0x20 && code != 0xA0 && code != 0x034F && (code < 0x2000 || code > 0x200F) && (code < 0x2028 || code > 0x202F) &&
-			(code < 0x205F || code > 0x2064) && (code < 0x206A || code > 0x206F) && (code < 0xFE00 || code > 0xFE0F) &&
-			code != 0xFEFF && (code < 0xFFF9 || code > 0xFFFC))
+		if(!str_utf8_is_whitespace(code))
 		{
 			return str_old;
 		}

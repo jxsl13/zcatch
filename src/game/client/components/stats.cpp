@@ -2,43 +2,35 @@
 #include <engine/textrender.h>
 #include <engine/graphics.h>
 #include <engine/serverbrowser.h>
+#include <game/client/animstate.h>
 #include <game/client/components/announcers.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
-#include <game/client/animstate.h>
-#include <game/client/teecomp.h>
 #include <generated/client_data.h>
-#include "teecomp_stats.h"
+#include "stats.h"
 
-CTeecompStats::CTeecompStats()
+CStats::CStats()
 {
 	m_Mode = 0;
 	m_StatsClientID = -1;
-	m_ScreenshotTaken = false;
-	m_ScreenshotTime = -1;
 }
 
-void CTeecompStats::OnReset()
+void CStats::OnReset()
 {
 	for(int i=0; i<MAX_CLIENTS; i++)
 		m_pClient->m_aStats[i].Reset();
 	m_Mode = 0;
 	m_StatsClientID = -1;
-	m_ScreenshotTaken = false;
-	m_ScreenshotTime = -1;
 }
 
-void CTeecompStats::ConKeyStats(IConsole::IResult *pResult, void *pUserData)
+void CStats::ConKeyStats(IConsole::IResult *pResult, void *pUserData)
 {
-	if(pResult->GetInteger(0) != 0)
-		((CTeecompStats *)pUserData)->m_Mode = pResult->GetInteger(1);
-	else
-		((CTeecompStats *)pUserData)->m_Mode = 0;
+	((CStats *)pUserData)->m_Mode = pResult->GetInteger(0) != 0;
 }
-
-void CTeecompStats::ConKeyNext(IConsole::IResult *pResult, void *pUserData)
+/*
+void CStats::ConKeyNext(IConsole::IResult *pResult, void *pUserData)
 {
-	CTeecompStats *pStats = (CTeecompStats *)pUserData;
+	CStats *pStats = (CStats *)pUserData;
 	if(pStats->m_Mode != 2)
 		return;
 
@@ -48,20 +40,20 @@ void CTeecompStats::ConKeyNext(IConsole::IResult *pResult, void *pUserData)
 		pStats->m_StatsClientID %= MAX_CLIENTS;
 		pStats->CheckStatsClientID();
 	}
-}
+}*/
 
-void CTeecompStats::OnConsoleInit()
+void CStats::OnConsoleInit()
 {
-	Console()->Register("+stats", "i", CFGFLAG_CLIENT, ConKeyStats, this, "Show stats");
-	Console()->Register("+next_stats", "", CFGFLAG_CLIENT, ConKeyNext, this, "Next player Stats");
+	Console()->Register("+stats", "", CFGFLAG_CLIENT, ConKeyStats, this, "Show stats");
+	// Console()->Register("+next_stats", "", CFGFLAG_CLIENT, ConKeyNext, this, "Next player Stats");
 }
 
-bool CTeecompStats::IsActive()
+bool CStats::IsActive()
 {
 	return (m_Mode > 0);
 }
 
-void CTeecompStats::CheckStatsClientID()
+void CStats::CheckStatsClientID()
 {
 	if(m_StatsClientID == -1)
 		m_StatsClientID = m_pClient->m_LocalClientID;
@@ -80,7 +72,28 @@ void CTeecompStats::CheckStatsClientID()
 	}
 }
 
-void CTeecompStats::OnMessage(int MsgType, void *pRawMsg)
+/*
+void CTeecompStats::CheckStatsClientID()
+{
+	if(m_StatsClientID == -1)
+		m_StatsClientID = m_pClient->m_LocalClientID;
+
+	int Prev = m_StatsClientID;
+	while(!m_pClient->m_aStats[m_StatsClientID].m_Active)
+	{
+		m_StatsClientID++;
+		m_StatsClientID %= MAX_CLIENTS;
+		if(m_StatsClientID == Prev)
+		{
+			m_StatsClientID = -1;
+			m_Mode = 0;
+			break;
+		}
+	}
+}
+*/
+
+void CStats::OnMessage(int MsgType, void *pRawMsg)
 {
 	if(MsgType == NETMSGTYPE_SV_KILLMSG)
 	{
@@ -167,59 +180,39 @@ void CTeecompStats::OnMessage(int MsgType, void *pRawMsg)
 		else
 			pStats[pMsg->m_Victim].m_Suicides++;
 	}
-	else if(MsgType == NETMSGTYPE_SV_CHAT)
+/*	if(MsgType == NETMSGTYPE_SV_KILLMSG)
 	{
-		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		if(pMsg->m_ClientID < 0)
+		CNetMsg_Sv_KillMsg *pMsg = (CNetMsg_Sv_KillMsg *)pRawMsg;
+		CGameClient::CClientStats *pStats = m_pClient->m_aStats;
+		
+		pStats[pMsg->m_Victim].m_Deaths++;
+		pStats[pMsg->m_Victim].m_CurrentSpree = 0;
+		if(pMsg->m_Weapon >= 0)
+			pStats[pMsg->m_Victim].m_aDeathsFrom[pMsg->m_Weapon]++;
+		if(pMsg->m_ModeSpecial & 1)
+			pStats[pMsg->m_Victim].m_DeathsCarrying++;
+		if(pMsg->m_Victim != pMsg->m_Killer)
 		{
-			const char *p;
-			const char *pLookFor = "flag was captured by '";
-			if(str_find(pMsg->m_pMessage, pLookFor) != 0)
-			{
-				// server info
-				CServerInfo CurrentServerInfo;
-				Client()->GetServerInfo(&CurrentServerInfo);
+			pStats[pMsg->m_Killer].m_Frags++;
+			pStats[pMsg->m_Killer].m_CurrentSpree++;
 
-				p = str_find(pMsg->m_pMessage, pLookFor);
-				char aName[64];
-				p += str_length(pLookFor);
-				str_copy(aName, p, sizeof(aName));
-				
-				// remove capture time
-				if(str_comp(aName+str_length(aName)-9, " seconds)") == 0)
-				{
-					char *c = aName+str_length(aName)-10;
-					while(c > aName)
-					{
-						c--;
-						if(*c == '(')
-						{
-							*(c-1) = 0;
-							break;
-						}
-					}
-				}
-				// remove the ' at the end
-				aName[str_length(aName)-1] = 0;
-
-				for(int i = 0; i < MAX_CLIENTS; i++)
-				{
-					if(!m_pClient->m_aStats[i].m_Active)
-						continue;
-
-					if(str_comp(m_pClient->m_aClients[i].m_aName, aName) == 0)
-					{
-						m_pClient->m_aStats[i].m_FlagCaptures++;
-						break;
-					}
-				}
-			}
+			if(pStats[pMsg->m_Killer].m_CurrentSpree > pStats[pMsg->m_Killer].m_BestSpree)
+				pStats[pMsg->m_Killer].m_BestSpree = pStats[pMsg->m_Killer].m_CurrentSpree;
+			if(pMsg->m_Weapon >= 0)
+				pStats[pMsg->m_Killer].m_aFragsWith[pMsg->m_Weapon]++;
+			if(pMsg->m_ModeSpecial & 1)
+				pStats[pMsg->m_Killer].m_CarriersKilled++;
+			if(pMsg->m_ModeSpecial & 2)
+				pStats[pMsg->m_Killer].m_KillsCarrying++;
 		}
-	}
+		else
+			pStats[pMsg->m_Victim].m_Suicides++;
+	}*/
 }
 
-void CTeecompStats::OnRender()
+void CStats::OnRender()
 {
+	/*
 	// auto stat screenshot stuff
 	if(g_Config.m_TcStatScreenshot)
 	{
@@ -244,12 +237,14 @@ void CTeecompStats::OnRender()
 		case 2:
 			RenderIndividualStats();
 			break;
-	}
+	}*/
+	RenderGlobalStats();
 }
 
-void CTeecompStats::RenderGlobalStats()
+
+void CStats::RenderGlobalStats()
 {
-	if(m_Mode != 1)
+	if(!m_Mode)
 		return;
 
 	float Width = 400*3.0f*Graphics()->ScreenAspect();
@@ -270,7 +265,7 @@ void CTeecompStats::RenderGlobalStats()
 	}
 
 	for(int i=0; i<9; i++)
-		if(g_Config.m_TcStatboardInfos & (1<<i))
+		if(g_Config.m_ClStatboardInfos & (1<<i))
 		{
 			if((1<<i) == (TC_STATS_BESTSPREE))
 				w += 140;
@@ -278,11 +273,11 @@ void CTeecompStats::RenderGlobalStats()
 				w += 100;
 		}
 
-	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
 		w += 100;
 
 	bool aDisplayWeapon[NUM_WEAPONS] = {false};
-	if(g_Config.m_TcStatboardInfos & TC_STATS_WEAPS)
+	if(g_Config.m_ClStatboardInfos & TC_STATS_WEAPS)
 	{
 		w += 10;
 		for(i=0; i<NumPlayers; i++)
@@ -310,19 +305,19 @@ void CTeecompStats::RenderGlobalStats()
 	float tw;
 	int px = 325;
 
-	TextRender()->Text(0, x+10, y-5, 24.0f, Localize("Name"), -1);
-	const char *apHeaders[] = { Localize("Frags"), Localize("Deaths"), Localize("Suicides"), Localize("Ratio"), Localize("Net"), Localize("FPM"), Localize("Spree"), Localize("Best spree"), Localize("Grabs") };
+	TextRender()->Text(0, x+10, y-5, 24.0f, Localize("Name"), -1.0f);
+	const char *apHeaders[] = { Localize("Frags"), Localize("Deaths"), Localize("Suicides"), Localize("Ratio"), Localize("Net", "Net score"), Localize("FPM"), Localize("Spree"), Localize("Best spree"), Localize("Grabs", "Flag grabs") };
 	for(i=0; i<9; i++)
-		if(g_Config.m_TcStatboardInfos & (1<<i))
+		if(g_Config.m_ClStatboardInfos & (1<<i))
 		{
 			if(1<<i == TC_STATS_BESTSPREE)
 				px += 40.0f;
-			tw = TextRender()->TextWidth(0, 24.0f, apHeaders[i], -1);
-			TextRender()->Text(0, x+px-tw, y-5, 24.0f, apHeaders[i], -1);
+			tw = TextRender()->TextWidth(0, 24.0f, apHeaders[i], -1, -1.0f);
+			TextRender()->Text(0, x+px-tw, y-5, 24.0f, apHeaders[i], -1.0f);
 			px += 100;
 		}
 
-	if(g_Config.m_TcStatboardInfos & TC_STATS_WEAPS)
+	if(g_Config.m_ClStatboardInfos & TC_STATS_WEAPS)
 	{
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 		Graphics()->QuadsBegin();
@@ -342,7 +337,7 @@ void CTeecompStats::RenderGlobalStats()
 		px += 40;
 	}
 
-	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
 	{
 		px -= 40;
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
@@ -369,11 +364,29 @@ void CTeecompStats::RenderGlobalStats()
 	}
 	for(int j=0; j<NumPlayers; j++)
 	{
-		const CGameClient::CClientStats Stats = m_pClient->m_aStats[apPlayers[j]];		
-
-		if(apPlayers[j] == m_pClient->m_LocalClientID)
+		// workaround
+		if(j == 16)
 		{
-			// background so it's easy to find the local player
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "... %d other players", NumPlayers-j);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x+64, y, FontSize, aBuf, -1.0f);
+			px += 100;
+			break;
+		}
+
+
+		// skip specs
+		if(m_pClient->m_aClients[apPlayers[j]].m_Active && m_pClient->m_aClients[apPlayers[j]].m_Team == TEAM_SPECTATORS)
+			break;
+
+		const CGameClient::CClientStats Stats = m_pClient->m_aStats[apPlayers[j]];		
+		const bool HighlightedLine = (!m_pClient->m_Snap.m_SpecInfo.m_Active && apPlayers[j] == m_pClient->m_LocalClientID)
+			|| (m_pClient->m_Snap.m_SpecInfo.m_Active && apPlayers[j] == m_pClient->m_Snap.m_SpecInfo.m_SpectatorID);
+
+		// background so it's easy to find the local player or the followed one in spectator mode
+		if(HighlightedLine)
+		{
 			CUIRect Rect = {x, y, w-20, LineHeight*0.95f};
 			RenderTools()->DrawRoundRect(&Rect, vec4(1,1,1,0.25f), 17.0f);
 		}
@@ -383,85 +396,79 @@ void CTeecompStats::RenderGlobalStats()
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &Teeinfo, EMOTE_NORMAL, vec2(1,0), vec2(x+28, y+28+TeeOffset));
 
 		char aBuf[128];
-		if(g_Config.m_TcStatId)
-		{
-			str_format(aBuf, sizeof(aBuf), "%d", apPlayers[j]);
-			TextRender()->Text(0, x, y, FontSize, aBuf, -1);
-		}
-
 		CTextCursor Cursor;
-		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
+		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, x+64, y, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 220;
 		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
 
 		px = 325;
-		if(g_Config.m_TcStatboardInfos & TC_STATS_FRAGS)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_FRAGS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Frags);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_DEATHS)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_DEATHS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_SUICIDES)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_SUICIDES)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Suicides);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_RATIO)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_RATIO)
 		{
 			if(Stats.m_Deaths == 0)
 				str_format(aBuf, sizeof(aBuf), "--");
 			else
 				str_format(aBuf, sizeof(aBuf), "%.2f", (float)(Stats.m_Frags)/Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_NET)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_NET)
 		{
 			str_format(aBuf, sizeof(aBuf), "%+d", Stats.m_Frags-Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_FPM)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_FPM)
 		{
 			float Fpm = (float)(Stats.m_Frags*60)/((float)(Client()->GameTick()-Stats.m_JoinDate)/Client()->GameTickSpeed());
 			str_format(aBuf, sizeof(aBuf), "%.1f", Fpm);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_SPREE)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_SPREE)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_CurrentSpree);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(g_Config.m_TcStatboardInfos & TC_STATS_BESTSPREE)
+		if(g_Config.m_ClStatboardInfos & TC_STATS_BESTSPREE)
 		{
 			px += 40;
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_BestSpree);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
-		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGGRABS)
+		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGGRABS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagGrabs);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
 		for(i=0, px=px-40; i<NUM_WEAPONS; i++)
@@ -470,22 +477,23 @@ void CTeecompStats::RenderGlobalStats()
 				continue;
 
 			str_format(aBuf, sizeof(aBuf), "%d/%d", Stats.m_aFragsWith[i], Stats.m_aDeathsFrom[i]);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x+px-tw/2, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x+px-tw/2, y, FontSize, aBuf, -1.0f);
 			px += 80;
 		}
-		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
+		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagCaptures);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
-			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
+			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1.0f);
 			px += 100;
 		}
 		y += LineHeight;
 	}
 }
 
-void CTeecompStats::RenderIndividualStats()
+// unused yet
+void CStats::RenderIndividualStats()
 {
 	if(m_Mode != 2)
 		return;
@@ -648,10 +656,4 @@ void CTeecompStats::RenderIndividualStats()
 		TextRender()->Text(0, x+xo, y, FontSize, aBuf, -1);
 		y += LineHeight;
 	}
-}
-
-void CTeecompStats::AutoStatScreenshot()
-{
-	/*if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-		Client()->AutoStatScreenshot_Start();*/
 }

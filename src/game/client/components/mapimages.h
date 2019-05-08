@@ -25,6 +25,9 @@ class CMapImages : public CComponent
 	IGraphics::CTextureHandle m_AutoTilesTexture;
 	IGraphics::CTextureHandle m_AutoDoodadsTexture;
 
+	IGraphics::CTextureHandle m_EasterTexture;
+	bool m_EasterIsLoaded;
+
 	void LoadMapImages(class IMap *pMap, class CLayers *pLayers, int MapType);
 
 public:
@@ -41,6 +44,7 @@ public:
 	virtual void OnMapLoad();
 	void OnMenuMapLoad(class IMap *pMap);
 	
+	IGraphics::CTextureHandle GetEasterTexture();
 	void LoadAutoMapres();
 };
 

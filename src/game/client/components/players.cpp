@@ -671,12 +671,12 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		r.y += g_Config.m_GfxArmorUnderHealth ? (3.0f) :(-3.0f);
 		
 		str_format(Text, sizeof(Text), "%d", hp);
-		int w = TextRender()->TextWidth(0, 9, Text, -1);
+		int w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, r.x-w, r.y-g_Config.m_GfxArmorUnderHealth*8, 9.0f, TEXTFLAG_RENDER);
 		TextRender()->TextEx(&Cursor, Text, -1);
 		
 		str_format(Text, sizeof(Text), "%d", armor);
-		w = TextRender()->TextWidth(0, 9, Text, -1);
+		w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, r.x-w, r.y-(1-g_Config.m_GfxArmorUnderHealth)*8, 9.0f, TEXTFLAG_RENDER);
 		TextRender()->TextEx(&Cursor, Text, -1);
 	}
