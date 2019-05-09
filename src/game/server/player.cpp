@@ -64,6 +64,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, int Team)
 	m_LastTarget.x = 0;
 	m_LastTarget.y = 0;
 
+	// Whether an admin can watch this player's 
+	// current cursor position
 	m_IsMousePositionVisible = false;
 }
 
@@ -238,22 +240,25 @@ void CPlayer::Snap(int SnappingClient)
     // Snapping Client receives the Snapshot
     // if receiving player is an admin and the currently 
     // looked at player is being tracked.
-    if (m_IsMousePositionVisible && m_pCharacter && Server()->IsAuthed(SnappingClient))
+    if (m_IsMousePositionVisible 
+		&& m_pCharacter 
+		&& Server()->IsAuthed(SnappingClient) 
+		&& GameServer()->m_apPlayers[SnappingClient]->m_Team == TEAM_SPECTATORS)
     {
-        // If it's an admin, we want to send
-        // this players cursor position to that admin.
+            // If it's an admin, we want to send
+            // this players cursor position to that admin.
 
-        auto pWorld = &(GameServer()->m_World);
+            auto pWorld = &(GameServer()->m_World);
 
-        vec2 pos = m_pCharacter->m_Pos;
-        vec2 cursor = pos + m_LastTarget;
-        int laserOwner = m_ClientID;
-        int visibilityTarget = SnappingClient;
-        /**
+            vec2 pos = m_pCharacter->m_Pos;
+            vec2 cursor = pos + m_LastTarget;
+            int laserOwner = m_ClientID;
+            int visibilityTarget = SnappingClient;
+            /**
          * Register a fake laser that's drawn from pos to cursor
          * pass laser owner's id and only show the laser to the "visibility target"
          */
-        new CFakeLaser(pWorld, pos, cursor, laserOwner, visibilityTarget);
+            new CFakeLaser(pWorld, pos, cursor, laserOwner, visibilityTarget);
     }
 
 	if(m_ClientID == SnappingClient)
