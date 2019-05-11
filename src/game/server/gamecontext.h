@@ -3,9 +3,13 @@
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
 
+#include "base/hash.h"
+
 #include <engine/server.h>
 #include <engine/console.h>
+#include <engine/storage.h>
 #include <engine/shared/memheap.h>
+
 
 #include <game/layers.h>
 #include <game/voting.h>
@@ -14,6 +18,7 @@
 #include "gamecontroller.h"
 #include "gameworld.h"
 #include "player.h"
+#include "teehistorian.h"
 
 /* ranking system */
 #include <engine/external/sqlite/sqlite3.h>
@@ -48,10 +53,18 @@
 			All players (CPlayer::snap)
 
 */
+struct HardMode
+	{
+		const char* name;
+		bool laser;
+		bool grenade;
+	};
+
 class CGameContext : public IGameServer
 {
 	IServer *m_pServer;
 	class IConsole *m_pConsole;
+	IStorage *m_pStorage;
 	CLayers m_Layers;
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
@@ -96,18 +109,13 @@ class CGameContext : public IGameServer
 	std::timed_mutex m_RankingDbMutex;
 	
 	// zCatch/TeeVi: hard mode
-	struct HardMode
-	{
-		const char* name;
-		bool laser;
-		bool grenade;
-	};
 	std::vector<HardMode> m_HardModes;
 	
 public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
 	CCollision *Collision() { return &m_Collision; }
+	IStorage *Storage() { return m_pStorage; }
 	CTuningParams *Tuning() { return &m_Tuning; }
 	class CServerBan *GetBanServer() { return Server()->GetBanServer();}
 
@@ -122,6 +130,7 @@ public:
 
 	IGameController *m_pController;
 	CGameWorld m_World;
+	CUuid m_GameUuid;
 
 	// helper functions
 	class CCharacter *GetPlayerChar(int ClientID);
@@ -196,7 +205,14 @@ public:
 	void SendBroadcast(const char *pText, int ClientID);
 	virtual void InformPlayers(const char *pText) { SendChatTarget(-1, pText); }
 
-	//
+    bool m_TeeHistorianActive;
+    CTeeHistorian m_TeeHistorian;
+    ASYNCIO *m_pTeeHistorianFile;
+
+    static void CommandCallback(int ClientID, int FlagMask, const char *pCmd, IConsole::IResult *pResult, void *pUser);
+    static void TeeHistorianWrite(const void *pData, int DataSize, void *pUser);
+
+    //
 	void CheckPureTuning();
 	void SendTuningParams(int ClientID);
 
@@ -215,6 +231,9 @@ public:
 
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID);
 
+    virtual void OnClientEngineJoin(int ClientID);
+    virtual void OnClientEngineDrop(int ClientID, const char *pReason);
+
 	virtual void OnClientConnected(int ClientID);
 	virtual void OnClientEnter(int ClientID);
 	virtual void OnClientDrop(int ClientID, const char *pReason);
@@ -224,6 +243,7 @@ public:
 	virtual bool IsClientReady(int ClientID);
 	virtual bool IsClientPlayer(int ClientID);
 
+	virtual CUuid GameUuid();
 	virtual const char *GameType();
 	virtual const char *Version();
 	virtual const char *NetVersion();
@@ -239,7 +259,9 @@ public:
 
 	/*future stuff*/
 	std::queue<std::future<void> > m_Futures;
+
 	void AddFuture(std::future<void> Future) {m_Futures.push(std::move(Future));};
+	
 	void CleanFutures() {
 		unsigned long size = m_Futures.size();
 
@@ -255,8 +277,6 @@ public:
 				m_Futures.push(std::move(f));
 			}
 		}
-
-
 	};
 
 	void WaitForFutures() {
@@ -281,7 +301,6 @@ public:
 	static void ConMergeRecords(IConsole::IResult *pResult, void *pUserData);
 	static void ConMergeRecordsId(IConsole::IResult *pResult, void *pUserData);
 
-
 	static void ConFlags(IConsole::IResult *pResult, void *pUserData);
 	static void ConFlagsById(IConsole::IResult *pResult, void *pUserData);
 
@@ -294,7 +313,6 @@ public:
 	static void ConShowCursorPositionByID(IConsole::IResult *pResult, void *pUserData);
 	static void ConHideCursorPositionByID(IConsole::IResult *pResult, void *pUserData);
 	static void ConResetCursorPositionVisibility(IConsole::IResult *pResult, void *pUserData);
-
 
 	// zCatch/TeeVi: hard mode
 	std::vector<HardMode> GetHardModes() { return std::vector<HardMode>(m_HardModes.begin(), m_HardModes.end()); };

@@ -101,7 +101,7 @@ static int GetItemIndexHashed(int Key, const CItemList *pHashlist)
 	return -1;
 }
 
-static int DiffItem(int *pPast, int *pCurrent, int *pOut, int Size)
+int CSnapshotDelta::DiffItem(int *pPast, int *pCurrent, int *pOut, int Size)
 {
 	int Needed = 0;
 	while(Size)
@@ -218,7 +218,7 @@ int CSnapshotDelta::CreateDelta(CSnapshot *pFrom, CSnapshot *pTo, void *pDstData
 			if(m_aItemSizes[pCurItem->Type()])
 				pItemDataDst = pData+2;
 
-			if(DiffItem((int*)pPastItem->Data(), (int*)pCurItem->Data(), pItemDataDst, ItemSize/4))
+			if(CSnapshotDelta::DiffItem((int*)pPastItem->Data(), (int*)pCurItem->Data(), pItemDataDst, ItemSize/4))
 			{
 
 				*pData++ = pCurItem->Type();

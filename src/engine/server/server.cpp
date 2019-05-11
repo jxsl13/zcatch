@@ -365,6 +365,8 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 	m_InfoTexts = NULL;
 	m_InfoTextInterval = -1;
 	
+	m_aErrorShutdownReason[0] = 0;
+
 	Init();
 }
 
@@ -543,6 +545,30 @@ int CServer::Init()
 void CServer::SetRconCID(int ClientID)
 {
 	m_RconClientID = ClientID;
+}
+
+int CServer::GetAuthedState(int ClientID)
+{
+	return m_aClients[ClientID].m_Authed;
+}
+
+const char *CServer::GetAuthName(int ClientID)
+{
+	int level =  m_aClients[ClientID].m_Authed;
+
+	switch (level)
+	{
+	case AUTHED_ADMIN:
+		return "AUTHED_ADMIN";
+	case AUTHED_SUBADMIN:
+		return m_aClients[ClientID].m_SubAdminAuthName.c_str();
+	case AUTHED_MOD:
+		return "AUTHED_MOD";
+	case AUTHED_NO:
+		return "AUTHED_NO";
+	default:
+		return "default";
+	}
 }
 
 bool CServer::IsAuthed(int ClientID)
@@ -835,6 +861,9 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr,	pReason);
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
+	// TeeHistorian
+	pThis->GameServer()->OnClientEngineDrop(ClientID, pReason);
+
 	// notify the mod about the drop
 	if(pThis->m_aClients[ClientID].m_State >= CClient::STATE_READY)
 		pThis->GameServer()->OnClientDrop(ClientID, pReason);
@@ -854,13 +883,20 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	return 0;
 }
 
+void CServer::GetMapInfo(char *pMapName, int MapNameSize, int *pMapSize, int *pMapCrc)
+{
+	str_copy(pMapName, GetMapName(), MapNameSize);
+	*pMapSize = m_CurrentMapSize;
+	*pMapCrc = m_CurrentMapCrc;
+}
+
 void CServer::SendMap(int ClientID)
 {
-	CMsgPacker Msg(NETMSG_MAP_CHANGE);
-	Msg.AddString(GetMapName(), 0);
-	Msg.AddInt(m_CurrentMapCrc);
-	Msg.AddInt(m_CurrentMapSize);
-	SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
+		CMsgPacker Msg(NETMSG_MAP_CHANGE);
+		Msg.AddString(GetMapName(), 0);
+		Msg.AddInt(m_CurrentMapCrc);
+		Msg.AddInt(m_CurrentMapSize);
+		SendMsgEx(&Msg, MSGFLAG_VITAL|MSGFLAG_FLUSH, ClientID, true);
 }
 
 void CServer::SendConnectionReady(int ClientID)
@@ -1032,7 +1068,10 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
 				GameServer()->OnClientEnter(ClientID);
-			}
+
+				// TeeHistorian
+				GameServer()->OnClientEngineJoin(ClientID);
+            }
 		}
 		else if(Msg == NETMSG_INPUT)
 		{
@@ -1488,6 +1527,10 @@ int CServer::Run()
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 	GameServer()->OnInit();
+	if(ErrorShutdown())
+	{
+		return 1;
+	}
 	str_format(aBuf, sizeof(aBuf), "version %s", GameServer()->NetVersion());
 	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
@@ -1539,6 +1582,10 @@ int CServer::Run()
 					m_CurrentGameTick = 0;
 					Kernel()->ReregisterInterface(GameServer());
 					GameServer()->OnInit();
+					if(ErrorShutdown())
+					{
+						break;
+					}
 					UpdateServerInfo();
 				}
 				else
@@ -1571,6 +1618,10 @@ int CServer::Run()
 				}
 
 				GameServer()->OnTick();
+				if(ErrorShutdown())
+				{
+					break;
+				}
 			}
 
 			// snap game
@@ -1616,11 +1667,17 @@ int CServer::Run()
 			net_socket_read_wait(m_NetServer.Socket(), 5);
 		}
 	}
+
+	const char *pDisconnectReason = "Server shutdown";
+	if(ErrorShutdown())
+	{
+		pDisconnectReason = m_aErrorShutdownReason;
+	}
 	// disconnect all clients on shutdown
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-			m_NetServer.Drop(i, "Server shutdown");
+			m_NetServer.Drop(i, pDisconnectReason);
 
 		m_Econ.Shutdown();
 	}
@@ -2375,3 +2432,7 @@ int main(int argc, const char **argv) // ignore_convention
 	return 0;
 }
 
+void CServer::SetErrorShutdown(const char *pReason)
+{
+	str_copy(m_aErrorShutdownReason, pReason, sizeof(m_aErrorShutdownReason));
+}

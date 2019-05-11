@@ -78,6 +78,8 @@ void CGameContext::Construct(int Resetting)
 	m_HardModes.push_back({"10s", true, true});
 	m_HardModes.push_back({"20s", true, true});
 	m_HardModes.push_back({"double", true, true});
+
+    m_TeeHistorianActive = false;
 }
 
 CGameContext::CGameContext(int Resetting)
@@ -499,12 +501,49 @@ void CGameContext::OnTick()
 	// check tuning
 	CheckPureTuning();
 
+	if(m_TeeHistorianActive)
+	{
+		int Error = aio_error(m_pTeeHistorianFile);
+		if(Error)
+		{
+			dbg_msg("teehistorian", "error writing to file, err=%d", Error);
+			Server()->SetErrorShutdown("teehistorian io error");
+		}
+
+		if(!m_TeeHistorian.Starting())
+		{
+			m_TeeHistorian.EndInputs();
+			m_TeeHistorian.EndTick();
+		}
+		m_TeeHistorian.BeginTick(Server()->Tick());
+		m_TeeHistorian.BeginPlayers();
+	}
+
 	// copy tuning
 	m_World.m_Core.m_Tuning = m_Tuning;
 	m_World.Tick();
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
+
+	if (m_TeeHistorianActive)
+	{
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			if (m_apPlayers[i] && m_apPlayers[i]->GetCharacter())
+			{
+				CNetObj_CharacterCore Char;
+				m_apPlayers[i]->GetCharacter()->GetCore().Write(&Char);
+				m_TeeHistorian.RecordPlayer(i, &Char);
+			}
+			else
+			{
+				m_TeeHistorian.RecordDeadPlayer(i);
+			}
+		}
+		m_TeeHistorian.EndPlayers();
+		m_TeeHistorian.BeginInputs();
+	}
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -728,6 +767,9 @@ void CGameContext::OnClientDirectInput(int ClientID, void *pInput)
 {
 	if(!m_World.m_Paused)
 		m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)pInput);
+
+    if (m_TeeHistorianActive)
+        m_TeeHistorian.RecordPlayerInput(ClientID, (CNetObj_PlayerInput *)pInput);
 }
 
 void CGameContext::OnClientPredictedInput(int ClientID, void *pInput)
@@ -833,19 +875,19 @@ void CGameContext::OnClientConnected(int ClientID)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
-	if(m_apPlayers[ClientID]->m_CaughtBy > CPlayer::ZCATCH_NOT_CAUGHT)
-		m_apPlayers[m_apPlayers[ClientID]->m_CaughtBy]->ReleaseZCatchVictim(ClientID);
-	
 
-	// if player voted something/someone and it did not pass
-	// before leaving the server, voteban him for the remaining time.
-	int64 Now = Server()->Tick();
-	int Timeleft = m_apPlayers[ClientID]->m_LastVoteCall + Server()->TickSpeed() * 60 - Now;
-	// convert to seconds
-	Timeleft = static_cast<int>(Timeleft / Server()->TickSpeed());
-	if (m_apPlayers[ClientID]->m_LastVoteCall && Timeleft > 0)
-	{
-		GetBanServer()->Server()->AddVoteban(ClientID, Timeleft);
+    if (m_apPlayers[ClientID]->m_CaughtBy > CPlayer::ZCATCH_NOT_CAUGHT)
+        m_apPlayers[m_apPlayers[ClientID]->m_CaughtBy]->ReleaseZCatchVictim(ClientID);
+
+    // if player voted something/someone and it did not pass
+    // before leaving the server, voteban him for the remaining time.
+    int64 Now = Server()->Tick();
+    int Timeleft = m_apPlayers[ClientID]->m_LastVoteCall + Server()->TickSpeed() * 60 - Now;
+    // convert to seconds
+    Timeleft = static_cast<int>(Timeleft / Server()->TickSpeed());
+    if (m_apPlayers[ClientID]->m_LastVoteCall && Timeleft > 0)
+    {
+        GetBanServer()->Server()->AddVoteban(ClientID, Timeleft);
 	}
 
 
@@ -863,6 +905,22 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		if(m_apPlayers[i] && m_apPlayers[i]->m_SpectatorID == ClientID)
 			m_apPlayers[i]->m_SpectatorID = SPEC_FREEVIEW;
 	}
+}
+
+void CGameContext::OnClientEngineJoin(int ClientID)
+{
+    if (m_TeeHistorianActive)
+    {
+        m_TeeHistorian.RecordPlayerJoin(ClientID);
+    }
+}
+
+void CGameContext::OnClientEngineDrop(int ClientID, const char *pReason)
+{
+    if (m_TeeHistorianActive)
+    {
+        m_TeeHistorian.RecordPlayerDrop(ClientID, pReason);
+    }
 }
 
 // returns whether the player is allowed to chat, informs the player and mutes him if needed
@@ -891,6 +949,14 @@ void CGameContext::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 {
     void* pRawMsg = m_NetObjHandler.SecureUnpackMsg(MsgID, pUnpacker);
     CPlayer* pPlayer = m_apPlayers[ClientID];
+
+    if(m_TeeHistorianActive)
+	{
+		if(m_NetObjHandler.TeeHistorianRecordMsg(MsgID))
+		{
+			m_TeeHistorian.RecordPlayerMessage(ClientID, pUnpacker->CompleteData(), pUnpacker->CompleteSize());
+		}
+	}
 
     if (pPlayer)
     {
@@ -2776,6 +2842,7 @@ void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
+	m_pStorage = Kernel()->RequestInterface<IStorage>();
 
 	Console()->Register("tune", "si", CFGFLAG_SERVER, ConTuneParam, this, "Tune variable to value");
 	Console()->Register("tune_reset", "", CFGFLAG_SERVER, ConTuneReset, this, "Reset tuning");
@@ -2829,8 +2896,12 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
+	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
+    
+	m_GameUuid = RandomUuid();
+	Console()->SetTeeHistorianCommandCallback(CommandCallback, this);
 
 	//if(!data) // only load once
 		//data = load_data_from_memory(internal_data);
@@ -2840,6 +2911,11 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 	m_Layers.Init(Kernel());
 	m_Collision.Init(&m_Layers);
+
+	char aMapName[128];
+	int MapSize;
+	int MapCrc;
+	Server()->GetMapInfo(aMapName, sizeof(aMapName), &MapSize, &MapCrc);
 
 	/* open ranking system db */
 	if (g_Config.m_SvRanking == 1)
@@ -2856,10 +2932,64 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 		/* wait up to 5 seconds if the db is used */
 		sqlite3_busy_timeout(m_RankingDb, 5000);
 	}
-	
 
-	m_pController = new CGameController_zCatch(this);
+    m_pController = new CGameController_zCatch(this);
 	
+	m_TeeHistorianActive = g_Config.m_SvTeeHistorian;
+	if(m_TeeHistorianActive)
+	{
+		char aGameUuid[UUID_MAXSTRSIZE];
+		FormatUuid(m_GameUuid, aGameUuid, sizeof(aGameUuid));
+
+		char aFilename[64];
+		str_format(aFilename, sizeof(aFilename), "teehistorian/%s.teehistorian", aGameUuid);
+
+		IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
+		if(!File)
+		{
+			dbg_msg("teehistorian", "failed to open '%s'", aFilename);
+			Server()->SetErrorShutdown("teehistorian open error");
+			return;
+		}
+		else
+		{
+			dbg_msg("teehistorian", "recording to '%s'", aFilename);
+		}
+		m_pTeeHistorianFile = aio_new(File);
+
+		char aVersion[128];
+		str_format(aVersion, sizeof(aVersion), "%s", GAME_VERSION);
+		
+		CTeeHistorian::CGameInfo GameInfo;
+		GameInfo.m_GameUuid = m_GameUuid;
+		GameInfo.m_pServerVersion = aVersion;
+		GameInfo.m_StartTime = time(0);
+
+		GameInfo.m_pServerName = g_Config.m_SvName;
+		GameInfo.m_ServerPort = g_Config.m_SvPort;
+		GameInfo.m_pGameType = m_pController->m_pGameType;
+
+		GameInfo.m_pConfig = &g_Config;
+		GameInfo.m_pTuning = Tuning();
+		GameInfo.m_pUuids = &g_UuidManager;
+
+		GameInfo.m_pMapName = aMapName;
+		GameInfo.m_MapSize = MapSize;
+		GameInfo.m_MapCrc = MapCrc;
+
+		m_TeeHistorian.Reset(&GameInfo, TeeHistorianWrite, this);
+
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
+			int Level = Server()->GetAuthedState(i);
+			if(Level)
+			{
+				m_TeeHistorian.RecordAuthInitial(i, Level, Server()->GetAuthName(i));
+			}
+		}
+	}
+
+
 	/* ranking system */
 	if (RankingEnabled())
 	{
@@ -2899,10 +3029,24 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
 void CGameContext::OnShutdown()
 {
-	delete m_pController;
-	m_pController = 0;
+    if(m_TeeHistorianActive)
+	{
+		m_TeeHistorian.Finish();
+		aio_close(m_pTeeHistorianFile);
+		aio_wait(m_pTeeHistorianFile);
+		int Error = aio_error(m_pTeeHistorianFile);
+		if(Error)
+		{
+			dbg_msg("teehistorian", "error closing file, err=%d", Error);
+			Server()->SetErrorShutdown("teehistorian close error");
+		}
+		aio_free(m_pTeeHistorianFile);
+	}
 	
-	Clear();
+    delete m_pController;
+    m_pController = 0;
+
+    Clear();
 }
 
 void CGameContext::OnSnap(int ClientID)
@@ -2966,8 +3110,24 @@ void CGameContext::UnlockRankingDb()
 	m_RankingDbMutex.unlock();
 }
 
+CUuid CGameContext::GameUuid() { return m_GameUuid; }
 const char *CGameContext::GameType() { return m_pController && m_pController->m_pGameType ? m_pController->m_pGameType : ""; }
 const char *CGameContext::Version() { return GAME_VERSION; }
 const char *CGameContext::NetVersion() { return GAME_NETVERSION; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }
+
+void CGameContext::TeeHistorianWrite(const void *pData, int DataSize, void *pUser)
+{
+	CGameContext *pSelf = (CGameContext *)pUser;
+	aio_write(pSelf->m_pTeeHistorianFile, pData, DataSize);
+}
+
+void CGameContext::CommandCallback(int ClientID, int FlagMask, const char *pCmd, IConsole::IResult *pResult, void *pUser)
+{
+    CGameContext *pSelf = (CGameContext *)pUser;
+    if (pSelf->m_TeeHistorianActive)
+    {
+        pSelf->m_TeeHistorian.RecordConsoleCommand(ClientID, FlagMask, pCmd, pResult);
+    }
+}

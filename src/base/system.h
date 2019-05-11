@@ -9,6 +9,7 @@
 #define BASE_SYSTEM_H
 
 #include "detect.h"
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -352,6 +353,134 @@ IOHANDLE io_stdout();
 */
 IOHANDLE io_stderr();
 
+typedef struct ASYNCIO ASYNCIO;
+
+/*
+	Function: aio_new
+		Wraps a <IOHANDLE> for asynchronous writing.
+
+	Parameters:
+		io - Handle to the file.
+
+	Returns:
+		Returns the handle for asynchronous writing.
+
+*/
+ASYNCIO *aio_new(IOHANDLE io);
+
+/*
+	Function: aio_lock
+		Locks the ASYNCIO structure so it can't be written into by
+		other threads.
+
+	Parameters:
+		aio - Handle to the file.
+*/
+void aio_lock(ASYNCIO *aio);
+
+/*
+	Function: aio_unlock
+		Unlocks the ASYNCIO structure after finishing the contiguous
+		write.
+
+	Parameters:
+		aio - Handle to the file.
+*/
+void aio_unlock(ASYNCIO *aio);
+
+/*
+	Function: aio_write
+		Queues a chunk of data for writing.
+
+	Parameters:
+		aio - Handle to the file.
+		buffer - Pointer to the data that should be written.
+		size - Number of bytes to write.
+
+*/
+void aio_write(ASYNCIO *aio, const void *buffer, unsigned size);
+
+/*
+	Function: aio_write_newline
+		Queues a newline for writing.
+
+	Parameters:
+		aio - Handle to the file.
+
+*/
+void aio_write_newline(ASYNCIO *aio);
+
+/*
+	Function: aio_write_unlocked
+		Queues a chunk of data for writing. The ASYNCIO struct must be
+		locked using `aio_lock` first.
+
+	Parameters:
+		aio - Handle to the file.
+		buffer - Pointer to the data that should be written.
+		size - Number of bytes to write.
+
+*/
+void aio_write_unlocked(ASYNCIO *aio, const void *buffer, unsigned size);
+
+/*
+	Function: aio_write_newline_unlocked
+		Queues a newline for writing. The ASYNCIO struct must be locked
+		using `aio_lock` first.
+
+	Parameters:
+		aio - Handle to the file.
+
+*/
+void aio_write_newline_unlocked(ASYNCIO *aio);
+
+/*
+	Function: aio_error
+		Checks whether errors have occurred during the asynchronous
+		writing.
+
+		Call this function regularly to see if there are errors. Call
+		this function after <aio_wait> to see if the process of writing
+		to the file succeeded.
+
+	Parameters:
+		aio - Handle to the file.
+
+	Returns:
+		Returns 0 if no error occurred, and nonzero on error.
+
+*/
+int aio_error(ASYNCIO *aio);
+
+/*
+	Function: aio_close
+		Queues file closing.
+
+	Parameters:
+		aio - Handle to the file.
+
+*/
+void aio_close(ASYNCIO *aio);
+
+/*
+	Function: aio_wait
+		Wait for the asynchronous operations to complete.
+
+	Parameters:
+		aio - Handle to the file.
+
+*/
+void aio_wait(ASYNCIO *aio);
+
+/*
+	Function: aio_free
+		Frees the resources associated to the asynchronous file handle.
+
+	Parameters:
+		aio - Handle to the file.
+
+*/
+void aio_free(ASYNCIO *aio);
 
 /* Group: Threads */
 
@@ -363,6 +492,17 @@ IOHANDLE io_stderr();
 		milliseconds - Number of milliseconds to sleep.
 */
 void thread_sleep(int milliseconds);
+
+/*
+	Function: thread_init
+		Creates a new thread.
+
+	Parameters:
+		threadfunc - Entry point for the new thread.
+		user - Pointer to pass to the thread.
+		name - name describing the use of the thread
+*/
+void *thread_init(void (*threadfunc)(void *), void *user, const char *name);
 
 /*
 	Function: thread_create
@@ -418,26 +558,26 @@ void lock_destroy(LOCK lock);
 
 int lock_try(LOCK lock);
 void lock_wait(LOCK lock);
-void lock_release(LOCK lock);
+void lock_unlock(LOCK lock);
 
 
 /* Group: Semaphores */
-
-#if !defined(CONF_PLATFORM_MACOSX)
-	#if defined(CONF_FAMILY_UNIX)
-		#include <semaphore.h>
-		typedef sem_t SEMAPHORE;
-	#elif defined(CONF_FAMILY_WINDOWS)
-		typedef void* SEMAPHORE;
-	#else
-		#error missing sempahore implementation
-	#endif
-
-	void semaphore_init(SEMAPHORE *sem);
-	void semaphore_wait(SEMAPHORE *sem);
-	void semaphore_signal(SEMAPHORE *sem);
-	void semaphore_destroy(SEMAPHORE *sem);
+#if defined(CONF_FAMILY_WINDOWS)
+	typedef void* SEMAPHORE;
+#elif defined(CONF_PLATFORM_MACOSX)
+	#include <semaphore.h>
+	typedef sem_t* SEMAPHORE;
+#elif defined(CONF_FAMILY_UNIX)
+	#include <semaphore.h>
+	typedef sem_t SEMAPHORE;
+#else
+	#error not implemented on this platform
 #endif
+
+void sphore_init(SEMAPHORE *sem);
+void sphore_wait(SEMAPHORE *sem);
+void sphore_signal(SEMAPHORE *sem);
+void sphore_destroy(SEMAPHORE *sem);
 
 /* Group: Timer */
 #ifdef __GNUC__
@@ -1003,6 +1143,26 @@ const char *str_find(const char *haystack, const char *needle);
 void str_hex(char *dst, int dst_size, const void *data, int data_size);
 
 /*
+	Function: str_hex_decode
+		Takes a hex string *without spaces between bytes* and returns a
+		byte array.
+
+	Parameters:
+		dst - Buffer for the byte array
+		dst_size - size of the buffer
+		data - String to decode
+
+	Returns:
+		2 - String doesn't exactly fit the buffer
+		1 - Invalid character in string
+		0 - Success
+
+	Remarks:
+		- The contents of the buffer is only valid on success
+*/
+int str_hex_decode(void *dst, int dst_size, const char *src);
+
+/*
 	Function: str_timestamp
 		Copies a time stamp in the format year-month-day_hour-minute-second to the string.
 
@@ -1014,6 +1174,8 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size);
 		- Guarantees that buffer string will contain zero-termination.
 */
 void str_timestamp(char *buffer, int buffer_size);
+void str_timestamp_format(char *buffer, int buffer_size, const char *format);
+void str_timestamp_ex(time_t time, char *buffer, int buffer_size, const char *format);
 
 /* Group: Filesystem */
 
@@ -1350,6 +1512,9 @@ void secure_random_fill(void *bytes, unsigned length);
 		Returns random int (replacement for rand()).
 */
 int secure_rand();
+
+int pid();
+
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,8 @@
 #include "player.h"
 #include "game/server/entities/fakelaser.h"
 
+struct HardMode;
+
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
@@ -636,7 +638,7 @@ bool CPlayer::AddHardMode(const char* mode)
 // add a random hard mode
 const char* CPlayer::AddRandomHardMode()
 {
-	auto modes = m_pGameServer->GetHardModes();
+	std::vector<HardMode> modes = m_pGameServer->GetHardModes();
 	std::random_shuffle(modes.begin(), modes.end());
 	
 	for(auto it = modes.begin(); it != modes.end(); ++it)

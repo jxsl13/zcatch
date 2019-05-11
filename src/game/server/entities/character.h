@@ -27,6 +27,8 @@ public:
 	CCharacter(CGameWorld *pWorld);
 	~CCharacter();
 
+	CCharacterCore GetCore() { return m_Core; };
+
 	virtual void Reset();
 	virtual void Destroy();
 	virtual void Tick();

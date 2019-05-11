@@ -660,6 +660,9 @@ CConsole::CConsole(int FlagMask)
 
 	m_pStorage = 0;
 
+    m_pfnTeeHistorianCommandCallback = 0;
+    m_pTeeHistorianCommandUserdata = 0;
+
 	// register some basic commands
 	Register("echo", "r", CFGFLAG_SERVER|CFGFLAG_CLIENT, Con_Echo, this, "Echo the text");
 	Register("exec", "r", CFGFLAG_SERVER|CFGFLAG_CLIENT, Con_Exec, this, "Execute the specified file");
@@ -920,5 +923,10 @@ const IConsole::CCommandInfo *CConsole::GetCommandInfo(const char *pName, int Fl
 	return 0;
 }
 
+void CConsole::SetTeeHistorianCommandCallback(FTeeHistorianCommandCallback pfnCallback, void *pUser)
+{
+    m_pfnTeeHistorianCommandCallback = pfnCallback;
+    m_pTeeHistorianCommandUserdata = pUser;
+}
 
 extern IConsole *CreateConsole(int FlagMask) { return new CConsole(FlagMask); }

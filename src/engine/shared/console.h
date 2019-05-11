@@ -154,6 +154,10 @@ class CConsole : public IConsole
 	void AddCommandSorted(CCommand *pCommand);
 	CCommand *FindCommand(const char *pName, int FlagMask);
 
+	FTeeHistorianCommandCallback m_pfnTeeHistorianCommandCallback;
+	void *m_pTeeHistorianCommandUserdata;
+    virtual void SetTeeHistorianCommandCallback(FTeeHistorianCommandCallback pfnCallback, void *pUser);
+
 public:
 	CConsole(int FlagMask);
 

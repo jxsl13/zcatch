@@ -12,6 +12,7 @@ Powerups = ["HEALTH", "ARMOR", "WEAPON", "NINJA"]
 RawHeader = '''
 
 #include <engine/message.h>
+#include <engine/shared/teehistorian_ex.h>
 
 enum
 {
@@ -295,7 +296,7 @@ Messages = [
 	NetMessage("Cl_Say", [
 		NetBool("m_Team"),
 		NetStringStrict("m_pMessage"),
-	]),
+	], teehistorian=False),
 
 	NetMessage("Cl_SetTeam", [
 		NetIntRange("m_Team", 'TEAM_SPECTATORS', 'TEAM_BLUE'),
@@ -333,13 +334,13 @@ Messages = [
 
 	NetMessage("Cl_Vote", [
 		NetIntRange("m_Vote", -1, 1),
-	]),
+	], teehistorian=False),
 
 	NetMessage("Cl_CallVote", [
 		NetStringStrict("m_Type"),
 		NetStringStrict("m_Value"),
 		NetStringStrict("m_Reason"),
-	]),
+	], teehistorian=False),
 	NetMessage("Cl_Version", [
 		NetIntAny("m_ClientVersionNumber"),
 		])

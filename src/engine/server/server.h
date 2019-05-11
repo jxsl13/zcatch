@@ -192,6 +192,8 @@ public:
 	CRegister m_Register;
 	CMapChecker m_MapChecker;
 
+	char m_aErrorShutdownReason[128];
+
 	CServer();
 	~CServer();
 
@@ -214,6 +216,8 @@ public:
 	int Init();
 
 	void SetRconCID(int ClientID);
+	int GetAuthedState(int ClientID);
+	const char *GetAuthName(int ClientID);
 	bool IsAuthed(int ClientID);
 	int GetClientInfo(int ClientID, CClientInfo *pInfo);
 	void GetClientAddr(int ClientID, char *pAddrStr, int Size);
@@ -232,6 +236,7 @@ public:
 	static int NewClientNoAuthCallback(int ClientID, void *pUser);
 	static int DelClientCallback(int ClientID, const char *pReason, void *pUser);
 
+	void GetMapInfo(char *pMapName, int MapNameSize, int *pMapSize, int *pMapCrc);
 	void SendMap(int ClientID);
 	void SendConnectionReady(int ClientID);
 	void SendRconLine(int ClientID, const char *pLine);
@@ -326,6 +331,9 @@ public:
 
 	// log some client out of the rcon
 	void rconLogClientOut(int ClientID, const char *msg = "Logout successful.");
+	
+	bool ErrorShutdown() const { return m_aErrorShutdownReason[0] != 0; }
+	void SetErrorShutdown(const char *pReason);
 };
 
 #endif

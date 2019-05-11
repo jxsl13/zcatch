@@ -6,6 +6,8 @@
 #include "kernel.h"
 #include "message.h"
 
+#include <base/hash.h>
+
 #include <string>
 
 class IServer : public IInterface
@@ -65,6 +67,8 @@ public:
 		RCON_CID_VOTE = -2,
 	};
 	virtual void SetRconCID(int ClientID) = 0;
+	virtual int GetAuthedState(int ClientID) = 0;
+	virtual const char *GetAuthName(int ClientID) = 0;
 	virtual bool IsAuthed(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 
@@ -80,6 +84,10 @@ public:
 	
 	virtual int GetNumLoggedInAdmins() = 0;
 	virtual class CServerBan *GetBanServer() = 0;
+
+    // TeeHistorian
+    virtual void GetMapInfo(char *pMapName, int MapNameSize, int *pMapSizes, int *pMapCrc) = 0;
+	virtual void SetErrorShutdown(const char *pReason) = 0;
 };
 
 class IGameServer : public IInterface
@@ -98,6 +106,9 @@ public:
 
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) = 0;
 
+	virtual void OnClientEngineJoin(int ClientID) = 0;
+	virtual void OnClientEngineDrop(int ClientID, const char *pReason) = 0;
+
 	virtual void OnClientConnected(int ClientID) = 0;
 	virtual void OnClientEnter(int ClientID) = 0;
 	virtual void OnClientDrop(int ClientID, const char *pReason) = 0;
@@ -107,6 +118,7 @@ public:
 	virtual bool IsClientReady(int ClientID) = 0;
 	virtual bool IsClientPlayer(int ClientID) = 0;
 
+	virtual CUuid GameUuid() = 0;
 	virtual const char *GameType() = 0;
 	virtual const char *Version() = 0;
 	virtual const char *NetVersion() = 0;

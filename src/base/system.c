@@ -370,6 +370,371 @@ int io_flush(IOHANDLE io)
 	return 0;
 }
 
+int io_error(IOHANDLE io)
+{
+	return ferror((FILE*)io);
+}
+
+#define ASYNC_BUFSIZE 8 * 1024
+#define ASYNC_LOCAL_BUFSIZE 64 * 1024
+
+struct ASYNCIO
+{
+	LOCK lock;
+	IOHANDLE io;
+	SEMAPHORE sphore;
+	void *thread;
+
+	unsigned char *buffer;
+	unsigned int buffer_size;
+	unsigned int read_pos;
+	unsigned int write_pos;
+
+	int error;
+	unsigned char finish;
+	unsigned char refcount;
+};
+
+enum
+{
+	ASYNCIO_RUNNING,
+	ASYNCIO_CLOSE,
+	ASYNCIO_EXIT,
+};
+
+struct BUFFERS
+{
+	unsigned char *buf1;
+	unsigned int len1;
+	unsigned char *buf2;
+	unsigned int len2;
+};
+
+static void buffer_ptrs(ASYNCIO *aio, struct BUFFERS *buffers)
+{
+	mem_zero(buffers, sizeof(*buffers));
+	if(aio->read_pos < aio->write_pos)
+	{
+		buffers->buf1 = aio->buffer + aio->read_pos;
+		buffers->len1 = aio->write_pos - aio->read_pos;
+	}
+	else if(aio->read_pos > aio->write_pos)
+	{
+		buffers->buf1 = aio->buffer + aio->read_pos;
+		buffers->len1 = aio->buffer_size - aio->read_pos;
+		buffers->buf2 = aio->buffer;
+		buffers->len2 = aio->write_pos;
+	}
+}
+
+static void aio_handle_free_and_unlock(ASYNCIO *aio)
+{
+	int do_free;
+	aio->refcount--;
+
+	do_free = aio->refcount == 0;
+	lock_unlock(aio->lock);
+	if(do_free)
+	{
+		free(aio->buffer);
+		sphore_destroy(&aio->sphore);
+		lock_destroy(aio->lock);
+		free(aio);
+	}
+}
+
+static void aio_thread(void *user)
+{
+	ASYNCIO *aio = user;
+
+	lock_wait(aio->lock);
+	while(1)
+	{
+		struct BUFFERS buffers;
+		int result_io_error;
+		unsigned char local_buffer[ASYNC_LOCAL_BUFSIZE];
+		unsigned int local_buffer_len = 0;
+
+		if(aio->read_pos == aio->write_pos)
+		{
+			if(aio->finish != ASYNCIO_RUNNING)
+			{
+				if(aio->finish == ASYNCIO_CLOSE)
+				{
+					io_close(aio->io);
+				}
+				aio_handle_free_and_unlock(aio);
+				break;
+			}
+			lock_unlock(aio->lock);
+			sphore_wait(&aio->sphore);
+			lock_wait(aio->lock);
+			continue;
+		}
+
+		buffer_ptrs(aio, &buffers);
+		if(buffers.buf1)
+		{
+			if(buffers.len1 > sizeof(local_buffer) - local_buffer_len)
+			{
+				buffers.len1 = sizeof(local_buffer) - local_buffer_len;
+			}
+			mem_copy(local_buffer + local_buffer_len, buffers.buf1, buffers.len1);
+			local_buffer_len += buffers.len1;
+			if(buffers.buf2)
+			{
+				if(buffers.len2 > sizeof(local_buffer) - local_buffer_len)
+				{
+					buffers.len2 = sizeof(local_buffer) - local_buffer_len;
+				}
+				mem_copy(local_buffer + local_buffer_len, buffers.buf2, buffers.len2);
+				local_buffer_len += buffers.len2;
+			}
+		}
+		aio->read_pos = (aio->read_pos + buffers.len1 + buffers.len2) % aio->buffer_size;
+		lock_unlock(aio->lock);
+
+		io_write(aio->io, local_buffer, local_buffer_len);
+		io_flush(aio->io);
+		result_io_error = io_error(aio->io);
+
+		lock_wait(aio->lock);
+		aio->error = result_io_error;
+	}
+}
+
+ASYNCIO *aio_new(IOHANDLE io)
+{
+	ASYNCIO *aio = malloc(sizeof(*aio));
+	if(!aio)
+	{
+		return 0;
+	}
+	aio->io = io;
+	aio->lock = lock_create();
+	sphore_init(&aio->sphore);
+	aio->thread = 0;
+
+	aio->buffer = malloc(ASYNC_BUFSIZE);
+	if(!aio->buffer)
+	{
+		sphore_destroy(&aio->sphore);
+		lock_destroy(aio->lock);
+		free(aio);
+		return 0;
+	}
+	aio->buffer_size = ASYNC_BUFSIZE;
+	aio->read_pos = 0;
+	aio->write_pos = 0;
+	aio->error = 0;
+	aio->finish = ASYNCIO_RUNNING;
+	aio->refcount = 2;
+
+	aio->thread = thread_init(aio_thread, aio, "aio");
+	if(!aio->thread)
+	{
+		free(aio->buffer);
+		sphore_destroy(&aio->sphore);
+		lock_destroy(aio->lock);
+		free(aio);
+		return 0;
+	}
+	return aio;
+}
+
+static unsigned int buffer_len(ASYNCIO *aio)
+{
+	if(aio->write_pos >= aio->read_pos)
+	{
+		return aio->write_pos - aio->read_pos;
+	}
+	else
+	{
+		return aio->buffer_size + aio->write_pos - aio->read_pos;
+	}
+}
+
+static unsigned int next_buffer_size(unsigned int cur_size, unsigned int need_size)
+{
+	while(cur_size < need_size)
+	{
+		cur_size *= 2;
+	}
+	return cur_size;
+}
+
+void aio_lock(ASYNCIO *aio)
+{
+	lock_wait(aio->lock);
+}
+
+void aio_unlock(ASYNCIO *aio)
+{
+	lock_unlock(aio->lock);
+	sphore_signal(&aio->sphore);
+}
+
+void aio_write_unlocked(ASYNCIO *aio, const void *buffer, unsigned size)
+{
+	unsigned int remaining;
+	remaining = aio->buffer_size - buffer_len(aio);
+
+	// Don't allow full queue to distinguish between empty and full queue.
+	if(size < remaining)
+	{
+		unsigned int remaining_contiguous = aio->buffer_size - aio->write_pos;
+		if(size > remaining_contiguous)
+		{
+			mem_copy(aio->buffer + aio->write_pos, buffer, remaining_contiguous);
+			size -= remaining_contiguous;
+			buffer = ((unsigned char *)buffer) + remaining_contiguous;
+			aio->write_pos = 0;
+		}
+		mem_copy(aio->buffer + aio->write_pos, buffer, size);
+		aio->write_pos = (aio->write_pos + size) % aio->buffer_size;
+	}
+	else
+	{
+		// Add 1 so the new buffer isn't completely filled.
+		unsigned int new_written = buffer_len(aio) + size + 1;
+		unsigned int next_size = next_buffer_size(aio->buffer_size, new_written);
+		unsigned int next_len = 0;
+		unsigned char *next_buffer = malloc(next_size);
+
+		struct BUFFERS buffers;
+		buffer_ptrs(aio, &buffers);
+		if(buffers.buf1)
+		{
+			mem_copy(next_buffer + next_len, buffers.buf1, buffers.len1);
+			next_len += buffers.len1;
+			if(buffers.buf2)
+			{
+				mem_copy(next_buffer + next_len, buffers.buf2, buffers.len2);
+				next_len += buffers.len2;
+			}
+		}
+		mem_copy(next_buffer + next_len, buffer, size);
+		next_len += size;
+
+		free(aio->buffer);
+		aio->buffer = next_buffer;
+		aio->buffer_size = next_size;
+		aio->read_pos = 0;
+		aio->write_pos = next_len;
+	}
+}
+
+void aio_write(ASYNCIO *aio, const void *buffer, unsigned size)
+{
+	aio_lock(aio);
+	aio_write_unlocked(aio, buffer, size);
+	aio_unlock(aio);
+}
+
+void aio_write_newline_unlocked(ASYNCIO *aio)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	aio_write_unlocked(aio, "\r\n", 2);
+#else
+	aio_write_unlocked(aio, "\n", 1);
+#endif
+}
+
+void aio_write_newline(ASYNCIO *aio)
+{
+	aio_lock(aio);
+	aio_write_newline_unlocked(aio);
+	aio_unlock(aio);
+}
+
+int aio_error(ASYNCIO *aio)
+{
+	int result;
+	lock_wait(aio->lock);
+	result = aio->error;
+	lock_unlock(aio->lock);
+	return result;
+}
+
+void aio_free(ASYNCIO *aio)
+{
+	lock_wait(aio->lock);
+	if(aio->thread)
+	{
+		thread_detach(aio->thread);
+		aio->thread = 0;
+	}
+	aio_handle_free_and_unlock(aio);
+}
+
+void aio_close(ASYNCIO *aio)
+{
+	lock_wait(aio->lock);
+	aio->finish = ASYNCIO_CLOSE;
+	lock_unlock(aio->lock);
+	sphore_signal(&aio->sphore);
+}
+
+void aio_wait(ASYNCIO *aio)
+{
+	void *thread;
+	lock_wait(aio->lock);
+	thread = aio->thread;
+	aio->thread = 0;
+	if(aio->finish == ASYNCIO_RUNNING)
+	{
+		aio->finish = ASYNCIO_EXIT;
+	}
+	lock_unlock(aio->lock);
+	sphore_signal(&aio->sphore);
+	thread_wait(thread);
+}
+
+struct THREAD_RUN
+{
+	void (*threadfunc)(void *);
+	void *u;
+};
+
+#if defined(CONF_FAMILY_UNIX)
+static void *thread_run(void *user)
+#elif defined(CONF_FAMILY_WINDOWS)
+static unsigned long __stdcall thread_run(void *user)
+#else
+#error not implemented
+#endif
+{
+	struct THREAD_RUN *data = user;
+	void (*threadfunc)(void *) = data->threadfunc;
+	void *u = data->u;
+	free(data);
+	threadfunc(u);
+	return 0;
+}
+
+void *thread_init(void (*threadfunc)(void *), void *u, const char *name)
+{
+	struct THREAD_RUN *data = malloc(sizeof(*data));
+	data->threadfunc = threadfunc;
+	data->u = u;
+#if defined(CONF_FAMILY_UNIX)
+	{
+		pthread_t id;
+		int result = pthread_create(&id, NULL, thread_run, data);
+		if(result != 0)
+		{
+			dbg_msg("thread", "creating %s thread failed: %d", name, result);
+			return 0;
+		}
+		return (void*)id;
+	}
+#elif defined(CONF_FAMILY_WINDOWS)
+	return CreateThread(NULL, 0, thread_run, data, 0, NULL);
+#else
+	#error not implemented
+#endif
+}
+
 void *thread_create(void (*threadfunc)(void *), void *u)
 {
 #if defined(CONF_FAMILY_UNIX)
@@ -496,10 +861,12 @@ void lock_wait(LOCK lock)
 #endif
 }
 
-void lock_release(LOCK lock)
+void lock_unlock(LOCK lock)
 {
 #if defined(CONF_FAMILY_UNIX)
-	pthread_mutex_unlock((LOCKINTERNAL *)lock);
+	int result = pthread_mutex_unlock((LOCKINTERNAL *)lock);
+	if(result != 0)
+		dbg_msg("lock", "unlock failed: %d", result);
 #elif defined(CONF_FAMILY_WINDOWS)
 	LeaveCriticalSection((LPCRITICAL_SECTION)lock);
 #else
@@ -507,22 +874,51 @@ void lock_release(LOCK lock)
 #endif
 }
 
-#if !defined(CONF_PLATFORM_MACOSX)
-	#if defined(CONF_FAMILY_UNIX)
-	void semaphore_init(SEMAPHORE *sem) { sem_init(sem, 0, 0); }
-	void semaphore_wait(SEMAPHORE *sem) { sem_wait(sem); }
-	void semaphore_signal(SEMAPHORE *sem) { sem_post(sem); }
-	void semaphore_destroy(SEMAPHORE *sem) { sem_destroy(sem); }
-	#elif defined(CONF_FAMILY_WINDOWS)
-	void semaphore_init(SEMAPHORE *sem) { *sem = CreateSemaphore(0, 0, 10000, 0); }
-	void semaphore_wait(SEMAPHORE *sem) { WaitForSingleObject((HANDLE)*sem, INFINITE); }
-	void semaphore_signal(SEMAPHORE *sem) { ReleaseSemaphore((HANDLE)*sem, 1, NULL); }
-	void semaphore_destroy(SEMAPHORE *sem) { CloseHandle((HANDLE)*sem); }
-	#else
-		#error not implemented on this platform
-	#endif
-#endif
+#if defined(CONF_FAMILY_WINDOWS)
+void sphore_init(SEMAPHORE *sem) { *sem = CreateSemaphore(0, 0, 10000, 0); }
+void sphore_wait(SEMAPHORE *sem) { WaitForSingleObject((HANDLE)*sem, INFINITE); }
+void sphore_signal(SEMAPHORE *sem) { ReleaseSemaphore((HANDLE)*sem, 1, NULL); }
+void sphore_destroy(SEMAPHORE *sem) { CloseHandle((HANDLE)*sem); }
+#elif defined(CONF_PLATFORM_MACOSX)
+void sphore_init(SEMAPHORE *sem)
+{
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "/%d-teeworlds.com-%p", pid(), (void *)sem);
+	*sem = sem_open(aBuf, O_CREAT | O_EXCL, S_IRWXU | S_IRWXG, 0);
+}
+void sphore_wait(SEMAPHORE *sem) { sem_wait(*sem); }
+void sphore_signal(SEMAPHORE *sem) { sem_post(*sem); }
+void sphore_destroy(SEMAPHORE *sem)
+{
+	char aBuf[64];
+	sem_close(*sem);
+	str_format(aBuf, sizeof(aBuf), "/%d-teeworlds.com-%p", pid(), (void *)sem);
+	sem_unlink(aBuf);
+}
+#elif defined(CONF_FAMILY_UNIX)
+void sphore_init(SEMAPHORE *sem)
+{
+	if(sem_init(sem, 0, 0) != 0)
+		dbg_msg("sphore", "init failed: %d", errno);
+}
 
+void sphore_wait(SEMAPHORE *sem)
+{
+	if(sem_wait(sem) != 0)
+		dbg_msg("sphore", "wait failed: %d", errno);
+}
+
+void sphore_signal(SEMAPHORE *sem)
+{
+	if(sem_post(sem) != 0)
+		dbg_msg("sphore", "post failed: %d", errno);
+}
+void sphore_destroy(SEMAPHORE *sem)
+{
+	if(sem_destroy(sem) != 0)
+		dbg_msg("sphore", "destroy failed: %d", errno);
+}
+#endif
 
 /* -----  time ----- */
 int64 time_get()
@@ -1792,6 +2188,81 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size)
 	}
 }
 
+static int hexval(char x)
+{
+    switch(x)
+    {
+    case '0': return 0;
+    case '1': return 1;
+    case '2': return 2;
+    case '3': return 3;
+    case '4': return 4;
+    case '5': return 5;
+    case '6': return 6;
+    case '7': return 7;
+    case '8': return 8;
+    case '9': return 9;
+    case 'a':
+    case 'A': return 10;
+    case 'b':
+    case 'B': return 11;
+    case 'c':
+    case 'C': return 12;
+    case 'd':
+    case 'D': return 13;
+    case 'e':
+    case 'E': return 14;
+    case 'f':
+    case 'F': return 15;
+    default: return -1;
+    }
+}
+
+static int byteval(const char *byte, unsigned char *dst)
+{
+	int v1 = -1, v2 = -1;
+	v1 = hexval(byte[0]);
+	v2 = hexval(byte[1]);
+
+	if(v1 < 0 || v2 < 0)
+		return 1;
+
+	*dst = v1 * 16 + v2;
+	return 0;
+}
+
+int str_hex_decode(void *dst, int dst_size, const char *src)
+{
+	unsigned char *cdst = dst;
+	int slen = str_length(src);
+	int len = slen / 2;
+	int i;
+	if(slen != dst_size * 2)
+		return 2;
+
+	for(i = 0; i < len && dst_size; i++, dst_size--)
+	{
+		if(byteval(src + i * 2, cdst++))
+			return 1;
+	}
+	return 0;
+}
+
+void str_timestamp_ex(time_t time_data, char *buffer, int buffer_size, const char *format)
+{
+	struct tm *time_info;
+	time_info = localtime(&time_data);
+	strftime(buffer, buffer_size, format, time_info);
+	buffer[buffer_size-1] = 0;	/* assure null termination */
+}
+
+void str_timestamp_format(char *buffer, int buffer_size, const char *format)
+{
+	time_t time_data;
+	time(&time_data);
+	str_timestamp_ex(time_data, buffer, buffer_size, format);
+}
+
 void str_timestamp(char *buffer, int buffer_size)
 {
 	time_t time_data;
@@ -2154,6 +2625,15 @@ void secure_random_fill(void *bytes, unsigned length)
 		dbg_msg("secure", "io_read returned with a short read");
 		dbg_break();
 	}
+#endif
+}
+
+int pid()
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	return _getpid();
+#else
+	return getpid();
 #endif
 }
 

@@ -59,6 +59,8 @@ public:
 		int m_pData[1];
 	};
 
+	static int DiffItem(int *pPast, int *pCurrent, int *pOut, int Size);
+
 private:
 	// TODO: strange arbitrary number
 	short m_aItemSizes[64];
