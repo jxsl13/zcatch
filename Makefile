@@ -10,6 +10,19 @@ CORES=2
 default: release_server
 clean: clean_build
 
+update_release_server: backup_autoexec update_repository restore_autoexec release_server
+	@echo "Done updating the release server executable!"
+	
+restore_autoexec:
+	mv autoexec.cfg.backup autoexec.cfg
+
+update_repository:
+	git checkout autoexec.cfg
+	git pull
+
+backup_autoexec:
+	cp autoexec.cfg autoexec.cfg.backup
+
 
 release_server: build_bam
 	@echo "Building normal server executable..."
