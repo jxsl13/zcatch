@@ -14,6 +14,8 @@ update_release_server: backup_autoexec update_repository restore_autoexec releas
 	@echo "Done updating the release server executable!"
 	
 restore_autoexec:
+	@echo "Restoring autoexec.cfg"
+	rm autoexec.cfg
 	mv autoexec.cfg.backup autoexec.cfg
 
 update_repository:
@@ -21,6 +23,7 @@ update_repository:
 	git pull
 
 backup_autoexec:
+	@echo "Backing up autoexec.cfg"
 	cp autoexec.cfg autoexec.cfg.backup
 
 
