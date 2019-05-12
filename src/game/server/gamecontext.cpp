@@ -2935,6 +2935,7 @@ void CGameContext::OnInit(/*class IKernel *pKernel*/)
 
     m_pController = new CGameController_zCatch(this);
 	
+	// This is only set when the server starts.
 	m_TeeHistorianActive = g_Config.m_SvTeeHistorian;
 	if(m_TeeHistorianActive)
 	{

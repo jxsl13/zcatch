@@ -506,7 +506,7 @@ void CGameController_zCatch::RewardWinner(int winnerId) {
 	int numEnemies = min(MAX_CLIENTS - 1, winner->m_zCatchNumKillsInARow - winner->m_zCatchNumKillsReleased);
 	
 	/* calculate points (multiplied with 100) */
-	int points = 100 * enemiesKilledToPoints(numEnemies);
+	int points = (int)(100.0f * enemiesKilledToPoints(numEnemies));
 	
 	/* set winner's ranking stats */
 	++winner->m_RankCache.m_NumWins;
@@ -1210,8 +1210,8 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 				int rank 		    	= sqlite3_column_int(pStmt, 8);
 				int scoreToNextRank 	= sqlite3_column_int(pStmt, 9);
 
-				// needs to have played at least 5 minutes to be visibly ranked
-				if (timePlayed > 5 * 60)
+				// needs to have played at least x seconds to be visibly ranked
+				if (timePlayed > g_Config.m_SvTimePlayedToSeeRank || numWins > 0)
 				{
 
 					s << "╔—————————  Individual Rank  —————————╗" << "\n";
@@ -1270,7 +1270,10 @@ void CGameController_zCatch::ChatCommandRankFetchDataAndPrint(CGameContext* Game
 					s <<"╚———————————————————————————╝" << "\n";
 
 				} else {
-					s << "'" << name << "' has not played long enough on the server to earn a rank.\n" ;
+					int remainingTimeToSeeRank = g_Config.m_SvTimePlayedToSeeRank - timePlayed;
+					s << "'" << name << "' has to play for another ";
+					s << remainingTimeToSeeRank;
+					s << " seconds or win a round in order to see the rank.\n";
 					toEveryone = false;
 				}
 			}

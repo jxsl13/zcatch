@@ -124,5 +124,6 @@ MACRO_CONFIG_INT(SvLastStandingPlayers, sv_last_standing_players, 5, 2, 16, CFGF
 MACRO_CONFIG_INT(SvBotDetection, sv_bot_detection, 0, 0, 3, CFGFLAG_SERVER, "Bot detection (0=off, 1=fast aim, 2=follow, 3=all)")
 MACRO_CONFIG_INT(SvRanking, sv_ranking, 1, 0, 1, CFGFLAG_SERVER, "Ranking system (0=off, 1=sqlite)")
 MACRO_CONFIG_STR(SvRankingFile, sv_ranking_file, 255, "ranking.db", CFGFLAG_SERVER, "File in which the ranking and scores are saved.")
+MACRO_CONFIG_INT(SvTimePlayedToSeeRank, sv_ranking_time_played_condition, 0, 86400, 300, CFGFLAG_SERVER, "The amount of seconds a player without any wins has to have played on the server in order to see their own rank. Default 600 seconds = 5 minutes.")
 MACRO_CONFIG_INT(SvAllowHardMode, sv_allow_hard_mode, 0, 0, 2, CFGFLAG_SERVER, "Allow players to go into hard mode")
 #endif
