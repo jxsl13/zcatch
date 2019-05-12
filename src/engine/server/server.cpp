@@ -2205,7 +2205,6 @@ void CServer::rconLogClientOut(int ClientID, const char *msg)
 		m_aClients[ClientID].m_Authed = AUTHED_NO;
 		m_aClients[ClientID].m_AuthTries = 0;
 		m_aClients[ClientID].m_pRconCmdToSend = 0;
-		m_aClients[ClientID].m_Authed = IConsole::ACCESS_LEVEL_NO;
 
 		SendRconLine(ClientID, msg);
 		char aBuf[32];
