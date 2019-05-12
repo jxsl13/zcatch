@@ -505,8 +505,7 @@ void CGameController_zCatch::RewardWinner(int winnerId) {
 	CPlayer *winner = GameServer()->m_apPlayers[winnerId];
 	int numEnemies = min(MAX_CLIENTS - 1, winner->m_zCatchNumKillsInARow - winner->m_zCatchNumKillsReleased);
 	
-	/* calculate points (multiplied with 100) */
-	int points = (int)(100.0f * enemiesKilledToPoints(numEnemies));
+	int points = enemiesKilledToPoints(numEnemies);
 	
 	/* set winner's ranking stats */
 	++winner->m_RankCache.m_NumWins;
@@ -529,7 +528,7 @@ void CGameController_zCatch::RewardWinner(int winnerId) {
 	
 	/* announce in chat */
 	char aBuf[96];
-	str_format(aBuf, sizeof(aBuf), "Winner '%s' gets %.2f points.", name, points/100.0);
+	str_format(aBuf, sizeof(aBuf), "Winner '%s' gets %.2f points.", name, points/100.0f);
 	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 	
 }
@@ -1647,30 +1646,49 @@ unsigned int CGameController_zCatch::SendLines(CGameContext* GameServer, std::st
 
 }
  
-
- int CGameController_zCatch::enemiesKilledToPoints(int enemies)
+int CGameController_zCatch::enemiesKilledToPoints(int enemies)
  {
+	if(enemies <= 0)
+	{
+		return 0;
+	}
+
+	// factor to squeeze our curve between 0 and 1
  	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
  	
  	double e = std::exp(enemies / 5.0);
 
  	double normalized_points = e / normalize_factor;
 
- 	return static_cast<int>(100.0 * normalized_points);
+	// we want to return ineteger values instead of floating point values, thus
+	// we multiply our normalized curve by 100 in order to be able to work with
+	// two decimal places later on.
+ 	return static_cast<int>(std::ceil(100.0 * normalized_points));
  }
- double CGameController_zCatch::pointsToEnemiesKilled(int points)
+
+double CGameController_zCatch::pointsToEnemiesKilled(int points)
  {
+	if (points <= 0)
+	{
+		return 0.0;
+	}
+	// in order to reverse the normalization, we need the factor again
  	const double normalize_factor = std::exp((MAX_CLIENTS - 1) / 5.0);
 
+	// the points we get are 100 times our normalized points, thus 
+	// in order to get them bavk between 0 amd 1, we devide them by 100
  	double normalized_points = points / 100.0;
 
+	// reverse normalization 0 - 1 -> 0 
  	double unnormalized_points = normalized_points * normalize_factor;
 
  	double ln = std::log(unnormalized_points);
 
- 	int enemies = ln * 5;
+	// ln(exp(x/5)) = x/5 => * 5 => x
+ 	int enemies = static_cast<int>(ln * 5.0);
  	return enemies;
  }
+
 
 
 
