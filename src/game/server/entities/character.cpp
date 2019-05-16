@@ -199,6 +199,11 @@ void CCharacter::SetWeapon(int W)
 		m_ActiveWeapon = 0;
 }
 
+int CCharacter::GetWeapon()
+{
+	return m_ActiveWeapon;
+}
+
 bool CCharacter::IsGrounded()
 {
 	if(GameServer()->Collision()->CheckPoint(m_Pos.x+m_ProximityRadius/2, m_Pos.y+m_ProximityRadius/2+5))

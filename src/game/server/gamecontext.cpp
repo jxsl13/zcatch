@@ -766,8 +766,24 @@ void CGameContext::OnTick()
 void CGameContext::OnClientDirectInput(int ClientID, void *pInput)
 {
 	if(!m_World.m_Paused)
-		m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)pInput);
+	{
+		CNetObj_PlayerInput *fixedInput =  (CNetObj_PlayerInput *)pInput;
+		// teehistorian doesn't receive this value properly, 
+		// thus we need to provide it on our own, as the client doesn't change the weapon properly.
+		CCharacter *character = m_apPlayers[ClientID]->GetCharacter(); 
 
+		// A character is returned if the character is alive and exists.
+		if (character)
+		{
+			int currentWeapon = character->GetWeapon();
+			// We want to have the current game mode's weapon 
+			// to be the players default weapon.
+			fixedInput->m_WantedWeapon = currentWeapon;
+		}
+		m_apPlayers[ClientID]->OnDirectInput((CNetObj_PlayerInput *)fixedInput);
+
+	}
+		
     if (m_TeeHistorianActive)
         m_TeeHistorian.RecordPlayerInput(ClientID, (CNetObj_PlayerInput *)pInput);
 }
