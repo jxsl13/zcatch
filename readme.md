@@ -106,6 +106,6 @@ Any change of this license IS to be propagated to any derived modifications.
 
 Any violation of this license is to be punished by a donation of 500 € multiplied by 
 1.05 to the power of X, where X is the count of full years passed since the beginning of
-the year 2019, to a charitable organization of my choise.
+the year 2019, to a charitable organization of my choice.
 ```
 
