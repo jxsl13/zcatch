@@ -18,6 +18,7 @@
 #include "gamemodes/lts.h"
 #include "gamemodes/mod.h"
 #include "gamemodes/tdm.h"
+#include "gamemodes/zcatch.h"
 #include "gamecontext.h"
 #include "player.h"
 
@@ -1482,8 +1483,10 @@ void CGameContext::OnInit()
 		m_pController = new CGameControllerLTS(this);
 	else if(str_comp_nocase(g_Config.m_SvGametype, "tdm") == 0)
 		m_pController = new CGameControllerTDM(this);
+	else if(str_comp_nocase(g_Config.m_SvGametype, "zcatch") == 0)
+		m_pController = new CGameControllerZCATCH(this);
 	else
-		m_pController = new CGameControllerDM(this);
+		m_pController = new CGameControllerZCATCH(this);
 
 	// create all entities from the game layer
 	CMapItemLayerTilemap *pTileMap = m_Layers.GameLayer();
