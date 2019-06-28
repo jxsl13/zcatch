@@ -63,6 +63,7 @@ private:
 	class CPlayer *m_pPlayer;
 
 	bool m_Alive;
+	int m_CaughtBy;
 
 	// weapon info
 	CEntity *m_apHitObjects[10];
