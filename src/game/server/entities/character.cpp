@@ -60,9 +60,44 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
+	m_QueuedWeapon = -1;
+
+	switch (g_Config.m_svWeaponMode)
+	{
+	case WEAPON_HAMMER:
+		m_ActiveWeapon 	= WEAPON_HAMMER;
+		m_LastWeapon 	= WEAPON_HAMMER;
+		break;
+	case WEAPON_GUN:
+		m_ActiveWeapon 	= WEAPON_GUN;
+		m_LastWeapon 	= WEAPON_GUN;
+		break;
+	case WEAPON_SHOTGUN:
+		m_ActiveWeapon 	= WEAPON_SHOTGUN;
+		m_LastWeapon 	= WEAPON_SHOTGUN;
+		break;
+	case WEAPON_GRENADE:
+		m_ActiveWeapon 	= WEAPON_GRENADE;
+		m_LastWeapon 	= WEAPON_GRENADE;
+		break;
+	case WEAPON_RIFLE:
+		m_ActiveWeapon 	= WEAPON_RIFLE;
+		m_LastWeapon 	= WEAPON_RIFLE;
+		break;
+	case NUM_WEAPONS:
+
+		break;
+	default:
+		m_ActiveWeapon 	= WEAPON_HAMMER;
+		m_LastWeapon 	= WEAPON_GUN;
+		GiveWeapon(WEAPON_SHOTGUN, 10);
+		GiveWeapon(WEAPON_GRENADE, 10);
+		GiveWeapon(WEAPON_RIFLE, 10);
+		break;
+	}
+
 	m_ActiveWeapon = WEAPON_GUN;
 	m_LastWeapon = WEAPON_HAMMER;
-	m_QueuedWeapon = -1;
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
