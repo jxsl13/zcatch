@@ -11,7 +11,7 @@ script:
 - cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
 - make run_tests
 - cd ..
-- build/teeworlds_srv shutdown
+- build/zcatch_srv shutdown
 env:
   global:
   - CFLAGS="-Wdeclaration-after-statement -Werror"

@@ -4,7 +4,7 @@
 #define GAME_SERVER_PLAYER_H
 
 #include "alloc.h"
-
+#include <vector>
 
 enum
 {
@@ -41,6 +41,16 @@ public:
 
 	void KillCharacter(int Weapon = WEAPON_GAME);
 	CCharacter *GetCharacter();
+
+	// zCatch
+	bool CatchPlayer(int ID);
+	bool BeCaught(int byID);
+	bool IsCaught();
+	bool IsNotCaught();
+	bool BeReleased();
+	int ReleaseLastCaughtPlayer();
+	int ReleaseAllCaughtPlayers();
+	int GetNumCaughtPlayers();
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -124,6 +134,10 @@ private:
 	int m_ClientID;
 	int m_Team;
 	bool m_Dummy;
+
+	// zCatch
+	int m_CaughtBy;
+	std::vector<int> m_CaughtPlayers;
 
 	// used for spectator mode
 	int m_SpecMode;

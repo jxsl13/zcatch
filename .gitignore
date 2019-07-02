@@ -29,7 +29,7 @@ packetgen*
 teeworlds*
 !teeworlds.manifest
 !teeworlds.rc
-teeworlds_srv*
+zcatch_srv*
 testrunner
 versionsrv*
 
@@ -56,3 +56,6 @@ googletest-src
 install_manifest.txt
 pack_*/
 rules.ninja
+
+# VS Code
+.vscode

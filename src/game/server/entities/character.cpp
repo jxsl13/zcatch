@@ -47,7 +47,6 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Health = 0;
 	m_Armor = 0;
 	m_TriggeredEvents = 0;
-	m_CaughtBy = -1;
 }
 
 void CCharacter::Reset()
@@ -60,43 +59,47 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
-	m_QueuedWeapon = -1;
 
-	switch (g_Config.m_svWeaponMode)
+	auto isNotVanillaGameType = [](const char *pGameType) -> bool {
+		return str_comp_nocase(pGameType, "CTF") != 0 &&
+		str_comp_nocase(pGameType, "DM") != 0 &&
+		str_comp_nocase(pGameType, "LMS") != 0 &&
+		str_comp_nocase(pGameType, "LTS") != 0 && 
+		str_comp_nocase(pGameType, "TDM") != 0;
+	};
+
+	if(isNotVanillaGameType(GameServer()->GameType()))
 	{
-	case WEAPON_HAMMER:
-		m_ActiveWeapon 	= WEAPON_HAMMER;
-		m_LastWeapon 	= WEAPON_HAMMER;
-		break;
-	case WEAPON_GUN:
-		m_ActiveWeapon 	= WEAPON_GUN;
-		m_LastWeapon 	= WEAPON_GUN;
-		break;
-	case WEAPON_SHOTGUN:
-		m_ActiveWeapon 	= WEAPON_SHOTGUN;
-		m_LastWeapon 	= WEAPON_SHOTGUN;
-		break;
-	case WEAPON_GRENADE:
-		m_ActiveWeapon 	= WEAPON_GRENADE;
-		m_LastWeapon 	= WEAPON_GRENADE;
-		break;
-	case WEAPON_RIFLE:
-		m_ActiveWeapon 	= WEAPON_RIFLE;
-		m_LastWeapon 	= WEAPON_RIFLE;
-		break;
-	case NUM_WEAPONS:
-
-		break;
-	default:
-		m_ActiveWeapon 	= WEAPON_HAMMER;
-		m_LastWeapon 	= WEAPON_GUN;
-		GiveWeapon(WEAPON_SHOTGUN, 10);
-		GiveWeapon(WEAPON_GRENADE, 10);
-		GiveWeapon(WEAPON_RIFLE, 10);
-		break;
+		switch (g_Config.m_SvWeaponMode)
+		{
+		case WEAPON_HAMMER:
+			m_ActiveWeapon = WEAPON_HAMMER;
+			break;
+		case WEAPON_GUN:
+			m_ActiveWeapon = WEAPON_GUN;
+			break;
+		case WEAPON_SHOTGUN:
+			m_ActiveWeapon = WEAPON_SHOTGUN;
+			break;
+		case WEAPON_GRENADE:
+			m_ActiveWeapon = WEAPON_GRENADE;
+			break;
+		case WEAPON_LASER:
+			m_ActiveWeapon = WEAPON_LASER;
+			break;
+		case WEAPON_NINJA:
+			m_ActiveWeapon = WEAPON_NINJA;
+			break;
+		default:
+			m_ActiveWeapon = WEAPON_HAMMER;
+			break;
+		}
 	}
-
-	m_ActiveWeapon = WEAPON_GUN;
+	else
+	{
+		m_ActiveWeapon = WEAPON_HAMMER;
+	}
+	
 	m_LastWeapon = WEAPON_HAMMER;
 
 	m_pPlayer = pPlayer;
@@ -113,7 +116,6 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 
 	GameServer()->m_World.InsertEntity(this);
 	m_Alive = true;
-	m_CaughtBy = -1;
 
 	GameServer()->m_pController->OnCharacterSpawn(this);
 
@@ -124,7 +126,6 @@ void CCharacter::Destroy()
 {
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = 0;
 	m_Alive = false;
-	m_CaughtBy = -1;
 }
 
 void CCharacter::SetWeapon(int W)
@@ -138,7 +139,7 @@ void CCharacter::SetWeapon(int W)
 	GameServer()->CreateSound(m_Pos, SOUND_WEAPON_SWITCH);
 
 	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
-		m_ActiveWeapon = 0;
+		m_ActiveWeapon = WEAPON_HAMMER;
 	m_aWeapons[m_ActiveWeapon].m_AmmoRegenStart = -1;
 }
 
@@ -633,7 +634,7 @@ void CCharacter::TickDefered()
 	}
 	else if(m_Core.m_Death)
 	{
-		//handkle death-tiles
+		//handle death-tiles
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	}
 
@@ -689,15 +690,10 @@ void CCharacter::Die(int Killer, int Weapon)
 {
 	// we got to wait 0.5 secs before respawning
 	m_Alive = false;
+
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
-
-
-	if (Weapon >= 0 && Killer != m_pPlayer->GetCID()) // a valid enemy player's weapon 
-	{
-		m_CaughtBy = Killer;
-	}	
-
+	
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 		Killer, Server()->ClientName(Killer),
@@ -732,7 +728,14 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 
 	// don't inflict damage on self
 	if(From == m_pPlayer->GetCID())
+	{
+		// if we inflict damage on ourselves, usually due to grenade jumps
+		// well executed such jumps regenerate ammo instantly
+		// Add some ammo
+		m_aWeapons[m_ActiveWeapon].m_Ammo = min(m_aWeapons[m_ActiveWeapon].m_Ammo + 1,
+					g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Maxammo);
 		return false;
+	}
 
 	if(Dmg > 0)
 	{
@@ -746,7 +749,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	}
 
 	// create healthmod indicator
-	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
+	//GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
 
 	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])

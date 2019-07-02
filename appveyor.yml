@@ -23,11 +23,11 @@ test_script:
   - cmd: cmake --build build64 --config Release --target run_tests
   - cmd: |
       cd build32
-      Release\teeworlds_srv shutdown
+      Release\zcatch_srv shutdown
       cd ..
   - cmd: |
       cd build64
-      Release\teeworlds_srv shutdown
+      Release\zcatch_srv shutdown
       cd ..
 
 after_build:

@@ -29,7 +29,7 @@ jobs:
             env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON ..
             make everything
             make run_tests
-            ./teeworlds_srv shutdown
+            ./zcatch_srv shutdown
       - run:
           name: Build teeworlds with cmake in Debug mode
           command: |
@@ -38,4 +38,4 @@ jobs:
             env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
             make everything
             make run_tests
-            ./teeworlds_srv shutdown
+            ./zcatch_srv shutdown

@@ -33,6 +33,9 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_RespawnDisabled = GameServer()->m_pController->GetStartRespawnState();
 	m_DeadSpecMode = false;
 	m_Spawning = 0;
+
+	m_CaughtBy = -1;
+
 }
 
 CPlayer::~CPlayer()
@@ -318,8 +321,26 @@ CCharacter *CPlayer::GetCharacter()
 
 void CPlayer::KillCharacter(int Weapon)
 {
-	if(m_pCharacter)
+	// zCatch handle death tiles & suicide deaths
+	int numPlayersCaught = GetNumCaughtPlayers();
+
+	if (numPlayersCaught > 0 && Weapon == WEAPON_SELF)
 	{
+		// release last caught player on pressing suicide key.
+		int releasedID = ReleaseLastCaughtPlayer();
+		dbg_msg("DEBUG", "Player %d released player %d.", GetCID(), releasedID);
+		// we don't want to die in this case.
+		return;
+	}
+	else if(numPlayersCaught > 0 && Weapon == WEAPON_GAME)
+	{
+		dbg_msg("DEBUG", "Player %d fell into death tiles.", GetCID());
+		//fall down or into death tiles.
+		ReleaseAllCaughtPlayers();
+	}
+	
+	if(m_pCharacter)
+	{	
 		m_pCharacter->Die(m_ClientID, Weapon);
 		delete m_pCharacter;
 		m_pCharacter = 0;
@@ -469,4 +490,132 @@ void CPlayer::TryRespawn()
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
+}
+
+// affects oneself & caught player
+bool CPlayer::CatchPlayer(int ID)
+{	
+	// player can be caught by me(if not already caught)
+	if (GameServer()->m_apPlayers[ID] && GameServer()->m_apPlayers[ID]->BeCaught(GetCID()))
+	{
+		// player not cauht by anybody, add him to my caught players
+		m_CaughtPlayers.push_back(ID);
+		return true;
+	}
+	else
+	{
+		// catching the player failed
+		return false;
+	}
+}
+
+// affects oneself & all caught players
+bool CPlayer::BeCaught(int byID)
+
+{	if (byID == GetCID())
+	{
+		// suicide or falling into death tiles
+		// you die, you loose all of your caught players.
+		ReleaseAllCaughtPlayers();
+		return false;
+	}
+	if (m_CaughtBy >= 0)	
+	{
+		dbg_msg("DEBUG", "%d is already caught by: %d", GetCID(), m_CaughtBy);
+		// already caught by someone else
+		return false;
+	}
+	else
+	{
+		// if not caught, be caught by ID
+		m_CaughtBy = byID;
+		m_RespawnDisabled = true;
+		dbg_msg("DEBUG", "%d was caught by: %d", GetCID(), m_CaughtBy);
+		ReleaseAllCaughtPlayers();
+		return true;
+	}
+	
+}
+
+// only affects oneself
+bool CPlayer::BeReleased()
+{
+	if (m_CaughtBy >= 0)
+	{
+		// caught -> can be released -> is released
+		dbg_msg("DEBUG", "%d was released by: %d", GetCID(), m_CaughtBy);
+		m_CaughtBy = -1;
+		m_RespawnDisabled = false;
+		// respawn half a second after being released
+		m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+		return true;
+	}
+	else
+	{
+		// not caught -> cannot be released
+		return false;
+	}	
+}
+
+// affects oneself & caught players
+int CPlayer::ReleaseLastCaughtPlayer()
+{
+	if ( m_CaughtPlayers.size() > 0 )
+	{
+		int playerToReleaseID = m_CaughtPlayers.back();
+		if(GameServer()->m_apPlayers[playerToReleaseID]->BeReleased())
+		{
+			// player can be released
+			m_CaughtPlayers.pop_back();
+			return playerToReleaseID;
+		}
+		else
+		{
+			// player cannot be released
+			return -1;
+		}	
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+int CPlayer::ReleaseAllCaughtPlayers()
+{	
+	int releasedPlayers = m_CaughtPlayers.size();
+	// nobody to release
+	if (releasedPlayers == 0)
+	{
+		return releasedPlayers;
+	}
+	
+	// somebody to release
+	// while returned id is a valid 0 <= ID <= MAC_CLIENTS
+	while(ReleaseLastCaughtPlayer() >= 0);
+		
+	return releasedPlayers;
+}
+
+int CPlayer::GetNumCaughtPlayers()
+{
+	return m_CaughtPlayers.size();
+}
+
+bool CPlayer::IsCaught()
+{
+	bool isCaught = m_CaughtBy >= 0 && m_CaughtBy < MAX_CLIENTS;
+	bool notInSpec = GetTeam() != TEAM_SPECTATORS;
+	bool cannotSpawn = m_RespawnDisabled;
+	bool characterNotAlive = GetCharacter() && !GetCharacter()->IsAlive();
+	return isCaught && notInSpec && (cannotSpawn || characterNotAlive);
+}
+
+bool CPlayer::IsNotCaught()
+{
+	bool isNotCaught = !(m_CaughtBy >= 0 && m_CaughtBy < MAX_CLIENTS);
+	bool notInSpec = GetTeam() != TEAM_SPECTATORS;
+	bool canSpawn = !m_RespawnDisabled;
+	bool characterAlive = GetCharacter() && GetCharacter()->IsAlive();
+	return isNotCaught && notInSpec && (canSpawn || characterAlive);
 }

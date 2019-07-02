@@ -10,7 +10,29 @@ public:
 	CGameControllerZCATCH(class CGameContext *pGameServer);
 
 	// game
+	virtual void Tick();
 	virtual void DoWincheckRound();
+	
+	virtual void OnPlayerConnect(class CPlayer *pPlayer);
+	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
+
+	virtual void OnCharacterSpawn(class CCharacter *pChr);
+	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
+private:
+
+	/**
+	 * Used to track, whether we reached the players count needed to
+	 * end a round or whether we went below that treshold.
+	 */
+	int m_PreviousAlivePlayerCount;
+	int m_AlivePlayerCount;
+
+	/**
+	 * As EndRound() should only be called from within DoWinCheck(), 
+	 * We want to enforce Ending a round in order to revert back to 
+	 * a warmup if there are not enough players to end a round.
+	 */
+	bool m_ForcedEndRound;
 };
 
 #endif

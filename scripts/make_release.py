@@ -232,7 +232,7 @@ if use_bundle:
 	<key>CFBundleExecutable</key>
 	<string>teeworlds_server</string>
 	<key>CFBundleIconFile</key>
-	<string>Teeworlds_srv</string>
+	<string>zcatch_srv</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>

@@ -6,6 +6,7 @@
 #include <base/vmath.h>
 
 #include <generated/protocol.h>
+#include <engine/shared/config.h>
 
 /*
 	Class: Game Controller
@@ -36,6 +37,7 @@ class IGameController
 	void CheckTeamBalance();
 	void DoTeamBalance();
 
+protected:
 	// game
 	enum EGameState
 	{
@@ -51,12 +53,14 @@ class IGameController
 		IGS_END_MATCH,			// match is over (tick timer)
 		IGS_END_ROUND,			// round is over (tick timer)
  	};
+
+private:
 	EGameState m_GameState;
 	int m_GameStateTimer;
 
 	virtual bool DoWincheckMatch();		// returns true when the match is over
 	virtual void DoWincheckRound() {};
-	bool HasEnoughPlayers() const { return (IsTeamplay() && m_aTeamSize[TEAM_RED] > 0 && m_aTeamSize[TEAM_BLUE] > 0) || (!IsTeamplay() && m_aTeamSize[TEAM_RED] > 1); }
+	bool HasEnoughPlayers() const { return (IsTeamplay() && m_aTeamSize[TEAM_RED] > 0 && m_aTeamSize[TEAM_BLUE] > 0) || (!IsTeamplay() && m_aTeamSize[TEAM_RED] >= g_Config.m_SvPlayersToStartRound); }
 	void ResetGame();
 	void SetGameState(EGameState GameState, int Timer=0);
 	void StartMatch();
@@ -102,6 +106,7 @@ protected:
 	int m_SuddenDeath;
 	int m_aTeamscore[NUM_TEAMS];
 
+	EGameState GetGameState() {return m_GameState;}
 	void EndMatch() { SetGameState(IGS_END_MATCH, TIMER_END); }
 	void EndRound() { SetGameState(IGS_END_ROUND, TIMER_END/2); }
 
@@ -159,10 +164,10 @@ public:
 	*/
 	virtual bool OnEntity(int Index, vec2 Pos);
 
-	void OnPlayerConnect(class CPlayer *pPlayer);
-	void OnPlayerDisconnect(class CPlayer *pPlayer);
-	void OnPlayerInfoChange(class CPlayer *pPlayer);
-	void OnPlayerReadyChange(class CPlayer *pPlayer);
+	virtual void OnPlayerConnect(class CPlayer *pPlayer);
+	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
+	virtual void OnPlayerInfoChange(class CPlayer *pPlayer);
+	virtual void OnPlayerReadyChange(class CPlayer *pPlayer);
 
 	void OnReset();
 

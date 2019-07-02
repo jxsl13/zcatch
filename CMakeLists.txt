@@ -85,7 +85,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   src/game/version.h
 )
 
-set(SERVER_EXECUTABLE teeworlds_srv CACHE STRING "Name of the built server executable")
+set(SERVER_EXECUTABLE zcatch_srv CACHE STRING "Name of the built server executable")
 set(CLIENT_EXECUTABLE teeworlds CACHE STRING "Name of the build client executable")
 
 ########################################################################

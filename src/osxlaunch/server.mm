@@ -90,7 +90,7 @@ void runServer()
 	[window makeKeyAndOrderFront: nil];
 
 	[view listenTo: task];
-	[task setLaunchPath: [mainBundle pathForAuxiliaryExecutable: @"teeworlds_srv"]];
+	[task setLaunchPath: [mainBundle pathForAuxiliaryExecutable: @"zcatch_srv"]];
 	[task setArguments: arguments];
 	[task launch];
 	[NSApp run];
