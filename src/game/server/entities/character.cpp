@@ -60,17 +60,12 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
 	m_LastWeapon = WEAPON_GUN;
+	m_SpawnProtectionTick = Server()->Tick();
 
-	auto isNotVanillaGameType = [](const char *pGameType) -> bool {
-		return str_comp_nocase(pGameType, "CTF") != 0 &&
-		str_comp_nocase(pGameType, "DM") != 0 &&
-		str_comp_nocase(pGameType, "LMS") != 0 &&
-		str_comp_nocase(pGameType, "LTS") != 0 && 
-		str_comp_nocase(pGameType, "TDM") != 0;
-	};
+	
 
 	// zCatch
-	if(isNotVanillaGameType(GameServer()->GameType()))
+	if(!GameServer()->IsVanillaGameType())
 	{	
 		// set weapon to hammer or gun, shotgun, grenade, laser, ninja
 		SetWeapon(g_Config.m_SvWeaponMode);
@@ -84,22 +79,21 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 			GiveWeapon(WEAPON_GRENADE, 10);
 			GiveWeapon(WEAPON_LASER, 10);
 		}
+		else if (g_Config.m_SvWeaponMode == WEAPON_NINJA)
+		{
+			GiveNinja();
+		}
 		else
 		{
 			// Give set weapon
 			GiveWeapon(m_ActiveWeapon, 10);
 		}
-		
-		
-		
 	}
 	else
 	{
 		m_ActiveWeapon = WEAPON_HAMMER;
 	}
 	
-	
-
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
 
@@ -155,8 +149,10 @@ void CCharacter::HandleNinja()
 {
 	if(m_ActiveWeapon != WEAPON_NINJA)
 		return;
-
-	if ((Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
+	
+	// time based deactivation is disabled in zCatch
+	bool isVanillaGameType = GameServer()->IsVanillaGameType();
+	if (isVanillaGameType && (Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
 	{
 		// time's up, return
 		m_aWeapons[WEAPON_NINJA].m_Got = false;
@@ -168,6 +164,10 @@ void CCharacter::HandleNinja()
 
 		SetWeapon(m_ActiveWeapon);
 		return;
+	} else if (!isVanillaGameType && (Server()->Tick() - m_Ninja.m_ActivationTick) > (g_pData->m_Weapons.m_Ninja.m_Duration * Server()->TickSpeed() / 1000))
+	{
+		// reset ninja duration.
+		GiveNinja();
 	}
 
 	// force ninja Weapon
@@ -724,6 +724,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
 		return false;
 
+	// zCatch
 	// don't inflict damage on self
 	if(From == m_pPlayer->GetCID())
 	{
@@ -735,7 +736,12 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 		return false;
 	}
 
-	if(Dmg > 0)
+	// spawn protection
+	if(/*Weapon == WEAPON_GAME ||*/ Server()->Tick() - m_SpawnProtectionTick <= Server()->TickSpeed() * 0.25f)
+		return false;
+	
+	// how much damage is needed to kill a player instantly
+	if(Dmg >= 7 - g_Config.m_SvGrenadeHitbox)
 	{
 		// instant death on damage taken.
 		m_Armor = 0;
@@ -743,11 +749,12 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	}
 	else
 	{
+		// if not in hitbox, do no damage
 		return false;
 	}
 
 	// create healthmod indicator
-	//GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
+	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
 
 	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])

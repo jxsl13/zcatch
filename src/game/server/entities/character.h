@@ -82,6 +82,7 @@ private:
 
 	int m_ReloadTimer;
 	int m_AttackTick;
+	int m_SpawnProtectionTick;
 
 	int m_EmoteType;
 	int m_EmoteStop;

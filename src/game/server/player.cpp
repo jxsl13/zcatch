@@ -36,8 +36,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_DeadSpecMode = false;
 	m_Spawning = 0;
 
-	m_CaughtBy = -1;
+	// zCatch
+	m_CaughtBy = NOT_CAUGHT;
 	m_WantsToJoinSpectators = false;
+	ResetStatistics();
 
 }
 
@@ -53,6 +55,17 @@ void CPlayer::Tick()
 		return;
 
 	Server()->SetClientScore(m_ClientID, m_Score);
+
+	// statistics
+	if (IsCaught())
+	{
+		m_TicksCaught++;
+	}
+	else if(IsNotCaught())
+	{
+		m_TicksAlive++;
+	}
+	
 
 	// do latency stuff
 	{
@@ -503,6 +516,9 @@ bool CPlayer::CatchPlayer(int ID)
 	{
 		// player not cauht by anybody, add him to my caught players
 		m_CaughtPlayers.push_back(ID);
+
+		// statistics
+		m_Kills++;
 		return true;
 	}
 	else
@@ -534,6 +550,9 @@ bool CPlayer::BeCaught(int byID)
 		m_CaughtBy = byID;
 		m_RespawnDisabled = true;
 		ReleaseAllCaughtPlayers();
+
+		// statistics
+		m_Deaths++;
 		return true;
 	}
 	
@@ -546,10 +565,10 @@ bool CPlayer::BeReleased()
 	{
 		// caught -> can be released -> is released
 		dbg_msg("DEBUG", "Player %d was released by %d", GetCID(), m_CaughtBy);
-		m_CaughtBy = -1;
+		m_CaughtBy = NOT_CAUGHT;
 		m_RespawnDisabled = false;
 		// respawn half a second after being released
-		m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed()/2);
 		return true;
 	}
 	else
@@ -583,6 +602,7 @@ int CPlayer::ReleaseLastCaughtPlayer()
 	}
 }
 
+// remove given id from my caught players
 bool CPlayer::RemoveFromCaughtPlayers(int ID)
 {
 	// success is true, if the player was actually in our caught players.
@@ -591,6 +611,8 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID)
 	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [&](int lookAtID) {
 		if (lookAtID == ID)
 		{
+			// remove from my caugh players & release at the same time.
+			GameServer()->m_apPlayers[lookAtID]->BeReleased();
 			success = true;
 			return true;
 		}
@@ -601,7 +623,11 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID)
 	});
 
 	// erase elements from 'it' through 'end()'
-	m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
+	if(success)
+	{
+		m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
+	}
+
 	return success;
 }
 
@@ -662,4 +688,12 @@ void CPlayer::ResetWantsToJoinSpectators()
 void CPlayer::SetWantsToJoinSpectators()
 {
 	m_WantsToJoinSpectators = true;
+}
+
+void CPlayer::ResetStatistics()
+{
+	m_Kills = 0;
+	m_Deaths = 0;
+	m_TicksCaught = 0;
+	m_TicksAlive = 0;
 }

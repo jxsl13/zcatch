@@ -1590,5 +1590,12 @@ const char *CGameContext::Version() const { return GAME_VERSION; }
 const char *CGameContext::NetVersion() const { return GAME_NETVERSION; }
 const char *CGameContext::NetVersionHashUsed() const { return GAME_NETVERSION_HASH_FORCED; }
 const char *CGameContext::NetVersionHashReal() const { return GAME_NETVERSION_HASH; }
-
+bool CGameContext::IsVanillaGameType() const
+{
+	const char* pGameType = GameType();
+	return str_comp_nocase(pGameType, "DM") == 0 ||
+		str_comp_nocase(pGameType, "LMS") == 0 ||
+		str_comp_nocase(pGameType, "LTS") == 0 || 
+		str_comp_nocase(pGameType, "TDM") == 0;
+}
 IGameServer *CreateGameServer() { return new CGameContext; }

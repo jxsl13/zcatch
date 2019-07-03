@@ -183,6 +183,8 @@ public:
 	virtual const char *NetVersion() const;
 	virtual const char *NetVersionHashUsed() const;
 	virtual const char *NetVersionHashReal() const;
+
+	bool IsVanillaGameType() const;
 };
 
 inline int64 CmaskAll() { return -1; }

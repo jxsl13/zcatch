@@ -43,17 +43,26 @@ public:
 	CCharacter *GetCharacter();
 
 	// zCatch
+	int m_Kills;
+	int m_Deaths;
+	int m_TicksCaught;
+	int m_TicksAlive;
+	void ResetStatistics();
+
 	bool CatchPlayer(int ID);
-	bool BeCaught(int byID);
 	bool IsCaught();
 	bool IsNotCaught();
-	bool BeReleased();
 	int ReleaseLastCaughtPlayer();
 	int ReleaseAllCaughtPlayers();
 	bool RemoveFromCaughtPlayers(int ID);
 	int GetCaughtByID();
 	int GetNumCaughtPlayers();
 
+private:
+	bool BeReleased();
+	bool BeCaught(int byID);
+
+public:
 	bool GetWantsToJoinSpectators();
 	void SetWantsToJoinSpectators();
 	void ResetWantsToJoinSpectators();
@@ -143,6 +152,8 @@ private:
 
 	// zCatch
 	int m_CaughtBy;
+	enum { NOT_CAUGHT = -1 };
+
 	std::vector<int> m_CaughtPlayers;
 	bool m_WantsToJoinSpectators;
 
