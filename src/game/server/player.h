@@ -50,7 +50,13 @@ public:
 	bool BeReleased();
 	int ReleaseLastCaughtPlayer();
 	int ReleaseAllCaughtPlayers();
+	bool RemoveFromCaughtPlayers(int ID);
+	int GetCaughtByID();
 	int GetNumCaughtPlayers();
+
+	bool GetWantsToJoinSpectators();
+	void SetWantsToJoinSpectators();
+	void ResetWantsToJoinSpectators();
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -138,6 +144,8 @@ private:
 	// zCatch
 	int m_CaughtBy;
 	std::vector<int> m_CaughtPlayers;
+	bool m_WantsToJoinSpectators;
+
 
 	// used for spectator mode
 	int m_SpecMode;

@@ -11,10 +11,27 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 {
 	m_pGameType = "zCatch/dev";
 	m_GameFlags = GAMEFLAG_SURVIVAL;
-	m_PreviousAlivePlayerCount = 0;
-	m_AlivePlayerCount = 0;
+
+	m_PreviousIngamePlayerCount = 0;
+	m_IngamePlayerCount = 0;
+
 	m_ForcedEndRound = false;
 }
+
+ void CGameControllerZCATCH::EndRound()
+ {
+	// release all players at the end of the round.
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(GameServer()->m_apPlayers[i])
+		{
+			GameServer()->m_apPlayers[i]->ReleaseAllCaughtPlayers();
+		}
+	}
+
+	// Change game state
+	IGameController::EndRound();
+ }
 
 // game
 void CGameControllerZCATCH::DoWincheckRound()
@@ -25,11 +42,9 @@ void CGameControllerZCATCH::DoWincheckRound()
 		m_ForcedEndRound = false;
 		EndRound();
 	}
-	
-
-	// check for time based win
-	if(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60)
+	else if(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60)
 	{
+		// check for time based win
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->IsNotCaught())
@@ -42,22 +57,40 @@ void CGameControllerZCATCH::DoWincheckRound()
 	{
 		// check for survival win
 		CPlayer *pAlivePlayer = 0;
-		m_PreviousAlivePlayerCount = m_AlivePlayerCount;
-		m_AlivePlayerCount = 0;
+		
+		int alivePlayerCount = 0;
+		m_PreviousIngamePlayerCount = m_IngamePlayerCount;
+		m_IngamePlayerCount = 0;
+
 		for(int i = 0; i < MAX_CLIENTS; ++i)
 		{
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->IsNotCaught())
+			if(GameServer()->m_apPlayers[i])
 			{
-				++m_AlivePlayerCount;
-				pAlivePlayer = GameServer()->m_apPlayers[i];
+				if (GameServer()->m_apPlayers[i]->IsNotCaught())
+				{
+					++alivePlayerCount;
+					pAlivePlayer = GameServer()->m_apPlayers[i];
+				}
+				
+				if (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
+				{
+					m_IngamePlayerCount++;
+				}	
 			}
 		}
 
-		if(m_AlivePlayerCount == 0)		// no winner
+		if(alivePlayerCount == 0)
+		{
+			// no winner
 			EndRound();
-		else if(m_AlivePlayerCount == 1)	// 1 winner
+		}	
+		else if(alivePlayerCount == 1)	// 1 winner
 		{
 			pAlivePlayer->m_Score++;
+			EndRound();
+		}
+		else if(m_PreviousIngamePlayerCount >= g_Config.m_SvPlayersToStartRound && m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
+		{
 			EndRound();
 		}
 	}
@@ -68,40 +101,21 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 	CCharacter& character = (*pChr);
 	CPlayer& player = (*pChr->GetPlayer());
 
-	character.IncreaseHealth(10);
+	// Gets weapons in Character::Spawn
 
-	switch (g_Config.m_SvWeaponMode)
-	{
-	case WEAPON_HAMMER:
-		character.GiveWeapon(WEAPON_HAMMER, -1);
-		break;
-	case WEAPON_GUN:
-		character.GiveWeapon(WEAPON_GUN, 10);
-		break;
-	case WEAPON_SHOTGUN:
-		character.GiveWeapon(WEAPON_SHOTGUN, 10);
-		break;
-	case WEAPON_GRENADE:
-		character.GiveWeapon(WEAPON_GRENADE, 10);
-		break;
-	case WEAPON_LASER:
-		character.GiveWeapon(WEAPON_LASER, 10);
-		break;
-	case WEAPON_NINJA:
-		character.GiveNinja();
-		break;
-	default:
-		character.GiveWeapon(WEAPON_HAMMER, -1);
-		character.GiveWeapon(WEAPON_GUN, -1);
-		character.GiveWeapon(WEAPON_SHOTGUN, -1);
-		character.GiveWeapon(WEAPON_GRENADE, -1);
-		character.GiveWeapon(WEAPON_LASER, -1);
-		break;
-	}
+	// gets health here.
+	character.IncreaseHealth(10);
 
 	// if we spawn, we should not have anyone caught from previous rounds.
 	// or weird post mortem kills.
 	player.ReleaseAllCaughtPlayers();
+
+	// spawns -> joins spec
+	if (player.GetWantsToJoinSpectators())
+	{
+		DoTeamChange(pChr->GetPlayer(), TEAM_SPECTATORS);
+		player.ResetWantsToJoinSpectators();
+	}
 }
 
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
@@ -112,15 +126,24 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// warmup
 	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
 	{
-		// any kind of warmup
 		dbg_msg("DEBUG", "Player %d joined the game.", player.GetCID());
 		IGameController::OnPlayerConnect(pPlayer);
+		return;
 	}
 
+	// actual game running
 	CPlayer *pDominatingPlayer = nullptr;
 
+	// find player with most kills
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
+		// if we join, we cannot be the dominating player
+		// skip ourself.
+		if (player.GetCID() == i)
+		{
+			continue;
+		}
+
 		if (GameServer()->m_apPlayers[i])
 		{
 			if (!pDominatingPlayer)
@@ -133,7 +156,9 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 			}
 		}
 	}
-	if (pDominatingPlayer)
+
+	// if the dominating player has nobody caught, we don't want them to
+	if (pDominatingPlayer && pDominatingPlayer->GetNumCaughtPlayers() > 0)
 	{
 		dbg_msg("DEBUG", "Player %d was added as victim of player %d.", player.GetCID(), pDominatingPlayer->GetCID());
 		pDominatingPlayer->CatchPlayer(player.GetCID());
@@ -148,21 +173,26 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	
 	// if player was ingame and not in spec when leaving
-	if (player.IsNotCaught())
+	if (player.GetTeam() != TEAM_SPECTATORS)
 	{
-		// save last number of caught players
-		m_PreviousAlivePlayerCount = m_AlivePlayerCount;
+		if (player.IsNotCaught())
+		{
+			// player being released 
+			player.ReleaseAllCaughtPlayers();
 
-		// released players become alive
-		int releasedPlayers = player.GetNumCaughtPlayers();
-		player.ReleaseAllCaughtPlayers();
-		m_AlivePlayerCount += releasedPlayers;
-
-		// leaving player decreases m_AlivePlayerCount
-		m_AlivePlayerCount--;
+		}
+		else if (player.IsCaught())
+		{
+			// remove player from caught list
+			GameServer()->m_apPlayers[player.GetCaughtByID()]->RemoveFromCaughtPlayers(player.GetCID());
+		}
+		
+		// I leave, decrease number of ingame players
+		m_IngamePlayerCount--;
+		
 
 		// not enough players to play a round
-		if (m_AlivePlayerCount < g_Config.m_SvPlayersToStartRound)
+		if (m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
 		{
 			// end round and do warmup again.
 			m_ForcedEndRound = true;
@@ -192,7 +222,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	/**
 	 * CPlayer::KillCharacter -> CCharacter::Die -> IGameController::OnCharacterDeath
 	 * the cases, where victim.GetNumCaughtPlayers() > 0 are handled in 
-	 * CPlayer::KillCharacter, priod to these cases, where it is possible to prevent 
+	 * CPlayer::KillCharacter, prior to these cases, where it is possible to prevent 
 	 * the character from actually being killed, when releasing a player, 
 	 * that was killed by mistake.
 	 */
@@ -217,11 +247,28 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 
 void CGameControllerZCATCH::Tick()
 {
-	if (m_PreviousAlivePlayerCount >= g_Config.m_SvPlayersToStartRound &&  m_AlivePlayerCount < g_Config.m_SvPlayersToStartRound)
+	IGameController::Tick();
+}
+
+void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
+{
+	CPlayer& player = (*pPlayer);
+
+	// toggle state, whether player wants or doesn't want to joint spec.
+	if (player.IsCaught() && Team == TEAM_SPECTATORS)
 	{
-		// Fallback to Warmup!
-		m_ForcedEndRound = true;
+		if (player.GetWantsToJoinSpectators())
+		{
+			player.ResetWantsToJoinSpectators();
+		}
+		else
+		{
+			player.SetWantsToJoinSpectators();
+		}
+		return;
 	}
 	
-	IGameController::Tick();
+	
+	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
+
 }

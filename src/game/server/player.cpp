@@ -7,6 +7,8 @@
 #include "gamecontroller.h"
 #include "player.h"
 
+#include <algorithm>
+
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS)
 
@@ -35,6 +37,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_Spawning = 0;
 
 	m_CaughtBy = -1;
+	m_WantsToJoinSpectators = false;
 
 }
 
@@ -447,7 +450,7 @@ void CPlayer::UpdateDeadSpecMode()
 }
 
 void CPlayer::SetTeam(int Team, bool DoChatMsg)
-{
+{	
 	KillCharacter();
 
 	m_Team = Team;
@@ -521,7 +524,7 @@ bool CPlayer::BeCaught(int byID)
 	}
 	if (m_CaughtBy >= 0)	
 	{
-		dbg_msg("DEBUG", "%d is already caught by: %d", GetCID(), m_CaughtBy);
+		dbg_msg("DEBUG", "Cannot release %d because already caught by %d", GetCID(), m_CaughtBy);
 		// already caught by someone else
 		return false;
 	}
@@ -530,7 +533,6 @@ bool CPlayer::BeCaught(int byID)
 		// if not caught, be caught by ID
 		m_CaughtBy = byID;
 		m_RespawnDisabled = true;
-		dbg_msg("DEBUG", "%d was caught by: %d", GetCID(), m_CaughtBy);
 		ReleaseAllCaughtPlayers();
 		return true;
 	}
@@ -543,7 +545,7 @@ bool CPlayer::BeReleased()
 	if (m_CaughtBy >= 0)
 	{
 		// caught -> can be released -> is released
-		dbg_msg("DEBUG", "%d was released by: %d", GetCID(), m_CaughtBy);
+		dbg_msg("DEBUG", "Player %d was released by %d", GetCID(), m_CaughtBy);
 		m_CaughtBy = -1;
 		m_RespawnDisabled = false;
 		// respawn half a second after being released
@@ -581,6 +583,28 @@ int CPlayer::ReleaseLastCaughtPlayer()
 	}
 }
 
+bool CPlayer::RemoveFromCaughtPlayers(int ID)
+{
+	// success is true, if the player was actually in our caught players.
+	bool success = false;
+	// move to the end of vector
+	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [&](int lookAtID) {
+		if (lookAtID == ID)
+		{
+			success = true;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	});
+
+	// erase elements from 'it' through 'end()'
+	m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
+	return success;
+}
+
 int CPlayer::ReleaseAllCaughtPlayers()
 {	
 	int releasedPlayers = m_CaughtPlayers.size();
@@ -602,6 +626,11 @@ int CPlayer::GetNumCaughtPlayers()
 	return m_CaughtPlayers.size();
 }
 
+int CPlayer::GetCaughtByID()
+{
+	return m_CaughtBy;
+}
+
 bool CPlayer::IsCaught()
 {
 	bool isCaught = m_CaughtBy >= 0 && m_CaughtBy < MAX_CLIENTS;
@@ -618,4 +647,19 @@ bool CPlayer::IsNotCaught()
 	bool canSpawn = !m_RespawnDisabled;
 	bool characterAlive = GetCharacter() && GetCharacter()->IsAlive();
 	return isNotCaught && notInSpec && (canSpawn || characterAlive);
+}
+
+bool CPlayer::GetWantsToJoinSpectators()
+{
+	return m_WantsToJoinSpectators;
+}
+
+void CPlayer::ResetWantsToJoinSpectators()
+{
+	m_WantsToJoinSpectators = false;
+}
+
+void CPlayer::SetWantsToJoinSpectators()
+{
+	m_WantsToJoinSpectators = true;
 }

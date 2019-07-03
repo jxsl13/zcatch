@@ -18,15 +18,20 @@ public:
 
 	virtual void OnCharacterSpawn(class CCharacter *pChr);
 	virtual int OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon);
+
+	virtual void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg=true);
+
+	virtual void EndRound();
 private:
 
 	/**
 	 * Used to track, whether we reached the players count needed to
 	 * end a round or whether we went below that treshold.
 	 */
-	int m_PreviousAlivePlayerCount;
-	int m_AlivePlayerCount;
-
+	int m_PreviousIngamePlayerCount;
+	int m_IngamePlayerCount;
+	
+	
 	/**
 	 * As EndRound() should only be called from within DoWinCheck(), 
 	 * We want to enforce Ending a round in order to revert back to 

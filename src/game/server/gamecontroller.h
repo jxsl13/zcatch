@@ -108,7 +108,7 @@ protected:
 
 	EGameState GetGameState() {return m_GameState;}
 	void EndMatch() { SetGameState(IGS_END_MATCH, TIMER_END); }
-	void EndRound() { SetGameState(IGS_END_ROUND, TIMER_END/2); }
+	virtual void EndRound() { SetGameState(IGS_END_ROUND, TIMER_END/2); }
 
 	// info
 	int m_GameFlags;
@@ -214,7 +214,7 @@ public:
 	bool CanJoinTeam(int Team, int NotThisID) const;
 	bool CanChangeTeam(CPlayer *pPplayer, int JoinTeam) const;
 
-	void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg=true);
+	virtual void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg=true);
 	void ForceTeamBalance() { if(!(m_GameFlags&GAMEFLAG_SURVIVAL)) DoTeamBalance(); }
 	
 	int GetRealPlayerNum() const { return m_aTeamSize[TEAM_RED]+m_aTeamSize[TEAM_BLUE]; }

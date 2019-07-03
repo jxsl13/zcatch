@@ -59,6 +59,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
+	m_LastWeapon = WEAPON_GUN;
 
 	auto isNotVanillaGameType = [](const char *pGameType) -> bool {
 		return str_comp_nocase(pGameType, "CTF") != 0 &&
@@ -68,39 +69,36 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		str_comp_nocase(pGameType, "TDM") != 0;
 	};
 
+	// zCatch
 	if(isNotVanillaGameType(GameServer()->GameType()))
-	{
-		switch (g_Config.m_SvWeaponMode)
+	{	
+		// set weapon to hammer or gun, shotgun, grenade, laser, ninja
+		SetWeapon(g_Config.m_SvWeaponMode);
+		
+		if (g_Config.m_SvWeaponMode >= NUM_WEAPONS)
 		{
-		case WEAPON_HAMMER:
-			m_ActiveWeapon = WEAPON_HAMMER;
-			break;
-		case WEAPON_GUN:
-			m_ActiveWeapon = WEAPON_GUN;
-			break;
-		case WEAPON_SHOTGUN:
-			m_ActiveWeapon = WEAPON_SHOTGUN;
-			break;
-		case WEAPON_GRENADE:
-			m_ActiveWeapon = WEAPON_GRENADE;
-			break;
-		case WEAPON_LASER:
-			m_ActiveWeapon = WEAPON_LASER;
-			break;
-		case WEAPON_NINJA:
-			m_ActiveWeapon = WEAPON_NINJA;
-			break;
-		default:
-			m_ActiveWeapon = WEAPON_HAMMER;
-			break;
+			// All weapons mode
+			GiveWeapon(WEAPON_HAMMER, 10);
+			GiveWeapon(WEAPON_GUN, 10);
+			GiveWeapon(WEAPON_SHOTGUN, 10);
+			GiveWeapon(WEAPON_GRENADE, 10);
+			GiveWeapon(WEAPON_LASER, 10);
 		}
+		else
+		{
+			// Give set weapon
+			GiveWeapon(m_ActiveWeapon, 10);
+		}
+		
+		
+		
 	}
 	else
 	{
 		m_ActiveWeapon = WEAPON_HAMMER;
 	}
 	
-	m_LastWeapon = WEAPON_HAMMER;
+	
 
 	m_pPlayer = pPlayer;
 	m_Pos = Pos;
