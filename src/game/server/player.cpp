@@ -524,7 +524,7 @@ bool CPlayer::BeCaught(int byID)
 	}
 	if (m_CaughtBy >= 0)	
 	{
-		dbg_msg("DEBUG", "Cannot release %d because already caught by %d", GetCID(), m_CaughtBy);
+		dbg_msg("DEBUG", "Player %d can't be caught by %d , because already caught by %d", GetCID(), byID, m_CaughtBy);
 		// already caught by someone else
 		return false;
 	}
