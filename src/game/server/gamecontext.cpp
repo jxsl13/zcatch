@@ -189,6 +189,14 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 	}
 }
 
+void CGameContext::SendServerMessage(int To, const char *pText)
+{
+	if(To >= 0 && To < MAX_CLIENTS)
+		SendChat(-1, CHAT_NONE, To, pText);
+	else
+		SendChat(-1, CHAT_ALL, -1, pText);
+}
+
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
 	char aBuf[256];
@@ -214,8 +222,11 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 	Msg.m_pMessage = pText;
 	Msg.m_TargetID = -1;
 
+	
 	if(Mode == CHAT_ALL)
+	{
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	}
 	else if(Mode == CHAT_TEAM)
 	{
 		// pack one for the recording only
@@ -230,13 +241,18 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
 		}
 	}
-	else // Mode == CHAT_WHISPER
+	else if(Mode == CHAT_WHISPER)
 	{
 		// send to the clients
 		Msg.m_TargetID = To;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 	}
+	else // Mode == CHAT_NONE
+	{
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+	}
+	
 }
 
 void CGameContext::SendBroadcast(const char* pText, int ClientID)
@@ -983,10 +999,19 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		}
 		else if (MsgID == NETMSGTYPE_CL_KILL && !m_World.m_Paused)
 		{
-			if(pPlayer->m_LastKill && pPlayer->m_LastKill+Server()->TickSpeed()*3 > Server()->Tick())
+			
+			// killing yourself is only allowed every x seconds.
+			int cooldownSecondsLeft = pPlayer->m_LastKill+Server()->TickSpeed()* g_Config.m_SvSuicideCooldown - Server()->Tick();
+			if(pPlayer->m_LastKill && cooldownSecondsLeft)
+			{
 				return;
+			}
 
-			pPlayer->m_LastKill = Server()->Tick();
+			if (pPlayer->GetNumCaughtPlayers() == 0)
+			{
+				// only prevent suicides, when a player actually does one.
+				pPlayer->m_LastKill = Server()->Tick();
+			}
 			pPlayer->KillCharacter(WEAPON_SELF);
 		}
 		else if (MsgID == NETMSGTYPE_CL_READYCHANGE)

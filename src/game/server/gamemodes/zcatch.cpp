@@ -20,12 +20,40 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 
  void CGameControllerZCATCH::EndRound()
  {
+	 // don't do anything if we just switched from
+	 // warmup to zCatch or from zCatch to warmup
+	if(m_PreviousIngamePlayerCount != m_IngamePlayerCount)
+	{
+		return;
+	}
+
 	// release all players at the end of the round.
+	float alivePercentage = 0.0f, caughtPercentage = 0.0f;
+	int totalTicksPlayed = 0;
+	CPlayer *player = nullptr;
+	char aBuf[256];
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(GameServer()->m_apPlayers[i])
+		player = GameServer()->m_apPlayers[i];
+		if(player)
 		{
-			GameServer()->m_apPlayers[i]->ReleaseAllCaughtPlayers();
+			// calculate some small player statistict
+			totalTicksPlayed = player->m_TicksAlive + player->m_TicksCaught;
+			if (totalTicksPlayed > 0)
+			{
+				alivePercentage = (player->m_TicksAlive / totalTicksPlayed) * 100.0f;
+				caughtPercentage = (player->m_TicksCaught / totalTicksPlayed) * 100.0f;
+
+				// send them to the player
+				str_format(aBuf, sizeof(aBuf), "Ingame: %.2f%% Spectating: %.2f%% ", alivePercentage, caughtPercentage);
+				GameServer()->SendServerMessage(i, aBuf);
+			}
+
+			// do cleanup
+			GameServer()->m_apPlayers[i]->ReleaseAllCaughtPlayers(CPlayer::REASON_EVERYONE_RELEASED);
+			GameServer()->m_apPlayers[i]->ResetStatistics();
+
+			player = nullptr;
 		}
 	}
 
@@ -87,10 +115,17 @@ void CGameControllerZCATCH::DoWincheckRound()
 		else if(alivePlayerCount == 1)	// 1 winner
 		{
 			pAlivePlayer->m_Score++;
+			
+			// Inform everyone about the winner.
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(pAlivePlayer->GetCID()));
+			GameServer()->SendServerMessage(-1, aBuf);
+
 			EndRound();
 		}
 		else if(m_PreviousIngamePlayerCount >= g_Config.m_SvPlayersToStartRound && m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
 		{
+			// Switching back to warmup!
 			EndRound();
 		}
 	}
@@ -125,8 +160,13 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	
 	// warmup
 	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
-	{
-		dbg_msg("DEBUG", "Player %d joined the game.", player.GetCID());
+	{	
+		if (g_Config.m_Debug)
+		{
+			dbg_msg("DEBUG", "Player %d joined the game.", player.GetCID());
+		}
+		
+		
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -160,10 +200,30 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// if the dominating player has nobody caught, we don't want them to
 	if (pDominatingPlayer && pDominatingPlayer->GetNumCaughtPlayers() > 0)
 	{
-		dbg_msg("DEBUG", "Player %d was added as victim of player %d.", player.GetCID(), pDominatingPlayer->GetCID());
-		pDominatingPlayer->CatchPlayer(player.GetCID());
+		pDominatingPlayer->CatchPlayer(player.GetCID(), CPlayer::REASON_PLAYER_JOINED);
 	}
+	else if (pDominatingPlayer && pDominatingPlayer->GetNumCaughtPlayers() == 0)
+	{
+		if (m_IngamePlayerCount > g_Config.m_SvPlayersToStartRound 
+			&& m_IngamePlayerCount == m_PreviousIngamePlayerCount)
+		{
+			// if player joins & nobody has caught anybody at that exact moment
+			// the player directly joins the game
+			// also we do not want this to happen, when we switch from
+			// warmup to the game or the other way around.
+			player.BeReleased(CPlayer::REASON_PLAYER_JOINED);
+		}
+		else if(m_IngamePlayerCount == g_Config.m_SvPlayersToStartRound)
+		{
+			// do not be released, let vanilla code handle this.
+			player.BeReleased();
+		}
 
+		// in this case we should not call the parent method, otherwise
+		// spawning will not work properly.
+		//return;
+	}
+	
 	// needed to do the spawning stuff.
 	IGameController::OnPlayerConnect(pPlayer);
 }
@@ -178,12 +238,12 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 		if (player.IsNotCaught())
 		{
 			// player being released 
-			player.ReleaseAllCaughtPlayers();
+			player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
 
 		}
 		else if (player.IsCaught())
 		{
-			// remove player from caught list
+			// remove leaving player from caught list 
 			GameServer()->m_apPlayers[player.GetCaughtByID()]->RemoveFromCaughtPlayers(player.GetCID());
 		}
 		
@@ -213,7 +273,11 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
 	{
 		// any kind of warmup
-		dbg_msg("DEBUG", "Warmup, player %d killed by %d.", victim.GetCID(), killer.GetCID());
+		if (g_Config.m_Debug)
+		{
+			dbg_msg("DEBUG", "Warmup, player %d killed by %d.", victim.GetCID(), killer.GetCID());
+		}
+		
 		// simply die & respawn
 		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 	}
@@ -226,23 +290,59 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	 * the character from actually being killed, when releasing a player, 
 	 * that was killed by mistake.
 	 */
-	if(victim.GetNumCaughtPlayers() == 0 && (Weapon == WEAPON_SELF || Weapon == WEAPON_GAME))
+	if(victim.GetCID() != killer.GetCID() && Weapon >= 0)
 	{
-		dbg_msg("DEBUG", "Player %d died a poor man's death.", victim.GetCID());
-	}
-	else if(victim.GetCID() != killer.GetCID() && Weapon != WEAPON_SELF && Weapon != WEAPON_GAME)
-	{
-		dbg_msg("DEBUG", "Player %d was caught by %d.", victim.GetCID(), killer.GetCID());
-		// someone killed me with a weapon
+		// someone killed me with a real weapon
 		killer.CatchPlayer(victim.GetCID());
 	}
-	else if(victim.GetCID() == killer.GetCID())
+	else if(Weapon < 0 && victim.GetCID() == killer.GetCID())
 	{
-		// weird stuff happening
-		dbg_msg("DEBUG", "I killed myself with: %d, what is going on?!", Weapon);
+		switch (Weapon)
+		{
+		case WEAPON_WORLD: // death tiles etc.
+			victim.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_FAILED);
+			break;
+		case WEAPON_SELF: // suicide
+			// here we catch literally the suicides, not the releases
+			GameServer()->SendServerMessage(victim.GetCID(), "Was it really necessary to kill youself?");
+			break;
+		case WEAPON_GAME: // team change, etc.
+			if (g_Config.m_Debug)
+			{
+				dbg_msg("DEBUG", "ID: %d was killed by the game.", victim.GetCID());
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	
+
+	// do scoreing
+	if(!pKiller || Weapon == WEAPON_GAME)
+		return 0;
+	if(pKiller == pVictim->GetPlayer())
+	{
+		// suicide or falling out of the map
+		pVictim->GetPlayer()->m_Score -= g_Config.m_SvSuicidePenalty; 
+	}
+		
+	if(Weapon == WEAPON_SELF)
+	{
+		// respawn in 3 seconds
+		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
+	}
+
+	// update spectator modes for dead players in survival
+	if(m_GameFlags&GAMEFLAG_SURVIVAL)
+	{
+		for(int i = 0; i < MAX_CLIENTS; ++i)
+			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
+				GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
 	}
 	
-	return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+	return 0;
 }
 
 void CGameControllerZCATCH::Tick()
@@ -257,18 +357,39 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	// toggle state, whether player wants or doesn't want to joint spec.
 	if (player.IsCaught() && Team == TEAM_SPECTATORS)
 	{
+		// player wants to join spec, but is caught.
+
+		char aBuf[256];
 		if (player.GetWantsToJoinSpectators())
-		{
+		{	
+			str_format(aBuf, sizeof(aBuf), "You will join the game once '%s' dies.", Server()->ClientName(player.GetCaughtByID()));
+
 			player.ResetWantsToJoinSpectators();
 		}
 		else
 		{
+			str_format(aBuf, sizeof(aBuf), "You will join the spectators once '%s' dies.", Server()->ClientName(player.GetCaughtByID()));
+
 			player.SetWantsToJoinSpectators();
 		}
+
+		GameServer()->SendServerMessage(player.GetCID(), aBuf);
+		// do not change team, while you are caught.
 		return;
 	}
+	else if(player.IsNotCaught() && player.GetNumCaughtPlayers() > 0 && Team == TEAM_SPECTATORS)
+	{
+		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_JOINED_SPEC);
+	}
+	else if(player.IsNotCaught() && Team != TEAM_SPECTATORS)
+	{
+		// players joins the game after being in spec
+		
+		// allow player to spawn
+		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
+	}
 	
-	
+
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 
 }

@@ -49,18 +49,44 @@ public:
 	int m_TicksAlive;
 	void ResetStatistics();
 
-	bool CatchPlayer(int ID);
+	enum EReleaseReason {
+		REASON_NONE = 0,
+
+		// release reasons
+		// #### one by one player release START
+		REASON_PLAYER_RELEASED,
+
+		// player's state is reset to released when 
+		// joining the game after having been in spec
+		REASON_PLAYER_JOINED_GAME_AGAIN, 
+		// #### one by one player release END
+
+		// #### all at once player release START
+		REASON_PLAYER_DIED,
+		REASON_PLAYER_FAILED,
+		REASON_PLAYER_LEFT,
+		REASON_PLAYER_JOINED_SPEC,
+		REASON_EVERYONE_RELEASED,
+		// #### all at once player release END
+
+		// catch reasons
+		REASON_PLAYER_CAUGHT,
+
+		// caught & released reasons
+		REASON_PLAYER_JOINED,
+	};
+
+	bool CatchPlayer(int ID, int reason=REASON_PLAYER_CAUGHT);
 	bool IsCaught();
 	bool IsNotCaught();
-	int ReleaseLastCaughtPlayer();
-	int ReleaseAllCaughtPlayers();
-	bool RemoveFromCaughtPlayers(int ID);
+	int ReleaseLastCaughtPlayer(int reason=REASON_NONE);
+	int ReleaseAllCaughtPlayers(int reason=REASON_NONE);
+	bool RemoveFromCaughtPlayers(int ID, int reason=REASON_NONE);
 	int GetCaughtByID();
 	int GetNumCaughtPlayers();
 
-private:
-	bool BeReleased();
-	bool BeCaught(int byID);
+	bool BeReleased(int reason=REASON_NONE);
+	bool BeCaught(int byID, int reason=REASON_NONE);
 
 public:
 	bool GetWantsToJoinSpectators();
@@ -152,7 +178,7 @@ private:
 
 	// zCatch
 	int m_CaughtBy;
-	enum { NOT_CAUGHT = -1 };
+	enum { NOT_CAUGHT = -1};
 
 	std::vector<int> m_CaughtPlayers;
 	bool m_WantsToJoinSpectators;

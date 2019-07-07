@@ -34,7 +34,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_IsReadyToPlay = !GameServer()->m_pController->IsPlayerReadyMode();
 	m_RespawnDisabled = GameServer()->m_pController->GetStartRespawnState();
 	m_DeadSpecMode = false;
-	m_Spawning = 0;
+	m_Spawning = false;
 
 	// zCatch
 	m_CaughtBy = NOT_CAUGHT;
@@ -337,22 +337,19 @@ CCharacter *CPlayer::GetCharacter()
 
 void CPlayer::KillCharacter(int Weapon)
 {
-	// zCatch handle death tiles & suicide deaths
-	int numPlayersCaught = GetNumCaughtPlayers();
+	// Any kills caused by WEAPON_WORLD
+	// are not passed to KillCharacter, but directly
+	// to Character::Die -> IGameController::OnCharacterDeath(handled in here or in derived class)
+	
+	// WEAPON_WORLD is not necessary handled in here.
 
-	if (numPlayersCaught > 0 && Weapon == WEAPON_SELF)
+	if (GetNumCaughtPlayers() > 0 && Weapon == WEAPON_SELF)
 	{
 		// release last caught player on pressing suicide key.
-		int releasedID = ReleaseLastCaughtPlayer();
-		dbg_msg("DEBUG", "Player %d released player %d.", GetCID(), releasedID);
+		ReleaseLastCaughtPlayer(REASON_PLAYER_RELEASED);
+		
 		// we don't want to die in this case.
 		return;
-	}
-	else if(numPlayersCaught > 0 && Weapon == WEAPON_GAME)
-	{
-		dbg_msg("DEBUG", "Player %d fell into death tiles.", GetCID());
-		//fall down or into death tiles.
-		ReleaseAllCaughtPlayers();
 	}
 	
 	if(m_pCharacter)
@@ -509,10 +506,10 @@ void CPlayer::TryRespawn()
 }
 
 // affects oneself & caught player
-bool CPlayer::CatchPlayer(int ID)
+bool CPlayer::CatchPlayer(int ID, int reason)
 {	
 	// player can be caught by me(if not already caught)
-	if (GameServer()->m_apPlayers[ID] && GameServer()->m_apPlayers[ID]->BeCaught(GetCID()))
+	if (GameServer()->m_apPlayers[ID] && GameServer()->m_apPlayers[ID]->BeCaught(GetCID(), reason))
 	{
 		// player not cauht by anybody, add him to my caught players
 		m_CaughtPlayers.push_back(ID);
@@ -529,45 +526,117 @@ bool CPlayer::CatchPlayer(int ID)
 }
 
 // affects oneself & all caught players
-bool CPlayer::BeCaught(int byID)
+bool CPlayer::BeCaught(int byID, int reason)
 
 {	if (byID == GetCID())
 	{
-		// suicide or falling into death tiles
+		// falling into death tiles
 		// you die, you loose all of your caught players.
-		ReleaseAllCaughtPlayers();
+		ReleaseAllCaughtPlayers(REASON_PLAYER_FAILED);
 		return false;
 	}
 	if (m_CaughtBy >= 0)	
 	{
-		dbg_msg("DEBUG", "Player %d can't be caught by %d , because already caught by %d", GetCID(), byID, m_CaughtBy);
+		if (g_Config.m_Debug)
+		{
+			dbg_msg("DEBUG", "Player %d can't be caught by %d , because already caught by %d", GetCID(), byID, m_CaughtBy);
+		}
+
 		// already caught by someone else
 		return false;
 	}
-	else
+	else if(GameServer()->m_apPlayers[byID])
 	{
+		// can only be caught if player actually exists
+
 		// if not caught, be caught by ID
+		if(reason)
+		{
+			char aBuf[256];
+			switch (reason)
+			{
+			case REASON_PLAYER_CAUGHT:
+				str_format(aBuf, sizeof(aBuf), "You will be released, when '%s' dies.", Server()->ClientName(byID));
+				break;
+			case REASON_PLAYER_JOINED:
+				str_format(aBuf, sizeof(aBuf), "You were added to \"%s's\" victims. You will be released, once \"%s\" dies.", Server()->ClientName(byID), Server()->ClientName(byID));
+				break;
+			default:
+				break;
+			}
+			GameServer()->SendServerMessage(GetCID(), aBuf);
+		}
 		m_CaughtBy = byID;
+		m_SpectatorID = m_CaughtBy;
 		m_RespawnDisabled = true;
-		ReleaseAllCaughtPlayers();
+		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);
 
 		// statistics
-		m_Deaths++;
+		if(reason != REASON_PLAYER_JOINED)
+			m_Deaths++;
 		return true;
 	}
-	
+	return false;
 }
 
 // only affects oneself
-bool CPlayer::BeReleased()
+bool CPlayer::BeReleased(int reason)
 {
-	if (m_CaughtBy >= 0)
+	if (m_CaughtBy >= 0 || 
+		(m_CaughtBy == NOT_CAUGHT && 
+			(reason == REASON_PLAYER_JOINED || reason == REASON_PLAYER_JOINED_GAME_AGAIN)
+		)
+	)
 	{
 		// caught -> can be released -> is released
-		dbg_msg("DEBUG", "Player %d was released by %d", GetCID(), m_CaughtBy);
+		if (g_Config.m_Debug)
+		{
+			dbg_msg("DEBUG", "Player %d was released by %d", GetCID(), m_CaughtBy);
+		}
+
+		if (reason)
+		{
+			char aBuf[256];
+			// first message to the released player
+			switch (reason)
+			{
+			case REASON_PLAYER_DIED:
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' died a miserable death.", Server()->ClientName(m_CaughtBy));
+				break;
+			case REASON_PLAYER_FAILED:
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' failed miserably.", Server()->ClientName(m_CaughtBy));
+				break;
+			case REASON_PLAYER_RELEASED:
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' is a generous player.", Server()->ClientName(m_CaughtBy));
+				break;
+			case REASON_PLAYER_JOINED:
+				str_format(aBuf, sizeof(aBuf), "You were released, because nobody has caught any players yet.");
+				break;
+			case REASON_PLAYER_JOINED_SPEC:
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' joined the spectators.", Server()->ClientName(m_CaughtBy));
+				break;
+			case REASON_PLAYER_JOINED_GAME_AGAIN:
+				// nothing to say here, because the released player triggered the "release" himself/herself
+				// actually a reset to the released state only 
+				// the player was previously willingly explicitly stectating.
+				break;
+			case REASON_PLAYER_LEFT:
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' is leaving the game.", Server()->ClientName(m_CaughtBy));
+				break;
+			case REASON_EVERYONE_RELEASED:
+				str_format(aBuf, sizeof(aBuf), "Everyone was released!");
+				break;
+			default:
+				break;
+			}
+			GameServer()->SendServerMessage(GetCID(), aBuf);
+		}
+
 		m_CaughtBy = NOT_CAUGHT;
+		m_SpectatorID = -1;
 		m_RespawnDisabled = false;
 		// respawn half a second after being released
+		Respawn();
 		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed()/2);
 		return true;
 	}
@@ -579,31 +648,46 @@ bool CPlayer::BeReleased()
 }
 
 // affects oneself & caught players
-int CPlayer::ReleaseLastCaughtPlayer()
+int CPlayer::ReleaseLastCaughtPlayer(int reason)
 {
 	if ( m_CaughtPlayers.size() > 0 )
 	{
 		int playerToReleaseID = m_CaughtPlayers.back();
-		if(GameServer()->m_apPlayers[playerToReleaseID]->BeReleased())
+		if(GameServer()->m_apPlayers[playerToReleaseID]->BeReleased(reason))
 		{
 			// player can be released
 			m_CaughtPlayers.pop_back();
+
+			/*
+				Inform the releasing player about the player he/she willingly
+				released. Any mass release is not handled in here, as it would flood
+				the dying/failing/ etc. player with messages.
+			 */
+			if (reason == REASON_PLAYER_RELEASED)
+			{
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "You released '%s'(%d left)",
+						   Server()->ClientName(playerToReleaseID),
+						   GetNumCaughtPlayers());
+				GameServer()->SendServerMessage(GetCID(), aBuf);
+			}
+
 			return playerToReleaseID;
 		}
 		else
 		{
 			// player cannot be released
-			return -1;
+			return NOT_CAUGHT;
 		}	
 	}
 	else
 	{
-		return -1;
+		return NOT_CAUGHT;
 	}
 }
 
 // remove given id from my caught players
-bool CPlayer::RemoveFromCaughtPlayers(int ID)
+bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 {
 	// success is true, if the player was actually in our caught players.
 	bool success = false;
@@ -612,7 +696,7 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID)
 		if (lookAtID == ID)
 		{
 			// remove from my caugh players & release at the same time.
-			GameServer()->m_apPlayers[lookAtID]->BeReleased();
+			GameServer()->m_apPlayers[lookAtID]->BeReleased(reason);
 			success = true;
 			return true;
 		}
@@ -631,7 +715,7 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID)
 	return success;
 }
 
-int CPlayer::ReleaseAllCaughtPlayers()
+int CPlayer::ReleaseAllCaughtPlayers(int reason)
 {	
 	int releasedPlayers = m_CaughtPlayers.size();
 	// nobody to release
@@ -639,10 +723,38 @@ int CPlayer::ReleaseAllCaughtPlayers()
 	{
 		return releasedPlayers;
 	}
-	
+
+	// message to the releasing player
+	bool hasReasonMessage = true;
+	char aBuf[256];
+
+	switch (reason)
+	{
+	case REASON_PLAYER_DIED:
+		str_format(aBuf, sizeof(aBuf), "Your death caused %d players to be set free!", GetNumCaughtPlayers());
+		break;
+	case REASON_PLAYER_FAILED:
+		str_format(aBuf, sizeof(aBuf), "Your failure caused %d players to be set free!", GetNumCaughtPlayers());
+		break;
+	case REASON_PLAYER_LEFT:
+		// no message, because the player leaves.
+		break;
+	case REASON_PLAYER_JOINED_SPEC:
+		str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d players to be set free!", GetNumCaughtPlayers());
+		break;
+	default:
+		hasReasonMessage = false;
+		break;
+	}
+
+	if (hasReasonMessage)
+	{
+		GameServer()->SendServerMessage(GetCID(), aBuf);
+	}
+
 	// somebody to release
 	// while returned id is a valid 0 <= ID <= MAC_CLIENTS
-	while(ReleaseLastCaughtPlayer() >= 0);
+	while(ReleaseLastCaughtPlayer(reason) >= 0);
 		
 	return releasedPlayers;
 }
