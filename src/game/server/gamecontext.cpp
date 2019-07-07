@@ -191,10 +191,13 @@ void CGameContext::CreateSound(vec2 Pos, int Sound, int64 Mask)
 
 void CGameContext::SendServerMessage(int To, const char *pText)
 {
-	if(To >= 0 && To < MAX_CLIENTS)
-		SendChat(-1, CHAT_NONE, To, pText);
-	else
-		SendChat(-1, CHAT_ALL, -1, pText);
+	if (pText && pText[0])
+	{
+		if (To >= 0 && To < MAX_CLIENTS)
+			SendChat(-1, CHAT_NONE, To, pText);
+		else
+			SendChat(-1, CHAT_ALL, -1, pText);
+	}
 }
 
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
@@ -1001,17 +1004,34 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		{
 			
 			// killing yourself is only allowed every x seconds.
-			int cooldownSecondsLeft = pPlayer->m_LastKill+Server()->TickSpeed()* g_Config.m_SvSuicideCooldown - Server()->Tick();
-			if(pPlayer->m_LastKill && cooldownSecondsLeft)
-			{
-				return;
-			}
+			int cooldownSecondsLeft = ((pPlayer->m_LastKill+ (Server()->TickSpeed() * g_Config.m_SvSuicideCooldown) - Server()->Tick()) / Server()->TickSpeed());
 
-			if (pPlayer->GetNumCaughtPlayers() == 0)
+			if (pPlayer->m_LastKill)
 			{
-				// only prevent suicides, when a player actually does one.
+				if (cooldownSecondsLeft > 0 && pPlayer->GetNumCaughtPlayers() == 0)
+				{
+					// if cooldown not yet reached
+					char aBuf[64];
+					str_format(aBuf, sizeof(aBuf), "%d second%s left before you can kill yourself again.", cooldownSecondsLeft, cooldownSecondsLeft == 1 ? "" : "s");
+					
+					// don't send too many mesages if the player keeps on spamming the suicide button.
+					if(Server()->Tick() % Server()->TickSpeed() < Server()->TickSpeed() / 10)
+						SendServerMessage(pPlayer->GetCID(), aBuf);
+					return;
+				} 
+				else if (pPlayer->GetNumCaughtPlayers() == 0)
+				{
+					// only prevent suicides, when a player actually does one.
+					pPlayer->m_LastKill = Server()->Tick();
+				}
+			}
+			else
+			{
+				// no previous suicide
 				pPlayer->m_LastKill = Server()->Tick();
 			}
+
+			// kill yourself
 			pPlayer->KillCharacter(WEAPON_SELF);
 		}
 		else if (MsgID == NETMSGTYPE_CL_READYCHANGE)

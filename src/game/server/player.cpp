@@ -38,6 +38,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 	// zCatch
 	m_CaughtBy = NOT_CAUGHT;
+	m_LeftCaughtPlayers = 0;
 	m_WantsToJoinSpectators = false;
 	ResetStatistics();
 
@@ -516,6 +517,7 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 
 		// statistics
 		m_Kills++;
+
 		return true;
 	}
 	else
@@ -568,12 +570,14 @@ bool CPlayer::BeCaught(int byID, int reason)
 		}
 		m_CaughtBy = byID;
 		m_SpectatorID = m_CaughtBy;
+		m_LeftCaughtPlayers = 0;
 		m_RespawnDisabled = true;
 		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);
 
 		// statistics
 		if(reason != REASON_PLAYER_JOINED)
 			m_Deaths++;
+
 		return true;
 	}
 	return false;
@@ -598,6 +602,7 @@ bool CPlayer::BeReleased(int reason)
 		{
 			char aBuf[256];
 			// first message to the released player
+			bool sendServerMessage = true;
 			switch (reason)
 			{
 			case REASON_PLAYER_DIED:
@@ -616,6 +621,7 @@ bool CPlayer::BeReleased(int reason)
 				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' joined the spectators.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_PLAYER_JOINED_GAME_AGAIN:
+				sendServerMessage = false;
 				// nothing to say here, because the released player triggered the "release" himself/herself
 				// actually a reset to the released state only 
 				// the player was previously willingly explicitly stectating.
@@ -629,7 +635,8 @@ bool CPlayer::BeReleased(int reason)
 			default:
 				break;
 			}
-			GameServer()->SendServerMessage(GetCID(), aBuf);
+			if(sendServerMessage)
+				GameServer()->SendServerMessage(GetCID(), aBuf);
 		}
 
 		m_CaughtBy = NOT_CAUGHT;
@@ -638,6 +645,7 @@ bool CPlayer::BeReleased(int reason)
 		// respawn half a second after being released
 		Respawn();
 		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed()/2);
+
 		return true;
 	}
 	else
@@ -672,6 +680,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason)
 				GameServer()->SendServerMessage(GetCID(), aBuf);
 			}
 
+			UpdatePlayersLeftToCatch();
 			return playerToReleaseID;
 		}
 		else
@@ -710,9 +719,26 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 	if(success)
 	{
 		m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
+		switch(reason)
+		{
+			case REASON_PLAYER_LEFT:
+				// player was removed from my caught players, 
+				// because he/she left the game
+				m_LeftCaughtPlayers++;
+				break;
+		}
 	}
 
 	return success;
+}
+
+bool CPlayer::BeSetFree(int reason)
+{
+	if (m_CaughtBy != NOT_CAUGHT)
+	{
+		return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(GetCID(), reason);
+	}
+	return false;
 }
 
 int CPlayer::ReleaseAllCaughtPlayers(int reason)
@@ -731,16 +757,16 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 	switch (reason)
 	{
 	case REASON_PLAYER_DIED:
-		str_format(aBuf, sizeof(aBuf), "Your death caused %d players to be set free!", GetNumCaughtPlayers());
+		str_format(aBuf, sizeof(aBuf), "Your death caused %d player%s to be set free!", GetNumCaughtPlayers(), GetNumCaughtPlayers() > 1 ? "s" : "");
 		break;
 	case REASON_PLAYER_FAILED:
-		str_format(aBuf, sizeof(aBuf), "Your failure caused %d players to be set free!", GetNumCaughtPlayers());
+		str_format(aBuf, sizeof(aBuf), "Your failure caused %d player%s to be set free!", GetNumCaughtPlayers(), GetNumCaughtPlayers() > 1 ? "s" : "");
 		break;
 	case REASON_PLAYER_LEFT:
 		// no message, because the player leaves.
 		break;
 	case REASON_PLAYER_JOINED_SPEC:
-		str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d players to be set free!", GetNumCaughtPlayers());
+		str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d player%s to be set free!", GetNumCaughtPlayers(), GetNumCaughtPlayers() > 1 ? "s" : "");
 		break;
 	default:
 		hasReasonMessage = false;
@@ -759,9 +785,39 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 	return releasedPlayers;
 }
 
+int CPlayer::UpdatePlayersLeftToCatch()
+{
+	// as this updating operation is rather heavy to lift, we want updates only to happen, 
+	// when someone is killed and not all the time
+	m_PlayersLeftToCatch = 0;
+	int myID = GetCID();
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(i != GetCID() && GameServer()->m_apPlayers[i])
+		{
+			if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && 
+				GameServer()->m_apPlayers[i]->GetCaughtByID() != myID)
+			{
+				m_PlayersLeftToCatch++;
+			}
+		}
+	}
+	return 	m_PlayersLeftToCatch;
+}
+int CPlayer::GetPlayersLeftToCatch()
+{
+	return m_PlayersLeftToCatch;
+}
+
 int CPlayer::GetNumCaughtPlayers()
 {
 	return m_CaughtPlayers.size();
+}
+
+int CPlayer::GetNumLeftCaughtPlayers()
+{
+	return m_LeftCaughtPlayers;
 }
 
 int CPlayer::GetCaughtByID()

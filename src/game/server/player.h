@@ -81,14 +81,35 @@ public:
 	bool IsNotCaught();
 	int ReleaseLastCaughtPlayer(int reason=REASON_NONE);
 	int ReleaseAllCaughtPlayers(int reason=REASON_NONE);
+
+	// return internally saved value
+	int GetPlayersLeftToCatch();
+	
+	// goes through all players and calculates,
+	// how many there are left for me to catch
+	int UpdatePlayersLeftToCatch();
+	
+	// remove a specific player from my caught players
+	// and release him/her
 	bool RemoveFromCaughtPlayers(int ID, int reason=REASON_NONE);
+
+	// forcefully remove player from another player's victims
+	// used to set 
+	bool BeSetFree(int reason=REASON_PLAYER_LEFT);
+
+	// who caught me
 	int GetCaughtByID();
+
+	// how many players did I catch
 	int GetNumCaughtPlayers();
+
+	// how many of my caught player did leave the game
+	int GetNumLeftCaughtPlayers();
+
 
 	bool BeReleased(int reason=REASON_NONE);
 	bool BeCaught(int byID, int reason=REASON_NONE);
 
-public:
 	bool GetWantsToJoinSpectators();
 	void SetWantsToJoinSpectators();
 	void ResetWantsToJoinSpectators();
@@ -178,9 +199,12 @@ private:
 
 	// zCatch
 	int m_CaughtBy;
+	int m_PlayersLeftToCatch;
 	enum { NOT_CAUGHT = -1};
 
 	std::vector<int> m_CaughtPlayers;
+	// preventing rejoin exploitation.
+	int m_LeftCaughtPlayers;
 	bool m_WantsToJoinSpectators;
 
 

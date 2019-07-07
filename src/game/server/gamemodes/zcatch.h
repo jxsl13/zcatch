@@ -23,7 +23,7 @@ public:
 
 	virtual void EndRound();
 private:
-
+	void RefreshBroadcast();
 	/**
 	 * Used to track, whether we reached the players count needed to
 	 * end a round or whether we went below that treshold.
@@ -31,7 +31,7 @@ private:
 	int m_PreviousIngamePlayerCount;
 	int m_IngamePlayerCount;
 	
-	
+
 	/**
 	 * As EndRound() should only be called from within DoWinCheck(), 
 	 * We want to enforce Ending a round in order to revert back to 

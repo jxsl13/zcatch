@@ -150,7 +150,25 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 	{
 		DoTeamChange(pChr->GetPlayer(), TEAM_SPECTATORS);
 		player.ResetWantsToJoinSpectators();
+		return;
 	}
+
+	// send broadcast if player stays ingame
+	char aBuf[64];
+	int enemiesLeft = player.UpdatePlayersLeftToCatch();
+	if (enemiesLeft > 0)
+	{
+		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		GameServer()->SendBroadcast(aBuf, player.GetCID());
+	}
+	else
+	{
+		GameServer()->SendBroadcast("", player.GetCID());
+	}
+	
+	// If the player spawns, the releasing player's
+	// enemiesLeft counter needs to be updated as well.
+	RefreshBroadcast();
 }
 
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
@@ -198,11 +216,13 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	}
 
 	// if the dominating player has nobody caught, we don't want them to
-	if (pDominatingPlayer && pDominatingPlayer->GetNumCaughtPlayers() > 0)
+	if (pDominatingPlayer && 
+		pDominatingPlayer->GetNumCaughtPlayers() + pDominatingPlayer->GetNumLeftCaughtPlayers() > 0)
 	{
 		pDominatingPlayer->CatchPlayer(player.GetCID(), CPlayer::REASON_PLAYER_JOINED);
 	}
-	else if (pDominatingPlayer && pDominatingPlayer->GetNumCaughtPlayers() == 0)
+	else if (pDominatingPlayer && 
+			pDominatingPlayer->GetNumCaughtPlayers() + pDominatingPlayer->GetNumLeftCaughtPlayers() == 0)
 	{
 		if (m_IngamePlayerCount > g_Config.m_SvPlayersToStartRound 
 			&& m_IngamePlayerCount == m_PreviousIngamePlayerCount)
@@ -243,7 +263,7 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 		else if (player.IsCaught())
 		{
 			// remove leaving player from caught list 
-			GameServer()->m_apPlayers[player.GetCaughtByID()]->RemoveFromCaughtPlayers(player.GetCID());
+			player.BeSetFree(CPlayer::REASON_PLAYER_LEFT);
 		}
 		
 		// I leave, decrease number of ingame players
@@ -316,8 +336,34 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		}
 	}
 
-	
+	// update broadcast for killer and victim
+	char aBuf[64];
 
+	// send broadcast update to killer
+	int enemiesLeft = killer.UpdatePlayersLeftToCatch();
+	if (enemiesLeft > 0)
+	{
+		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		GameServer()->SendBroadcast(aBuf, killer.GetCID());
+	}
+	else
+	{
+		GameServer()->SendBroadcast("", killer.GetCID());
+	}
+	
+	// send broadcast update to victim
+	enemiesLeft = victim.UpdatePlayersLeftToCatch();
+	if (enemiesLeft > 0)
+	{
+		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		GameServer()->SendBroadcast(aBuf, victim.GetCID());
+	}
+	else
+	{
+		GameServer()->SendBroadcast("", victim.GetCID());
+	}
+
+	// vanilla handling
 	// do scoreing
 	if(!pKiller || Weapon == WEAPON_GAME)
 		return 0;
@@ -346,6 +392,15 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 
 void CGameControllerZCATCH::Tick()
 {
+	// Broadcast Refresh is only needed for only 
+	// keeping the broadcastvisible, but not to push
+	// actual updates.
+	int fiveSeconds = Server()->TickSpeed() * 5;
+	if (Server()->Tick() % fiveSeconds == 0)
+	{
+		RefreshBroadcast();
+	}
+	
 	IGameController::Tick();
 }
 
@@ -380,15 +435,57 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	{
 		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_JOINED_SPEC);
 	}
-	else if(player.IsNotCaught() && Team != TEAM_SPECTATORS)
+	else if(player.GetTeam() == TEAM_SPECTATORS && Team != TEAM_SPECTATORS)
 	{
 		// players joins the game after being in spec
-		
-		// allow player to spawn
+
+		// do vanilla respawn stuff
+		IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
+
+		// force player to spawn
 		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
+		return;
 	}
 	
-
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 
 }
+
+void CGameControllerZCATCH::RefreshBroadcast()
+{
+	// basically only print the sored values of each player O(n)
+	// no updates are handled in here. Those should be handled
+	// at their occurrence place.
+	CPlayer *pTmpPlayer = nullptr;
+	char aBuf[64];
+	int enemiesLeft = 0;
+
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		pTmpPlayer = GameServer()->m_apPlayers[i];
+
+		if (pTmpPlayer)
+		{
+			enemiesLeft = pTmpPlayer->GetPlayersLeftToCatch();
+			
+			if (enemiesLeft > 0)
+			{
+				str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+				GameServer()->SendBroadcast(aBuf, i);
+			}
+			else
+			{
+				GameServer()->SendBroadcast("", i);
+			}	
+		}
+		
+		pTmpPlayer = nullptr;
+	}
+	
+}
+
+
+
+
+
+
