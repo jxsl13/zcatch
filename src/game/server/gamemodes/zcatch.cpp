@@ -207,21 +207,20 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		if (m_IngamePlayerCount > g_Config.m_SvPlayersToStartRound 
 			&& m_IngamePlayerCount == m_PreviousIngamePlayerCount)
 		{
-			// if player joins & nobody has caught anybody at that exact moment
+			// if the player joins & nobody has caught anybody 
+			// at that exact moment, when a round is running
 			// the player directly joins the game
-			// also we do not want this to happen, when we switch from
-			// warmup to the game or the other way around.
+			
+			// we don't want this message to be displayed in any other case
 			player.BeReleased(CPlayer::REASON_PLAYER_JOINED);
 		}
-		else if(m_IngamePlayerCount == g_Config.m_SvPlayersToStartRound)
+		else if(m_IngamePlayerCount == g_Config.m_SvPlayersToStartRound
+				&& m_IngamePlayerCount != m_PreviousIngamePlayerCount)
 		{
-			// do not be released, let vanilla code handle this.
+			// no chat announcements
+			// when switching game modes/states
 			player.BeReleased();
 		}
-
-		// in this case we should not call the parent method, otherwise
-		// spawning will not work properly.
-		//return;
 	}
 	
 	// needed to do the spawning stuff.
