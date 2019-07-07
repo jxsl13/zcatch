@@ -158,7 +158,7 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 	int enemiesLeft = player.UpdatePlayersLeftToCatch();
 	if (enemiesLeft > 0)
 	{
-		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		str_format(aBuf, sizeof(aBuf), "%d enem%s left", enemiesLeft, enemiesLeft == 1 ? "y" : "ies");
 		GameServer()->SendBroadcast(aBuf, player.GetCID());
 	}
 	else
@@ -343,7 +343,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	int enemiesLeft = killer.UpdatePlayersLeftToCatch();
 	if (enemiesLeft > 0)
 	{
-		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		str_format(aBuf, sizeof(aBuf), "%d enem%s left", enemiesLeft, enemiesLeft == 1 ? "y":"ies");
 		GameServer()->SendBroadcast(aBuf, killer.GetCID());
 	}
 	else
@@ -355,7 +355,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	enemiesLeft = victim.UpdatePlayersLeftToCatch();
 	if (enemiesLeft > 0)
 	{
-		str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+		str_format(aBuf, sizeof(aBuf), "%d enem%s left", enemiesLeft, enemiesLeft == 1 ? "y":"ies");
 		GameServer()->SendBroadcast(aBuf, victim.GetCID());
 	}
 	else
@@ -470,7 +470,7 @@ void CGameControllerZCATCH::RefreshBroadcast()
 			
 			if (enemiesLeft > 0)
 			{
-				str_format(aBuf, sizeof(aBuf), "%d enemies left", enemiesLeft);
+				str_format(aBuf, sizeof(aBuf), "%d enem%s left", enemiesLeft, enemiesLeft == 1 ? "y":"ies");
 				GameServer()->SendBroadcast(aBuf, i);
 			}
 			else

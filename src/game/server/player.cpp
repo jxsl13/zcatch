@@ -518,6 +518,30 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 		// statistics
 		m_Kills++;
 
+		if(reason)
+		{
+			char aBuf[256];
+			bool sendMessage = true;
+			switch (reason)
+			{
+			case REASON_PLAYER_CAUGHT:
+				// default catch, nothing special here to talk about.
+				sendMessage = false;
+				break;
+			case REASON_PLAYER_JOINED:
+				str_format(aBuf, sizeof(aBuf), "'%s' was added to your victims(%d left).", Server()->ClientName(ID), GetNumCaughtPlayers());
+				break;
+			default:
+				break;
+			}
+			if (sendMessage)
+			{
+				GameServer()->SendServerMessage(GetCID(), aBuf);
+			}
+				
+		}
+
+
 		return true;
 	}
 	else
