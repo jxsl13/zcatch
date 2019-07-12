@@ -1,6 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-
+#include <csignal>
 #include <base/math.h>
 #include <base/system.h>
 
@@ -1764,6 +1764,18 @@ void CServer::SnapSetStaticsize(int ItemType, int Size)
 }
 
 static CServer *CreateServer() { return new CServer(); }
+// used for signal handling
+static CServer *g_CServer = nullptr;
+
+void signalHandler(int signalNumber) 
+{
+	// shutdown server on ctrl + c signal received
+	if(g_CServer)
+	{
+		g_CServer->m_RunServer = 0;
+		dbg_msg("server", "Shutting down the server.");
+	}
+};
 
 int main(int argc, const char **argv) // ignore_convention
 {
@@ -1796,6 +1808,11 @@ int main(int argc, const char **argv) // ignore_convention
 
 	CServer *pServer = CreateServer();
 	IKernel *pKernel = IKernel::Create();
+
+	// register signal SIGINT and signal handler 
+	g_CServer = pServer;
+   	std::signal(SIGINT, signalHandler);
+	std::signal(SIGSTOP, signalHandler);
 
 	// create the components
 	int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;
