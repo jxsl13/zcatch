@@ -66,7 +66,7 @@ public:
 		REASON_PLAYER_FAILED,
 		REASON_PLAYER_LEFT,
 		REASON_PLAYER_JOINED_SPEC,
-		REASON_EVERYONE_RELEASED,
+		REASON_EVERYONE_RELEASED, // End of round
 		// #### all at once player release END
 
 		// catch reasons
@@ -79,7 +79,6 @@ public:
 	bool CatchPlayer(int ID, int reason=REASON_PLAYER_CAUGHT);
 	bool IsCaught();
 	bool IsNotCaught();
-	int ReleaseLastCaughtPlayer(int reason=REASON_NONE);
 	int ReleaseAllCaughtPlayers(int reason=REASON_NONE);
 
 	// return internally saved value
@@ -88,17 +87,13 @@ public:
 	// goes through all players and calculates,
 	// how many there are left for me to catch
 	int UpdatePlayersLeftToCatch();
-	
-	// remove a specific player from my caught players
-	// and release him/her
-	bool RemoveFromCaughtPlayers(int ID, int reason=REASON_NONE);
 
 	// forcefully remove player from another player's victims
 	// used to set 
 	bool BeSetFree(int reason=REASON_PLAYER_LEFT);
 
 	// who caught me
-	int GetCaughtByID();
+	int GetIDCaughtBy();
 
 	// how many players did I catch
 	int GetNumCaughtPlayers();
@@ -108,11 +103,12 @@ public:
 
 
 	bool BeReleased(int reason=REASON_NONE);
-	bool BeCaught(int byID, int reason=REASON_NONE);
+	
 
 	bool GetWantsToJoinSpectators();
 	void SetWantsToJoinSpectators();
 	void ResetWantsToJoinSpectators();
+
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -202,10 +198,22 @@ private:
 	int m_PlayersLeftToCatch;
 	enum { NOT_CAUGHT = -1};
 
+	bool BeCaught(int byID, int reason=REASON_NONE);
+	int ReleaseLastCaughtPlayer(int reason=REASON_NONE, bool updateSkinColors=false);
+	
+	// remove a specific player from my caught players
+	// and release him/her
+	bool RemoveFromCaughtPlayers(int ID, int reason=REASON_NONE);
+
+
 	std::vector<int> m_CaughtPlayers;
 	// preventing rejoin exploitation.
-	int m_LeftCaughtPlayers;
+	int m_NumCaughtPlayersWhoLeft;
 	bool m_WantsToJoinSpectators;
+
+
+	unsigned int GetColor();
+	void UpdateSkinColors();
 
 
 	// used for spectator mode

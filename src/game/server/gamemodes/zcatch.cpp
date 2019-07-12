@@ -16,6 +16,7 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	m_IngamePlayerCount = 0;
 
 	m_ForcedEndRound = false;
+	
 }
 
  void CGameControllerZCATCH::EndRound()
@@ -126,6 +127,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 		else if(m_PreviousIngamePlayerCount >= g_Config.m_SvPlayersToStartRound && m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
 		{
 			// Switching back to warmup!
+			dbg_msg("DEBUG", "Switching back to warm up mode.");
 			EndRound();
 		}
 	}
@@ -169,6 +171,7 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 	// If the player spawns, the releasing player's
 	// enemiesLeft counter needs to be updated as well.
 	RefreshBroadcast();
+	UpdateSkinsOf({player.GetCID()});
 }
 
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
@@ -184,7 +187,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 			dbg_msg("DEBUG", "Player %d joined the game.", player.GetCID());
 		}
 		
-		
+		UpdateSkinsOf({player.GetCID()});
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -247,6 +250,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	IGameController::OnPlayerConnect(pPlayer);
 }
 
+
 void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
@@ -281,6 +285,7 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	// needed to do the disconnect handling.
 	IGameController::OnPlayerDisconnect(pPlayer);
 }
+
 
 int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
@@ -363,6 +368,9 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		GameServer()->SendBroadcast("", victim.GetCID());
 	}
 
+	// update colors of both players
+	UpdateSkinsOf({victim.GetCID(), killer.GetCID()});
+
 	// vanilla handling
 	// do scoreing
 	if(!pKiller || Weapon == WEAPON_GAME)
@@ -370,7 +378,10 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	if(pKiller == pVictim->GetPlayer())
 	{
 		// suicide or falling out of the map
-		pVictim->GetPlayer()->m_Score -= g_Config.m_SvSuicidePenalty; 
+		if (Weapon == WEAPON_WORLD || (Weapon == WEAPON_SELF && victim.GetNumCaughtPlayers() == 0))
+		{
+			pVictim->GetPlayer()->m_Score -= g_Config.m_SvSuicidePenalty; 
+		}		
 	}
 		
 	if(Weapon == WEAPON_SELF)
@@ -390,19 +401,23 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	return 0;
 }
 
+
 void CGameControllerZCATCH::Tick()
 {
-	// Broadcast Refresh is only needed for only 
-	// keeping the broadcastvisible, but not to push
+	// Broadcast Refresh is only needed for solely 
+	// keeping the broadcast visible, but not to push
 	// actual updates.
-	int fiveSeconds = Server()->TickSpeed() * 5;
-	if (Server()->Tick() % fiveSeconds == 0)
+	int nineSeconds = Server()->TickSpeed() * 9;
+	if (Server()->Tick() % nineSeconds == 0)
 	{
+		// The broadcast is according to heinrich5991 kept shown
+		// by the client for 10 seconds.
 		RefreshBroadcast();
 	}
 	
 	IGameController::Tick();
 }
+
 
 void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
@@ -416,13 +431,13 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		char aBuf[256];
 		if (player.GetWantsToJoinSpectators())
 		{	
-			str_format(aBuf, sizeof(aBuf), "You will join the game once '%s' dies.", Server()->ClientName(player.GetCaughtByID()));
+			str_format(aBuf, sizeof(aBuf), "You will join the game once '%s' dies.", Server()->ClientName(player.GetIDCaughtBy()));
 
 			player.ResetWantsToJoinSpectators();
 		}
 		else
 		{
-			str_format(aBuf, sizeof(aBuf), "You will join the spectators once '%s' dies.", Server()->ClientName(player.GetCaughtByID()));
+			str_format(aBuf, sizeof(aBuf), "You will join the spectators once '%s' dies.", Server()->ClientName(player.GetIDCaughtBy()));
 
 			player.SetWantsToJoinSpectators();
 		}
@@ -451,9 +466,16 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 
 }
 
+
+void CGameControllerZCATCH::OnPlayerInfoChange(class CPlayer *pPlayer)
+{
+	// nothing
+}
+
+
 void CGameControllerZCATCH::RefreshBroadcast()
 {
-	// basically only print the sored values of each player O(n)
+	// basically only print the stored values of each player O(n)
 	// no updates are handled in here. Those should be handled
 	// at their occurrence place.
 	CPlayer *pTmpPlayer = nullptr;
@@ -464,7 +486,8 @@ void CGameControllerZCATCH::RefreshBroadcast()
 	{
 		pTmpPlayer = GameServer()->m_apPlayers[i];
 
-		if (pTmpPlayer)
+		// spectating players should not receive any broadcasts.
+		if (pTmpPlayer && pTmpPlayer->GetTeam() != TEAM_SPECTATORS)
 		{
 			enemiesLeft = pTmpPlayer->GetPlayersLeftToCatch();
 			
@@ -480,10 +503,24 @@ void CGameControllerZCATCH::RefreshBroadcast()
 		}
 		
 		pTmpPlayer = nullptr;
-	}
-	
+	}	
 }
 
+
+void CGameControllerZCATCH::UpdateSkinsOf(std::initializer_list<int> IDs)
+{
+	for (int toID = 0; toID < MAX_CLIENTS; toID++)
+	{
+		if (GameServer()->m_apPlayers[toID])
+		{
+			// send skin update message of id to everyone
+			for (int id : IDs)
+			{
+				GameServer()->SendSkinChange(toID, id);
+			}
+		}
+	}
+}
 
 
 

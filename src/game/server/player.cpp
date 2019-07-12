@@ -38,8 +38,10 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 	// zCatch
 	m_CaughtBy = NOT_CAUGHT;
-	m_LeftCaughtPlayers = 0;
+	m_CaughtPlayers.reserve(MAX_PLAYERS);
+	m_NumCaughtPlayersWhoLeft = 0;
 	m_WantsToJoinSpectators = false;
+	UpdateSkinColors();
 	ResetStatistics();
 
 }
@@ -347,7 +349,7 @@ void CPlayer::KillCharacter(int Weapon)
 	if (GetNumCaughtPlayers() > 0 && Weapon == WEAPON_SELF)
 	{
 		// release last caught player on pressing suicide key.
-		ReleaseLastCaughtPlayer(REASON_PLAYER_RELEASED);
+		ReleaseLastCaughtPlayer(REASON_PLAYER_RELEASED, true);
 		
 		// we don't want to die in this case.
 		return;
@@ -521,12 +523,12 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 		if(reason)
 		{
 			char aBuf[256];
-			bool sendMessage = true;
+			bool sendReasonMessage = true;
 			switch (reason)
 			{
 			case REASON_PLAYER_CAUGHT:
 				// default catch, nothing special here to talk about.
-				sendMessage = false;
+				sendReasonMessage = false;
 				break;
 			case REASON_PLAYER_JOINED:
 				str_format(aBuf, sizeof(aBuf), "'%s' was added to your victims(%d left).", Server()->ClientName(ID), GetNumCaughtPlayers());
@@ -534,14 +536,15 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 			default:
 				break;
 			}
-			if (sendMessage)
+			if (sendReasonMessage)
 			{
 				GameServer()->SendServerMessage(GetCID(), aBuf);
 			}
 				
 		}
 
-
+		// we caught someone, thus we get a new skin color.
+		UpdateSkinColors();
 		return true;
 	}
 	else
@@ -594,7 +597,7 @@ bool CPlayer::BeCaught(int byID, int reason)
 		}
 		m_CaughtBy = byID;
 		m_SpectatorID = m_CaughtBy;
-		m_LeftCaughtPlayers = 0;
+		m_NumCaughtPlayersWhoLeft = 0;
 		m_RespawnDisabled = true;
 		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);
 
@@ -630,7 +633,7 @@ bool CPlayer::BeReleased(int reason)
 			switch (reason)
 			{
 			case REASON_PLAYER_DIED:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' died a miserable death.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' died.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_PLAYER_FAILED:
 				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' failed miserably.", Server()->ClientName(m_CaughtBy));
@@ -680,7 +683,7 @@ bool CPlayer::BeReleased(int reason)
 }
 
 // affects oneself & caught players
-int CPlayer::ReleaseLastCaughtPlayer(int reason)
+int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 {
 	if ( m_CaughtPlayers.size() > 0 )
 	{
@@ -705,6 +708,27 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason)
 			}
 
 			UpdatePlayersLeftToCatch();
+
+			if(updateSkinColors)
+			{
+				UpdateSkinColors();
+				// as this specific case cannot be handled
+				// in the zcatch mod, we need to force the sending of
+				// our updated sin color in here.
+
+				if (reason == REASON_PLAYER_RELEASED)
+				{
+					for (int toID = 0; toID < MAX_CLIENTS; toID++)
+					{
+						if (GameServer()->m_apPlayers[toID])
+						{
+							// send skin update message of id to everyone
+							GameServer()->SendSkinChange(toID, GetCID());
+						}
+					}
+				}
+			
+			}
 			return playerToReleaseID;
 		}
 		else
@@ -748,11 +772,12 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 			case REASON_PLAYER_LEFT:
 				// player was removed from my caught players, 
 				// because he/she left the game
-				m_LeftCaughtPlayers++;
+				m_NumCaughtPlayersWhoLeft++;
 				break;
 		}
 	}
 
+	UpdateSkinColors();
 	return success;
 }
 
@@ -771,11 +796,13 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 	// nobody to release
 	if (releasedPlayers == 0)
 	{
+		UpdateSkinColors();
 		return releasedPlayers;
 	}
 
 	// message to the releasing player
 	bool hasReasonMessage = true;
+	bool isStillIngame = true;
 	char aBuf[256];
 
 	switch (reason)
@@ -788,6 +815,8 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 		break;
 	case REASON_PLAYER_LEFT:
 		// no message, because the player leaves.
+		hasReasonMessage = false;
+		isStillIngame = false;
 		break;
 	case REASON_PLAYER_JOINED_SPEC:
 		str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d player%s to be set free!", GetNumCaughtPlayers(), GetNumCaughtPlayers() > 1 ? "s" : "");
@@ -802,6 +831,12 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 		GameServer()->SendServerMessage(GetCID(), aBuf);
 	}
 
+	if(isStillIngame)
+	{
+		// releases everyone -> caught == 0 -> color -> blue
+		UpdateSkinColors();
+	}
+
 	// somebody to release
 	// while returned id is a valid 0 <= ID <= MAC_CLIENTS
 	while(ReleaseLastCaughtPlayer(reason) >= 0);
@@ -814,6 +849,12 @@ int CPlayer::UpdatePlayersLeftToCatch()
 	// as this updating operation is rather heavy to lift, we want updates only to happen, 
 	// when someone is killed and not all the time
 	m_PlayersLeftToCatch = 0;
+
+
+	// do not update anything if you are spectating.
+	if(GetTeam() == TEAM_SPECTATORS)
+		return 0;
+
 	int myID = GetCID();
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
@@ -821,7 +862,7 @@ int CPlayer::UpdatePlayersLeftToCatch()
 		if(i != GetCID() && GameServer()->m_apPlayers[i])
 		{
 			if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && 
-				GameServer()->m_apPlayers[i]->GetCaughtByID() != myID)
+				GameServer()->m_apPlayers[i]->GetIDCaughtBy() != myID)
 			{
 				m_PlayersLeftToCatch++;
 			}
@@ -841,10 +882,10 @@ int CPlayer::GetNumCaughtPlayers()
 
 int CPlayer::GetNumLeftCaughtPlayers()
 {
-	return m_LeftCaughtPlayers;
+	return m_NumCaughtPlayersWhoLeft;
 }
 
-int CPlayer::GetCaughtByID()
+int CPlayer::GetIDCaughtBy()
 {
 	return m_CaughtBy;
 }
@@ -888,4 +929,21 @@ void CPlayer::ResetStatistics()
 	m_Deaths = 0;
 	m_TicksCaught = 0;
 	m_TicksAlive = 0;
+}
+
+unsigned int CPlayer::GetColor()
+{
+	int color = max(0, 160 - GetNumCaughtPlayers() * 10) * 0x010000 + 0xff00;
+	return color;
+}
+
+void CPlayer::UpdateSkinColors()
+{
+	unsigned int color = GetColor();
+
+	for(int p = 0; p < NUM_SKINPARTS; p++)
+	{
+		m_TeeInfos.m_aUseCustomColors[p] = 1;
+		m_TeeInfos.m_aSkinPartColors[p] = color;
+	}
 }

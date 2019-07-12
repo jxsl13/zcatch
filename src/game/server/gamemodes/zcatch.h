@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_GAMEMODES_ZCATCH_H
 #define GAME_SERVER_GAMEMODES_ZCATCH_H
+#include <initializer_list>
 #include <game/server/gamecontroller.h>
 
 class CGameControllerZCATCH : public IGameController
@@ -13,6 +14,7 @@ public:
 	virtual void Tick();
 	virtual void DoWincheckRound();
 	
+	virtual void OnPlayerInfoChange(class CPlayer *pPlayer);
 	virtual void OnPlayerConnect(class CPlayer *pPlayer);
 	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
 
@@ -23,7 +25,16 @@ public:
 
 	virtual void EndRound();
 private:
+	// sends broadcast updates to everyone every few seconds.
 	void RefreshBroadcast();
+
+	/**
+	 * allows the usage of UpdateSkinsOf({multiple, ids})
+	 * sends to everyone that the skin information of those
+	 * multiple ids has changed. (color change)
+	 */
+	void UpdateSkinsOf(std::initializer_list<int> IDs);
+	
 	/**
 	 * Used to track, whether we reached the players count needed to
 	 * end a round or whether we went below that treshold.
