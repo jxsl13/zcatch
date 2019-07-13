@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
+#include <set>
 
 #include <engine/console.h>
 #include <engine/server.h>
@@ -128,7 +129,7 @@ public:
 
 	// helper functions
 	void CreateDamage(vec2 Pos, int Id, vec2 Source, int HealthAmount, int ArmorAmount, bool Self);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, std::set<int>* validTargets=nullptr);
 	void CreateHammerHit(vec2 Pos);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);

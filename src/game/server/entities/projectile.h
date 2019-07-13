@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_ENTITIES_PROJECTILE_H
 #define GAME_SERVER_ENTITIES_PROJECTILE_H
+#include <set>
 
 class CProjectile : public CEntity
 {
@@ -28,6 +29,10 @@ private:
 	float m_Force;
 	int m_StartTick;
 	bool m_Explosive;
+
+	std::set<int> m_ValidTargets;
+	bool IsValidTarget(int TargetID);
+	void FillValidTargets();
 };
 
 #endif

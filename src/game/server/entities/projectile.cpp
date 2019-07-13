@@ -4,6 +4,8 @@
 
 #include "character.h"
 #include "projectile.h"
+#include  "game/server/player.h"
+#include "engine/shared/config.h"
 
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
 		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon)
@@ -21,6 +23,7 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Explosive = Explosive;
 
 	GameWorld()->InsertEntity(this);
+	FillValidTargets();
 }
 
 void CProjectile::Reset()
@@ -73,10 +76,11 @@ void CProjectile::Tick()
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive)
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage);
-
-		else if(TargetChr)
-			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Direction*-1, m_Damage, m_Owner, m_Weapon);
+		{
+			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
+		}
+		else if(TargetChr && IsValidTarget(TargetChr->GetPlayer()->GetCID()))
+			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Direction*-1, m_Damage, m_Owner, m_Weapon);	
 
 		GameServer()->m_World.DestroyEntity(this);
 	}
@@ -107,4 +111,40 @@ void CProjectile::Snap(int SnappingClient)
 	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
 	if(pProj)
 		FillInfo(pProj);
+}
+
+void CProjectile::FillValidTargets()
+{
+	class CGameContext *pGameServer = GameServer();
+	if (pGameServer)
+	{	
+		class CPlayer *pPlayer;
+		int tmpID;
+		for (int i = 0; i < MAX_CLIENTS; i++)
+		{
+			pPlayer = pGameServer->m_apPlayers[i];
+
+			if (pPlayer && pPlayer->IsNotCaught())
+			{
+				tmpID = pPlayer->GetCID();
+
+				// in vicinity
+				if(pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->GetPos()) <= g_Config.m_SvSprayProtectionRadius)
+				{
+					// not already a valid target
+					if (!m_ValidTargets.count(tmpID))
+					{
+						m_ValidTargets.insert(tmpID);
+					}
+				}
+			}
+			pPlayer = nullptr;
+		}
+		
+	}
+}
+
+bool CProjectile::IsValidTarget(int TargetID)
+{
+	return m_ValidTargets.count(TargetID) > 0;
 }
