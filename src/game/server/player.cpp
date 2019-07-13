@@ -364,7 +364,7 @@ void CPlayer::KillCharacter(int Weapon)
 }
 
 void CPlayer::Respawn()
-{
+{	
 	if(m_RespawnDisabled && m_Team != TEAM_SPECTATORS)
 	{
 		// enable spectate mode for dead players
@@ -685,9 +685,27 @@ bool CPlayer::BeReleased(int reason)
 // affects oneself & caught players
 int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 {
-	if ( m_CaughtPlayers.size() > 0 )
+	if (m_CaughtPlayers.size() > 0)
 	{
 		int playerToReleaseID = m_CaughtPlayers.back();
+		
+		// caught players do not exists
+		while (!GameServer()->m_apPlayers[playerToReleaseID])
+		{
+			// release non existing player
+			m_CaughtPlayers.pop_back();
+			dbg_msg("DEBUG", "RELEASED ID %d because it does not exist anymore.", playerToReleaseID);
+			if(m_CaughtPlayers.size() == 0)
+			{
+				return NOT_CAUGHT;
+			}
+			// check next player
+			playerToReleaseID = m_CaughtPlayers.back();
+		}
+		// break out of loop, if player exists
+
+
+		// look at last still existing player.
 		if(GameServer()->m_apPlayers[playerToReleaseID]->BeReleased(reason))
 		{
 			// player can be released
@@ -753,7 +771,12 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 		if (lookAtID == ID)
 		{
 			// remove from my caugh players & release at the same time.
-			GameServer()->m_apPlayers[lookAtID]->BeReleased(reason);
+			if(GameServer()->m_apPlayers[lookAtID])
+			{
+				// if player is still online, rlease him.
+				GameServer()->m_apPlayers[lookAtID]->BeReleased(reason);
+			}
+
 			success = true;
 			return true;
 		}
@@ -785,7 +808,15 @@ bool CPlayer::BeSetFree(int reason)
 {
 	if (m_CaughtBy != NOT_CAUGHT)
 	{
-		return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(GetCID(), reason);
+		if(GameServer()->m_apPlayers[m_CaughtBy])
+		{
+			return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(GetCID(), reason);
+		}
+		else
+		{
+			BeReleased(reason);
+		}
+		
 	}
 	return false;
 }
@@ -880,7 +911,7 @@ int CPlayer::GetNumCaughtPlayers()
 	return m_CaughtPlayers.size();
 }
 
-int CPlayer::GetNumLeftCaughtPlayers()
+int CPlayer::GetNumCaughtPlayersWhoLeft()
 {
 	return m_NumCaughtPlayersWhoLeft;
 }
@@ -893,18 +924,18 @@ int CPlayer::GetIDCaughtBy()
 bool CPlayer::IsCaught()
 {
 	bool isCaught = m_CaughtBy >= 0 && m_CaughtBy < MAX_CLIENTS;
-	bool notInSpec = GetTeam() != TEAM_SPECTATORS;
+	bool notInSpec = m_Team != TEAM_SPECTATORS;
 	bool cannotSpawn = m_RespawnDisabled;
-	bool characterNotAlive = GetCharacter() && !GetCharacter()->IsAlive();
+	bool characterNotAlive = m_pCharacter && !m_pCharacter->IsAlive();
 	return isCaught && notInSpec && (cannotSpawn || characterNotAlive);
 }
 
 bool CPlayer::IsNotCaught()
 {
-	bool isNotCaught = !(m_CaughtBy >= 0 && m_CaughtBy < MAX_CLIENTS);
-	bool notInSpec = GetTeam() != TEAM_SPECTATORS;
+	bool isNotCaught = m_CaughtBy == NOT_CAUGHT;
+	bool notInSpec = m_Team != TEAM_SPECTATORS;
 	bool canSpawn = !m_RespawnDisabled;
-	bool characterAlive = GetCharacter() && GetCharacter()->IsAlive();
+	bool characterAlive = m_pCharacter && m_pCharacter->IsAlive();
 	return isNotCaught && notInSpec && (canSpawn || characterAlive);
 }
 

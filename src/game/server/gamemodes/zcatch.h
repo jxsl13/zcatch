@@ -25,8 +25,17 @@ public:
 
 	virtual void EndRound();
 private:
-	// sends broadcast updates to everyone every few seconds.
+	/**
+	 * This basically sends a istance value, but does not calculate it again.
+	 * the value is kept alive and visible, but is not updated.
+	 */
 	void RefreshBroadcast();
+
+	/**
+	 * This contraty to @RefreshBroadcast updates the enemies left to catch
+	 * counter for every player, and sends the updated value.
+	 */
+	void UpdateBroadcast();
 
 	/**
 	 * allows the usage of UpdateSkinsOf({multiple, ids})
@@ -34,6 +43,7 @@ private:
 	 * multiple ids has changed. (color change)
 	 */
 	void UpdateSkinsOf(std::initializer_list<int> IDs);
+	void UpdateSkinsOfEverybody();
 	
 	/**
 	 * Used to track, whether we reached the players count needed to

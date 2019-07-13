@@ -99,7 +99,7 @@ public:
 	int GetNumCaughtPlayers();
 
 	// how many of my caught player did leave the game
-	int GetNumLeftCaughtPlayers();
+	int GetNumCaughtPlayersWhoLeft();
 
 
 	bool BeReleased(int reason=REASON_NONE);
@@ -109,6 +109,7 @@ public:
 	void SetWantsToJoinSpectators();
 	void ResetWantsToJoinSpectators();
 
+	void UpdateSkinColors();
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
@@ -213,8 +214,6 @@ private:
 
 
 	unsigned int GetColor();
-	void UpdateSkinColors();
-
 
 	// used for spectator mode
 	int m_SpecMode;
