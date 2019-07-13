@@ -1003,10 +1003,11 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 		else if (MsgID == NETMSGTYPE_CL_KILL && !m_World.m_Paused)
 		{
 			
+
 			// killing yourself is only allowed every x seconds.
 			int cooldownSecondsLeft = ((pPlayer->m_LastKill+ (Server()->TickSpeed() * g_Config.m_SvSuicideCooldown) - Server()->Tick()) / Server()->TickSpeed());
 
-			if (pPlayer->m_LastKill)
+			if (pPlayer->m_LastKill && pPlayer->GetTeam() != TEAM_SPECTATORS)
 			{
 				if (cooldownSecondsLeft > 0 && pPlayer->GetNumCaughtPlayers() == 0)
 				{
@@ -1065,6 +1066,8 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 				SendSkinChange(pPlayer->GetCID(), i);
 			}
+
+			m_pController->OnPlayerInfoChange(pPlayer);
 		}
 	}
 	else
