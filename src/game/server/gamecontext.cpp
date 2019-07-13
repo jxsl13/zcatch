@@ -154,12 +154,10 @@ void CGameContext::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamag
 		{
 			if (!validTargets)
 			{
-				dbg_msg("DEBUG", "No valid targets passed");
 				apEnts[i]->TakeDamage(Force * Factor, Diff*-1, (int)(Factor * MaxDamage), Owner, Weapon);
 			}
 			else if(pTmpPlayer && validTargets->count(pTmpPlayer->GetCID()))
 			{
-				dbg_msg("DEBUG", "Target %d is valid an received damage", pTmpPlayer->GetCID());
 				// take damage if valid target
 				apEnts[i]->TakeDamage(Force * Factor, Diff*-1, (int)(Factor * MaxDamage), Owner, Weapon);
 			}
