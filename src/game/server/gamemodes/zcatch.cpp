@@ -578,7 +578,7 @@ void CGameControllerZCATCH::UpdateSkinsOf(std::initializer_list<int> IDs)
 			// send skin update message of id to everyone
 			for (int id : IDs)
 			{
-				GameServer()->SendSkinChange(toID, id);
+				GameServer()->SendSkinChange(id, toID);
 			}
 		}
 	}
@@ -595,7 +595,7 @@ void CGameControllerZCATCH::UpdateSkinsOfEverybody()
 			{
 				if (GameServer()->m_apPlayers[ofID])
 				{
-					GameServer()->SendSkinChange(toID, ofID);
+					GameServer()->SendSkinChange(ofID, toID);
 				}	
 			}
 		}
