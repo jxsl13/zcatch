@@ -503,6 +503,8 @@ void CGameControllerZCATCH::UpdateBroadcast()
 		{
 			if ( pTmpPlayer->GetTeam() != TEAM_SPECTATORS)
 			{
+				// this function is rather intense, so we want it to be called as 
+				// few times as possible
 				pTmpPlayer->UpdatePlayersLeftToCatch();
 				enemiesLeft = pTmpPlayer->GetPlayersLeftToCatch();
 
@@ -576,9 +578,9 @@ void CGameControllerZCATCH::UpdateSkinsOf(std::initializer_list<int> IDs)
 		if (GameServer()->m_apPlayers[toID])
 		{
 			// send skin update message of id to everyone
-			for (int id : IDs)
+			for (int ofID : IDs)
 			{
-				GameServer()->SendSkinChange(id, toID);
+				GameServer()->SendSkinChange(ofID, toID);
 			}
 		}
 	}

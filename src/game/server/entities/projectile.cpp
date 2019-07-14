@@ -7,6 +7,7 @@
 #include  "game/server/player.h"
 #include "engine/shared/config.h"
 
+
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
 		int Damage, bool Explosive, float Force, int SoundImpact, int Weapon)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE, Pos)
@@ -60,6 +61,12 @@ vec2 CProjectile::GetPos(float Time)
 
 void CProjectile::Tick()
 {
+	// TODO: make projectile stop moving when game's paused.
+	if (GameServer()->m_pController->IsGamePaused())
+	{
+		return;
+	}
+	
 	float Pt = (Server()->Tick()-m_StartTick-1)/(float)Server()->TickSpeed();
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 	vec2 PrevPos = GetPos(Pt);
@@ -129,18 +136,31 @@ void CProjectile::FillValidTargets()
 				tmpID = pPlayer->GetCID();
 
 				// in vicinity
-				if(pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->GetPos()) <= g_Config.m_SvSprayProtectionRadius)
+				if(pPlayer->GetCharacter() && 
+					(distance(m_Pos, pPlayer->GetCharacter()->GetPos()) <= g_Config.m_SvSprayProtectionRadius))
 				{
 					// not already a valid target
 					if (!m_ValidTargets.count(tmpID))
 					{
 						m_ValidTargets.insert(tmpID);
 					}
-				}
+				} 
 			}
 			pPlayer = nullptr;
 		}
-		
+
+		class CPlayer *pOwner = GameServer()->m_apPlayers[m_Owner];
+		class CCharacter *pOwnerCharacter = pOwner ? pOwner->GetCharacter() : nullptr;
+
+		// add hooked player to valid targets
+		if (pOwnerCharacter)
+		{
+			tmpID = pOwnerCharacter->GetHookedPlayer();
+			if (!m_ValidTargets.count(tmpID))
+			{
+				m_ValidTargets.insert(tmpID);
+			}
+		}
 	}
 }
 

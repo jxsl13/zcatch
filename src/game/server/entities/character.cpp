@@ -855,3 +855,15 @@ void CCharacter::PostSnap()
 {
 	m_TriggeredEvents = 0;
 }
+
+int CCharacter::GetHookedPlayer()
+{ 
+	if (0 <= m_Core.m_HookedPlayer && m_Core.m_HookedPlayer < MAX_CLIENTS)
+	{
+		return m_Core.m_HookedPlayer;
+	}
+	else
+	{
+		return -1;
+	}	
+}
