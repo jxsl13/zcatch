@@ -26,16 +26,18 @@ public:
 	virtual void EndRound();
 private:
 	/**
-	 * This basically sends a istance value, but does not calculate it again.
-	 * the value is kept alive and visible, but is not updated.
+	 * The value of enemies left to catch is kept alive and visible,
+	 * but is not updated.
+	 * Info: No calculations are done in here!
 	 */
 	void RefreshBroadcast();
 
 	/**
-	 * This contraty to @RefreshBroadcast updates the enemies left to catch
+	 * This, contraty to @RefreshBroadcast, updates the enemies left to catch
 	 * counter for every player, and sends the updated value.
 	 */
-	void UpdateBroadcast();
+	void UpdateBroadcastOf(std::initializer_list<int> IDs);
+	void UpdateBroadcastOfEverybody();
 
 	/**
 	 * allows the usage of UpdateSkinsOf({multiple, ids})
@@ -51,14 +53,8 @@ private:
 	 */
 	int m_PreviousIngamePlayerCount;
 	int m_IngamePlayerCount;
-	
 
-	/**
-	 * As EndRound() should only be called from within DoWinCheck(), 
-	 * We want to enforce Ending a round in order to revert back to 
-	 * a warmup if there are not enough players to end a round.
-	 */
-	bool m_ForcedEndRound;
+
 };
 
 #endif
