@@ -79,6 +79,7 @@ public:
 	bool CatchPlayer(int ID, int reason=REASON_PLAYER_CAUGHT);
 	bool IsCaught();
 	bool IsNotCaught();
+	int ReleaseLastCaughtPlayer(int reason=REASON_NONE, bool updateSkinColors=false);
 	int ReleaseAllCaughtPlayers(int reason=REASON_NONE);
 
 	// return internally saved value
@@ -200,7 +201,6 @@ private:
 	enum { NOT_CAUGHT = -1};
 
 	bool BeCaught(int byID, int reason=REASON_NONE);
-	int ReleaseLastCaughtPlayer(int reason=REASON_NONE, bool updateSkinColors=false);
 	
 	// remove a specific player from my caught players
 	// and release him/her

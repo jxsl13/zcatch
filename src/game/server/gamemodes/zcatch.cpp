@@ -8,8 +8,10 @@
 
 #include "zcatch.h"
 
+#include <stdexcept>
 #include <string>
 #include <sstream>
+
 
 CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
 {
@@ -31,11 +33,105 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 		return;
 	}
 
-	std::stringstream ss(pText);
-	
+	// parse words as tokens
+	std::stringstream commandLine(pText + 1);
+	std::string tmpString;
+	std::vector<std::string> tokens;
 
-	dbg_msg("DEBUG", "Message contains a leading command character");
+	while(std::getline(commandLine, tmpString, ' ')) 
+    { 
+        tokens.push_back(tmpString); 
+    } 
+	int size = tokens.size();
 
+
+	if (size > 0)
+	{
+		try
+		{
+			if(tokens.at(0) == "welcome")
+			{
+				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
+			}
+			else if (tokens.at(0) == "help")
+			{
+				if (size == 1)
+				{
+					GameServer()->SendServerMessage(ofID, "/welcome - The message you get, when you join the server.");
+					GameServer()->SendServerMessage(ofID, "/rules - If you want to know about zCatch's ruleset.");
+					GameServer()->SendServerMessage(ofID, "/info - If to know about this mod's creators.");
+					GameServer()->SendServerMessage(ofID, "/help list - To see a list of all the help screens.");
+
+				}
+				else if (size == 2)
+				{
+					if(tokens.at(1) == "list")
+					{
+						GameServer()->SendServerMessage(ofID, "/help release - Learn how to release players.");
+						GameServer()->SendServerMessage(ofID, "/help warmup - Learn more about how the warmup works.");
+					}
+					else if(tokens.at(1) == "release")
+					{
+						GameServer()->SendServerMessage(ofID, "There are two ways to release a player, that you have caught:");
+						GameServer()->SendServerMessage(ofID, "The first one is to create a suicide bind like this 'bind k kill' using the F1 console. The second way is to write");
+						GameServer()->SendServerMessage(ofID, "'/release' in the chat. The difference between both methods is that if you use your kill bind, you will kill yourself if");
+						GameServer()->SendServerMessage(ofID, "nobody is left to be released. In contrast, the second method will not do anything if there is nobody left to be released.");
+					}
+					else if(tokens.at(1) == "warmup")
+					{
+						char aBuf[128];
+						str_format(aBuf, sizeof(aBuf), "As long as there are less than %d players ingame, warmup is enabled.", g_Config.m_SvPlayersToStartRound);
+						GameServer()->SendServerMessage(ofID, aBuf);
+						GameServer()->SendServerMessage(ofID, "While in warmup, any player caught will respawn immediatly.");
+						GameServer()->SendServerMessage(ofID, "If there are enough players for a round of zCatch, the warmup ends and players are caught normally.");
+					}
+					else
+					{
+						throw std::invalid_argument("");
+					}
+				}
+				else
+				{
+					throw std::invalid_argument("");
+				}
+				
+			}
+			else if (tokens.at(0) == "info" && size == 1)
+			{
+				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime");
+				GameServer()->SendServerMessage(ofID, "and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank ");
+				GameServer()->SendServerMessage(ofID, "you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
+			}
+			else if(tokens.at(0) == "rules")
+			{  
+				GameServer()->SendServerMessage(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is");
+				GameServer()->SendServerMessage(ofID, "considered as caught. If you die, all of you caught players are released.");
+				GameServer()->SendServerMessage(ofID, "If you catch all of them, you win the round.");
+				GameServer()->SendServerMessage(ofID, "As a measure of fair play, you are able to release your caught players manually in reverse order.");
+				GameServer()->SendServerMessage(ofID, "Releasing players is optional in zCatch. Type '/help release' for more information.");
+			}
+			else if(tokens.at(0) == "release" && size == 1)
+			{
+				class CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
+				if(pPlayer)
+				{
+					pPlayer->ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_RELEASED, true);
+				}
+			}
+			else
+			{
+				return;
+			}
+		}
+		catch (std::invalid_argument &e)
+		{
+			GameServer()->SendServerMessage(ofID, "No such command, please try /cmdlist or /help");
+		}
+	}
+	else
+	{
+		return;
+	}
 }
 
  void CGameControllerZCATCH::EndRound()
@@ -169,6 +265,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
 	int gamestate = GetGameState();
+	OnChatMessage(0, 0, player.GetCID(), "/welcome");
 	
 	// warmup
 	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
