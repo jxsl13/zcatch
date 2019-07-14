@@ -522,7 +522,7 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 
 		if(reason)
 		{
-			char aBuf[256];
+			char aBuf[128];
 			bool sendReasonMessage = true;
 			switch (reason)
 			{
@@ -536,11 +536,9 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 			default:
 				break;
 			}
+
 			if (sendReasonMessage)
-			{
 				GameServer()->SendServerMessage(GetCID(), aBuf);
-			}
-				
 		}
 
 		// we caught someone, thus we get a new skin color.
@@ -562,26 +560,24 @@ bool CPlayer::BeCaught(int byID, int reason)
 		// falling into death tiles
 		// you die, you loose all of your caught players.
 		ReleaseAllCaughtPlayers(REASON_PLAYER_FAILED);
+		
+		// do not be caught
 		return false;
 	}
+
 	if (m_CaughtBy >= 0)	
 	{
-		if (g_Config.m_Debug)
-		{
-			dbg_msg("DEBUG", "Player %d can't be caught by %d , because already caught by %d", GetCID(), byID, m_CaughtBy);
-		}
-
 		// already caught by someone else
 		return false;
 	}
 	else if(GameServer()->m_apPlayers[byID])
 	{
+		// not caught case: be caught by ID
 		// can only be caught if player actually exists
 
-		// if not caught, be caught by ID
 		if(reason)
 		{
-			char aBuf[256];
+			char aBuf[128];
 			switch (reason)
 			{
 			case REASON_PLAYER_CAUGHT:
@@ -595,6 +591,7 @@ bool CPlayer::BeCaught(int byID, int reason)
 			}
 			GameServer()->SendServerMessage(GetCID(), aBuf);
 		}
+
 		m_CaughtBy = byID;
 		m_SpectatorID = m_CaughtBy;
 		m_NumCaughtPlayersWhoLeft = 0;
@@ -613,6 +610,9 @@ bool CPlayer::BeCaught(int byID, int reason)
 // only affects oneself
 bool CPlayer::BeReleased(int reason)
 {
+	// can be released if caught
+	// or if not caught and either joined the server
+	// or rejoined the game after being in spec
 	if (m_CaughtBy >= 0 || 
 		(m_CaughtBy == NOT_CAUGHT && 
 			(reason == REASON_PLAYER_JOINED || reason == REASON_PLAYER_JOINED_GAME_AGAIN)
@@ -620,14 +620,9 @@ bool CPlayer::BeReleased(int reason)
 	)
 	{
 		// caught -> can be released -> is released
-		if (g_Config.m_Debug)
-		{
-			dbg_msg("DEBUG", "Player %d was released by %d", GetCID(), m_CaughtBy);
-		}
-
 		if (reason)
 		{
-			char aBuf[256];
+			char aBuf[128];
 			// first message to the released player
 			bool sendServerMessage = true;
 			switch (reason)
@@ -670,8 +665,8 @@ bool CPlayer::BeReleased(int reason)
 		m_SpectatorID = -1;
 		m_RespawnDisabled = false;
 		// respawn half a second after being released
-		Respawn();
 		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed()/2);
+		Respawn();
 
 		return true;
 	}
@@ -689,12 +684,12 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 	{
 		int playerToReleaseID = m_CaughtPlayers.back();
 		
-		// caught players do not exists
+		// remove all caught player ids of players that do not 
+		// exist anymore.
 		while (!GameServer()->m_apPlayers[playerToReleaseID])
 		{
 			// release non existing player
 			m_CaughtPlayers.pop_back();
-			dbg_msg("DEBUG", "RELEASED ID %d because it does not exist anymore.", playerToReleaseID);
 			if(m_CaughtPlayers.size() == 0)
 			{
 				return NOT_CAUGHT;
@@ -725,15 +720,16 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 				GameServer()->SendServerMessage(GetCID(), aBuf);
 			}
 
+			// re-calculate enemies left to catch
 			UpdatePlayersLeftToCatch();
 
 			if(updateSkinColors)
 			{
 				UpdateSkinColors();
+
 				// as this specific case cannot be handled
 				// in the zcatch mod, we need to force the sending of
-				// our updated sin color in here.
-
+				// our updated skin color in here.
 				if (reason == REASON_PLAYER_RELEASED)
 				{
 					for (int toID = 0; toID < MAX_CLIENTS; toID++)
@@ -741,7 +737,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 						if (GameServer()->m_apPlayers[toID])
 						{
 							// send skin update message of id to everyone
-							GameServer()->SendSkinChange(toID, GetCID());
+							GameServer()->SendSkinChange(GetCID(), toID);
 						}
 					}
 				}
@@ -770,7 +766,7 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [&](int lookAtID) {
 		if (lookAtID == ID)
 		{
-			// remove from my caugh players & release at the same time.
+			// remove from my caught players & release at the same time.
 			if(GameServer()->m_apPlayers[lookAtID])
 			{
 				// if player is still online, rlease him.
@@ -786,9 +782,9 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 		}
 	});
 
-	// erase elements from 'it' through 'end()'
 	if(success)
 	{
+		// erase elements from end of vector
 		m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
 		switch(reason)
 		{
@@ -798,9 +794,11 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 				m_NumCaughtPlayersWhoLeft++;
 				break;
 		}
+
+		// only update colors if actually someone was released
+		UpdateSkinColors();
 	}
 
-	UpdateSkinColors();
 	return success;
 }
 
@@ -810,11 +808,14 @@ bool CPlayer::BeSetFree(int reason)
 	{
 		if(GameServer()->m_apPlayers[m_CaughtBy])
 		{
+			// if my killer still exists, remove from his caught players
 			return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(GetCID(), reason);
 		}
 		else
 		{
+			// my killer doesn't exist, just release me.
 			BeReleased(reason);
+			return true;
 		}
 		
 	}
@@ -827,7 +828,6 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 	// nobody to release
 	if (releasedPlayers == 0)
 	{
-		UpdateSkinColors();
 		return releasedPlayers;
 	}
 
@@ -862,16 +862,16 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 		GameServer()->SendServerMessage(GetCID(), aBuf);
 	}
 
-	if(isStillIngame)
-	{
-		// releases everyone -> caught == 0 -> color -> blue
-		UpdateSkinColors();
-	}
-
 	// somebody to release
 	// while returned id is a valid 0 <= ID <= MAC_CLIENTS
 	while(ReleaseLastCaughtPlayer(reason) >= 0);
-		
+	
+	// if player did not leave the game
+	if(isStillIngame)
+	{
+		UpdateSkinColors();
+	}
+
 	return releasedPlayers;
 }
 
@@ -882,7 +882,7 @@ int CPlayer::UpdatePlayersLeftToCatch()
 	m_PlayersLeftToCatch = 0;
 
 
-	// do not update anything if you are spectating.
+	// if you are spectating, you have nobody left to catch
 	if(GetTeam() == TEAM_SPECTATORS)
 		return 0;
 
@@ -890,8 +890,10 @@ int CPlayer::UpdatePlayersLeftToCatch()
 
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(i != GetCID() && GameServer()->m_apPlayers[i])
+		// player not me and player does actually exist
+		if(i != myID && GameServer()->m_apPlayers[i])
 		{
+			// player not spectating and not caught by me
 			if(GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && 
 				GameServer()->m_apPlayers[i]->GetIDCaughtBy() != myID)
 			{
@@ -901,6 +903,7 @@ int CPlayer::UpdatePlayersLeftToCatch()
 	}
 	return 	m_PlayersLeftToCatch;
 }
+
 int CPlayer::GetPlayersLeftToCatch()
 {
 	return m_PlayersLeftToCatch;
@@ -964,6 +967,8 @@ void CPlayer::ResetStatistics()
 
 unsigned int CPlayer::GetColor()
 {
+	// TODO: check if calculation with caught players + players who were caught, but left
+	// is actually a good idea.
 	int color = max(0, 160 - GetNumCaughtPlayers() * 10) * 0x010000 + 0xff00;
 	return color;
 }
