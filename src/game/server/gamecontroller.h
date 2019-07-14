@@ -169,6 +169,8 @@ public:
 	virtual void OnPlayerInfoChange(class CPlayer *pPlayer);
 	virtual void OnPlayerReadyChange(class CPlayer *pPlayer);
 
+	virtual void OnChatMessage(int ChatterClientID, int Mode, int toID, const char *pText);
+
 	void OnReset();
 
 	// game

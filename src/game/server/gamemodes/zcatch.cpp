@@ -1,11 +1,15 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/shared/config.h>
-
 #include <game/server/entities/character.h>
 #include <game/server/gamecontext.h>
 #include <game/server/player.h>
+#include <generated/protocol.h>
+
 #include "zcatch.h"
+
+#include <string>
+#include <sstream>
 
 CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
 {
@@ -17,6 +21,23 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	
 }
 
+void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const char *pText)
+{
+	// message doesn't start with /, then it's no command message
+	if(pText && pText[0] && pText[0] != '/')
+	{
+		dbg_msg("DEBUG", "Message doesn't contain any leading command character.");
+		IGameController::OnChatMessage(ofID, Mode, toID, pText);
+		return;
+	}
+
+	std::stringstream ss(pText);
+	
+
+	dbg_msg("DEBUG", "Message contains a leading command character");
+
+}
+
  void CGameControllerZCATCH::EndRound()
  {
 	 // don't do anything if we just switched from
@@ -26,34 +47,20 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 		return;
 	}
 
-	// release all players at the end of the round.
-	float alivePercentage = 0.0f, caughtPercentage = 0.0f;
-	float totalTicksPlayed = 0.0f;
-	CPlayer *player = nullptr;
-	char aBuf[256];
+	CPlayer *pPlayer = nullptr;
 
 	for (int ID = 0; ID < MAX_CLIENTS; ID++)
 	{
-		player = GameServer()->m_apPlayers[ID];
-		if(player)
+		pPlayer = GameServer()->m_apPlayers[ID];
+		if(pPlayer)
 		{
-			// calculate some small player statistics
-			totalTicksPlayed = static_cast<float>(player->m_TicksAlive + player->m_TicksCaught);
-			if (totalTicksPlayed > 0.0)
-			{
-				alivePercentage = (player->m_TicksAlive / totalTicksPlayed) * 100.0f;
-				caughtPercentage = (player->m_TicksCaught / totalTicksPlayed) * 100.0f;
-
-				// send them to the player
-				str_format(aBuf, sizeof(aBuf), "Ingame: %.2f%% Spectating: %.2f%% ", alivePercentage, caughtPercentage);
-				GameServer()->SendServerMessage(ID, aBuf);
-			}
+			
+			ShowPlayerStatistics(pPlayer);
 
 			// do cleanup
-			GameServer()->m_apPlayers[ID]->ReleaseAllCaughtPlayers(CPlayer::REASON_EVERYONE_RELEASED);
-			GameServer()->m_apPlayers[ID]->ResetStatistics();
-
-			player = nullptr;
+			pPlayer->ReleaseAllCaughtPlayers(CPlayer::REASON_EVERYONE_RELEASED);
+			pPlayer->ResetStatistics();
+			pPlayer = nullptr;
 		}
 	}
 
@@ -586,6 +593,26 @@ void CGameControllerZCATCH::UpdateSkinsOfEverybody()
 				}	
 			}
 		}
+	}
+}
+
+void CGameControllerZCATCH::ShowPlayerStatistics(class CPlayer *pOfPlayer)
+{
+	// release all players at the end of the round.
+	float alivePercentage = 0.0f, caughtPercentage = 0.0f;
+	float totalTicksPlayed = 0.0f;
+	char aBuf[64];
+
+	// calculate some small player statistics
+	totalTicksPlayed = static_cast<float>(pOfPlayer->m_TicksAlive + pOfPlayer->m_TicksCaught);
+	if (totalTicksPlayed > 0.0)
+	{
+		alivePercentage = (pOfPlayer->m_TicksAlive / totalTicksPlayed) * 100.0f;
+		caughtPercentage = (pOfPlayer->m_TicksCaught / totalTicksPlayed) * 100.0f;
+
+		// send them to the player
+		str_format(aBuf, sizeof(aBuf), "Ingame: %.2f%% Spectating: %.2f%% ", alivePercentage, caughtPercentage);
+		GameServer()->SendServerMessage(pOfPlayer->GetCID(), aBuf);
 	}
 }
 

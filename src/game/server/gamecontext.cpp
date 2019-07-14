@@ -836,7 +836,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 
 			if(Mode != CHAT_NONE)
-				SendChat(ClientID, Mode, pMsg->m_Target, pMsg->m_pMessage);
+				m_pController->OnChatMessage(ClientID, Mode, pMsg->m_Target, pMsg->m_pMessage);
 		}
 		else if(MsgID == NETMSGTYPE_CL_CALLVOTE)
 		{

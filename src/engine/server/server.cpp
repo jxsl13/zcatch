@@ -1767,7 +1767,7 @@ static CServer *CreateServer() { return new CServer(); }
 // used for signal handling
 static CServer *g_CServer = nullptr;
 
-void signalHandler(int signalNumber) 
+void SignalHandler(int signalNumber) 
 {
 	// shutdown server on ctrl + c signal received
 	if(g_CServer)
@@ -1811,8 +1811,8 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// register signal SIGINT and signal handler 
 	g_CServer = pServer;
-   	std::signal(SIGINT, signalHandler);
-	std::signal(SIGSTOP, signalHandler);
+   	std::signal(SIGINT, SignalHandler);
+	std::signal(SIGSTOP, SignalHandler);
 
 	// create the components
 	int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;

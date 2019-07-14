@@ -1214,3 +1214,8 @@ int IGameController::GetStartTeam()
 	}
 	return TEAM_SPECTATORS;
 }
+
+void IGameController::OnChatMessage(int ChatterClientID, int Mode, int toID, const char *pText)
+{
+	GameServer()->SendChat(ChatterClientID, Mode, toID, pText);
+}

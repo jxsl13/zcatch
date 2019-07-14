@@ -24,7 +24,20 @@ public:
 	virtual void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg=true);
 
 	virtual void EndRound();
+
+	/**
+	 * Intercept chat messages in order to respond to chat commands
+	 */
+	virtual void OnChatMessage(int ofID, int Mode, int toID, const char *pText);
+
 private:
+
+	/**
+	 * Send server message to the individual player about
+	 * their ingame statistics,
+	 */
+	void ShowPlayerStatistics(class CPlayer *pOfPlayer);
+
 	/**
 	 * The value of enemies left to catch is kept alive and visible,
 	 * but is not updated.
@@ -34,7 +47,7 @@ private:
 
 	/**
 	 * This, contraty to @RefreshBroadcast, updates the enemies left to catch
-	 * counter for every player, and sends the updated value.
+	 * counter for specified/every player/s, and sends the updated value.
 	 */
 	void UpdateBroadcastOf(std::initializer_list<int> IDs);
 	void UpdateBroadcastOfEverybody();
