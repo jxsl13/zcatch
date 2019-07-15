@@ -58,6 +58,9 @@ public:
 	bool IsAlive() const { return m_Alive; }
 	class CPlayer *GetPlayer() { return m_pPlayer; }
 
+	void Freeze(int Tick);
+	bool IsFrozen() const { return m_FreezeTicks > 0; }
+
 	int GetHookedPlayer();
 
 private:
@@ -123,6 +126,9 @@ private:
 	int m_ReckoningTick; // tick that we are performing dead reckoning From
 	CCharacterCore m_SendCore; // core that we should send
 	CCharacterCore m_ReckoningCore; // the dead reckoning core
+
+	// zCatch
+	int m_FreezeTicks;
 
 };
 

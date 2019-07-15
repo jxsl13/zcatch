@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
+#include "engine/shared/config.h"
 #include "entities/character.h"
 #include "entities/flag.h"
 #include "gamecontext.h"
@@ -62,16 +63,24 @@ void CPlayer::Tick()
 
 	Server()->SetClientScore(m_ClientID, m_Score);
 
-	// statistics
-	if (IsCaught())
+	if (GameServer()->m_pController->IsGameRunning())
 	{
-		m_TicksCaught++;
+		// statistics
+		if (IsCaught())
+		{
+			m_TicksCaught++;
+		}
+		else if(IsNotCaught())
+		{
+			m_TicksAlive++;
+		}
+
+		if (g_Config.m_SvAnticamper > 0)
+		{
+			Anticamper();
+		}
+		
 	}
-	else if(IsNotCaught())
-	{
-		m_TicksAlive++;
-	}
-	
 
 	// do latency stuff
 	{
@@ -1008,3 +1017,53 @@ void CPlayer::UpdateSkinColors()
 		m_TeeInfos.m_aSkinPartColors[p] = color;
 	}
 }
+
+int CPlayer::Anticamper()
+{
+	if(GameServer()->m_World.m_Paused || !m_pCharacter || m_Team == TEAM_SPECTATORS || m_pCharacter->IsFrozen())
+	{
+		m_CampTick = -1;
+		m_SentCampMsg = false;
+		return 0;
+	}
+
+	int AnticamperTime = g_Config.m_SvAnticamperTime;
+	int AnticamperRange = g_Config.m_SvAnticamperRange;
+
+	if(m_CampTick == -1)
+	{
+		m_CampPos = m_pCharacter->GetPos();
+		m_CampTick = Server()->Tick() + Server()->TickSpeed()*AnticamperTime;
+	}
+
+	// Check if the player is moving
+	if((abs(m_CampPos.x - m_pCharacter->GetPos().x) >= (float)AnticamperRange)|| 
+		(abs(m_CampPos.y - m_pCharacter->GetPos().y) >= (float)AnticamperRange))
+		{
+			m_CampTick = -1;
+		}
+
+	// Send warning to the player
+	if(m_CampTick <= Server()->Tick() + Server()->TickSpeed() * AnticamperTime/2 && m_CampTick != -1 && !m_SentCampMsg)
+	{
+		GameServer()->SendServerMessage(m_ClientID, "ANTICAMPER: Move or die");
+		m_SentCampMsg = true;
+	}
+
+	// Kill him
+	if((m_CampTick <= Server()->Tick()) && (m_CampTick > 0))
+	{
+		if(g_Config.m_SvAnticamperFreeze)
+		{
+			m_pCharacter->Freeze(Server()->TickSpeed()*g_Config.m_SvAnticamperFreeze);
+			GameServer()->SendServerMessage(m_ClientID, "You have been freezed due to camping");
+		}
+		else
+			m_pCharacter->Die(m_ClientID, WEAPON_GAME);
+		m_CampTick = -1;
+		m_SentCampMsg = false;
+		return 1;
+	}
+	return 0;
+}
+

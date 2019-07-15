@@ -70,6 +70,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 					{
 						GameServer()->SendServerMessage(ofID, "/help release - Learn how to release players.");
 						GameServer()->SendServerMessage(ofID, "/help warmup - Learn more about how the warmup works.");
+						GameServer()->SendServerMessage(ofID, "/help anticamper - Learn more about how the anti camper works.");
 					}
 					else if(tokens.at(1) == "release")
 					{
@@ -85,6 +86,21 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, aBuf);
 						GameServer()->SendServerMessage(ofID, "While in warmup, any player caught will respawn immediatly.");
 						GameServer()->SendServerMessage(ofID, "If there are enough players for a round of zCatch, the warmup ends and players are caught normally.");
+					}
+					else if(tokens.at(1) == "anticamper")
+					{
+						char aBuf[128];
+						if(g_Config.m_SvAnticamperFreeze > 0)
+						{
+							str_format(aBuf, sizeof(aBuf), "If you don't move for %d seconds out of the range of %d units, you will be freezed for %d seconds.", g_Config.m_SvAnticamperTime, g_Config.m_SvAnticamperRange, g_Config.m_SvAnticamperFreeze);
+						}
+						else
+						{
+							str_format(aBuf, sizeof(aBuf), "If you don't move for %d seconds out of the range of %d units, you will be killed.", g_Config.m_SvAnticamperTime, g_Config.m_SvAnticamperRange);
+						}
+						GameServer()->SendServerMessage(ofID, aBuf);
+						str_format(aBuf, sizeof(aBuf), "Anticamper is currently %s.", g_Config.m_SvAnticamper > 0 ? "enabled" : "disabled");	
+						GameServer()->SendServerMessage(ofID, aBuf);
 					}
 					else
 					{
@@ -265,13 +281,12 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
-	int gamestate = GetGameState();
 
 	// greeting
 	OnChatMessage(0, 0, player.GetCID(), "/welcome");
 	
 	// warmup
-	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
+	if (IsGameWarmup())
 	{	
 		if (g_Config.m_Debug)
 		{

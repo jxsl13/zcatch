@@ -47,6 +47,7 @@ CCharacter::CCharacter(CGameWorld *pWorld)
 	m_Health = 0;
 	m_Armor = 0;
 	m_TriggeredEvents = 0;
+	m_FreezeTicks = 0;
 }
 
 void CCharacter::Reset()
@@ -517,6 +518,9 @@ void CCharacter::SetEmote(int Emote, int Tick)
 
 void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 {
+	if(IsFrozen())
+		return;
+
 	// check for changes
 	if(mem_comp(&m_Input, pNewInput, sizeof(CNetObj_PlayerInput)) != 0)
 		m_LastAction = Server()->Tick();
@@ -532,6 +536,9 @@ void CCharacter::OnPredictedInput(CNetObj_PlayerInput *pNewInput)
 
 void CCharacter::OnDirectInput(CNetObj_PlayerInput *pNewInput)
 {
+	if(IsFrozen())
+		return;
+	
 	mem_copy(&m_LatestPrevInput, &m_LatestInput, sizeof(m_LatestInput));
 	mem_copy(&m_LatestInput, pNewInput, sizeof(m_LatestInput));
 
@@ -564,6 +571,22 @@ void CCharacter::Tick()
 {
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true);
+
+	if(IsFrozen())
+	{
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			GameServer()->CreateDamage(m_Pos, -1, vec2(1,0), 0, 0, 1);
+			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+		}
+		//Set weapon back to the last one
+		if(m_FreezeTicks == 1)
+			{
+				m_ActiveWeapon = m_LastWeapon;
+			}
+		m_FreezeTicks--;
+	}
+
 
 	// handle leaving gamelayer
 	if(GameLayerClipped(m_Pos))
@@ -866,4 +889,13 @@ int CCharacter::GetHookedPlayer()
 	{
 		return -1;
 	}	
+}
+
+void CCharacter::Freeze(int Ticks)
+{
+	m_FreezeTicks = Ticks;
+	m_LastWeapon = m_ActiveWeapon;
+	m_ActiveWeapon = WEAPON_NINJA;
+	ResetInput();
+	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
 }

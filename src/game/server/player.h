@@ -227,6 +227,13 @@ private:
 
 	unsigned int GetColor();
 
+	//Anticamper
+	int Anticamper();
+	bool m_SentCampMsg;
+	int m_CampTick;
+	vec2 m_CampPos;
+
+
 	// used for spectator mode
 	int m_SpecMode;
 	int m_SpectatorID;

@@ -143,6 +143,11 @@ MACRO_CONFIG_INT(SvSuicideCooldown, sv_suicide_cooldown, 15, 3, 60, CFGFLAG_SERV
 MACRO_CONFIG_INT(SvGrenadeHitbox, sv_grenade_hitbox, 3, 1, 6, CFGFLAG_SERVER, "How large is the grenade hitbox(explosion radius).")
 MACRO_CONFIG_INT(SvSprayProtectionRadius, sv_spray_protection_radius, 1100, 0, 10000, CFGFLAG_SERVER, "When a projectile is shot, this radius is checked, which players can take damage by the projectile.")
 
+MACRO_CONFIG_INT(SvAnticamper, sv_anticamper, 1, 0, 1, CFGFLAG_SERVER, "0 disables, 1 enables anticamper.")
+MACRO_CONFIG_INT(SvAnticamperFreeze, sv_anticamper_freeze, 7, 0, 15, CFGFLAG_SERVER, "If a player should freeze on camping (and how many seconds) or die")
+MACRO_CONFIG_INT(SvAnticamperTime, sv_anticamper_time, 10, 5, 120, CFGFLAG_SERVER, "How many seconds to wait till the player dies/freezes")
+MACRO_CONFIG_INT(SvAnticamperRange, sv_anticamper_range, 200, 0, 1000, CFGFLAG_SERVER, "Distance how far away the player must move to escape anticamper")
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")
