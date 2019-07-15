@@ -84,7 +84,12 @@ void CProjectile::Tick()
 
 		if(m_Explosive)
 		{
-			GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
+			// if the owner respawns before the projectile hits, invalidate the projectile
+			CPlayer *Owner = GameServer()->m_apPlayers[m_Owner];
+			if (Owner && Owner->m_RespawnTick < m_StartTick)
+			{
+				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
+			}
 		}
 		else if(TargetChr && IsValidTarget(TargetChr->GetPlayer()->GetCID()))
 			TargetChr->TakeDamage(m_Direction * max(0.001f, m_Force), m_Direction*-1, m_Damage, m_Owner, m_Weapon);	
