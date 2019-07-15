@@ -239,13 +239,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 			GameServer()->SendServerMessage(-1, aBuf);
 			EndRound();
 		}
-		else if(m_PreviousIngamePlayerCount >= g_Config.m_SvPlayersToStartRound && m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
-		{
-			// Switching back to warmup!
-			dbg_msg("DEBUG", "Switching back to warm up mode.");
-			// TODO: this needs to be reviewed
-			EndRound();
-		}
+		
 	}
 }
 
@@ -310,9 +304,8 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	}
 	else 
 	{
-		if (m_IngamePlayerCount > g_Config.m_SvPlayersToStartRound 
-			&& m_IngamePlayerCount == m_PreviousIngamePlayerCount)
-		{
+		if (m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound)
+		{			
 			// if the player joins & nobody has caught anybody 
 			// at that exact moment, when a round is running
 			// the player directly joins the game
@@ -325,6 +318,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 			// no chat announcements
 			// when switching game modes/states
 			// or other stuff.
+			dbg_msg("DEBUG", "Player silently joined the game.");
 			player.BeReleased(); // silent join
 		}
 	}
@@ -369,13 +363,14 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 {
 	CPlayer& victim = (*pVictim->GetPlayer());
 	CPlayer& killer = (*pKiller);
-	int gamestate = GetGameState();
 
 	// warmup
-	if (gamestate == IGS_WARMUP_GAME || gamestate == IGS_WARMUP_USER)
+	if (IsGameWarmup())
 	{
 		// any kind of warmup
-		
+
+		// respawn in one second
+		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 1.0f;
 		// simply die & respawn
 		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 	}
@@ -426,6 +421,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	// do scoreing
 	if(!pKiller || Weapon == WEAPON_GAME)
 		return 0;
+	
 	if(pKiller == pVictim->GetPlayer())
 	{
 		// suicide or falling out of the map
@@ -761,7 +757,7 @@ class CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 		
 		
 	}
-	dbg_msg("DEBUG", "Living players count: %lu", livingPlayers.size());
+	dbg_msg("DEBUG", "Choosing dominating player.Living players count: %lu", livingPlayers.size());
 
 
 	// remove player, that do not have the 
@@ -769,16 +765,19 @@ class CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 	livingPlayers.erase(it, livingPlayers.end());
 
 	if(livingPlayers.size() == 0)
+	{
 		return nullptr;
+	}
 	else if(static_cast<int>(livingPlayers.size()) == m_IngamePlayerCount)
+	{
 		return nullptr;
+	}
 	
 	// choose random player
 	class CPlayer* pChosenDominatingPlayer = livingPlayers.at(Server()->Tick() % livingPlayers.size());
 
 	if(pChosenDominatingPlayer->GetNumCaughtPlayers() + pChosenDominatingPlayer->GetNumCaughtPlayersWhoLeft() > 0)
 	{
-		dbg_msg("DEBUG", "Chosen player to be added as victim of is: ID %d of %lu dominatig players.", pChosenDominatingPlayer->GetCID(), livingPlayers.size());
 		return pChosenDominatingPlayer;
 	}
 	else
