@@ -38,8 +38,11 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 	// zCatch
 	m_CaughtBy = NOT_CAUGHT;
+	m_CaughtReason = REASON_NONE;
 	m_CaughtPlayers.reserve(MAX_PLAYERS);
+	m_NumCaughtPlayersWhoJoined = 0;
 	m_NumCaughtPlayersWhoLeft = 0;
+	m_NumWillinglyReleasedPlayers = 0;
 	m_WantsToJoinSpectators = false;
 	UpdateSkinColors();
 	ResetStatistics();
@@ -531,6 +534,7 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 				sendReasonMessage = false;
 				break;
 			case REASON_PLAYER_JOINED:
+				m_NumCaughtPlayersWhoJoined++;
 				str_format(aBuf, sizeof(aBuf), "'%s' was added to your victims(%d left).", Server()->ClientName(ID), GetNumCaughtPlayers());
 				break;
 			default:
@@ -593,8 +597,11 @@ bool CPlayer::BeCaught(int byID, int reason)
 		}
 
 		m_CaughtBy = byID;
+		m_CaughtReason = reason;
 		m_SpectatorID = m_CaughtBy;
+		m_NumCaughtPlayersWhoJoined = 0;
 		m_NumCaughtPlayersWhoLeft = 0;
+		m_NumWillinglyReleasedPlayers = 0;
 		m_RespawnDisabled = true;
 		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);
 
@@ -662,6 +669,7 @@ bool CPlayer::BeReleased(int reason)
 		}
 
 		m_CaughtBy = NOT_CAUGHT;
+		m_CaughtReason = REASON_NONE;
 		m_SpectatorID = -1;
 		m_RespawnDisabled = false;
 		// respawn half a second after being released
@@ -718,6 +726,8 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 						   Server()->ClientName(playerToReleaseID),
 						   GetNumCaughtPlayers());
 				GameServer()->SendServerMessage(GetCID(), aBuf);
+
+				m_NumWillinglyReleasedPlayers++;
 			}
 
 			// re-calculate enemies left to catch
@@ -919,9 +929,24 @@ int CPlayer::GetNumCaughtPlayersWhoLeft()
 	return m_NumCaughtPlayersWhoLeft;
 }
 
+int CPlayer::GetNumReleasedPlayers()
+{
+	return m_NumWillinglyReleasedPlayers;
+}
+
+int CPlayer::GetNumCaughtPlayersInARow()
+{
+	return m_CaughtPlayers.size() - m_NumCaughtPlayersWhoJoined + m_NumCaughtPlayersWhoLeft + m_NumWillinglyReleasedPlayers;
+}
+
 int CPlayer::GetIDCaughtBy()
 {
 	return m_CaughtBy;
+}
+
+int CPlayer::GetCaughtReason()
+{
+	return m_CaughtReason;
 }
 
 bool CPlayer::IsCaught()

@@ -96,12 +96,20 @@ public:
 	// who caught me
 	int GetIDCaughtBy();
 
+	// why was I caught
+	int GetCaughtReason();
+
 	// how many players did I catch
 	int GetNumCaughtPlayers();
 
 	// how many of my caught player did leave the game
 	int GetNumCaughtPlayersWhoLeft();
 
+	// how many players were released by the players willingly
+	int GetNumReleasedPlayers();
+
+	// how many players were killed in a row.
+	int GetNumCaughtPlayersInARow();
 
 	bool BeReleased(int reason=REASON_NONE);
 	
@@ -197,6 +205,8 @@ private:
 
 	// zCatch
 	int m_CaughtBy;
+	int m_CaughtReason;
+
 	int m_PlayersLeftToCatch;
 	enum { NOT_CAUGHT = -1};
 
@@ -210,8 +220,10 @@ private:
 	std::vector<int> m_CaughtPlayers;
 	// preventing rejoin exploitation.
 	int m_NumCaughtPlayersWhoLeft;
-	bool m_WantsToJoinSpectators;
+	int m_NumCaughtPlayersWhoJoined;
+	int m_NumWillinglyReleasedPlayers;
 
+	bool m_WantsToJoinSpectators;
 
 	unsigned int GetColor();
 

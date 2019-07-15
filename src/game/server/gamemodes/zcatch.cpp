@@ -8,6 +8,7 @@
 
 #include "zcatch.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -265,6 +266,8 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
 	int gamestate = GetGameState();
+
+	// greeting
 	OnChatMessage(0, 0, player.GetCID(), "/welcome");
 	
 	// warmup
@@ -283,40 +286,14 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		return;
 	}
 
-	// actual game running
-	CPlayer *pDominatingPlayer = nullptr;
+	class CPlayer *pDominatingPlayer = ChooseDominatingPlayer(player.GetCID());
 
-	// find player with most kills
-	for (int i = 0; i < MAX_CLIENTS; i++)
-	{
-		// if we join, we cannot be the dominating player
-		// skip ourself.
-		if (player.GetCID() == i)
-		{
-			continue;
-		}
-
-		if (GameServer()->m_apPlayers[i])
-		{
-			if (!pDominatingPlayer)
-			{
-				pDominatingPlayer = GameServer()->m_apPlayers[i];
-			}
-			else if (GameServer()->m_apPlayers[i]->GetNumCaughtPlayers() > pDominatingPlayer->GetNumCaughtPlayers())
-			{
-				pDominatingPlayer = GameServer()->m_apPlayers[i];
-			}
-		}
-	}
-
-	// if the dominating player has nobody caught, we don't want them to
-	if (pDominatingPlayer && 
-		pDominatingPlayer->GetNumCaughtPlayers() + pDominatingPlayer->GetNumCaughtPlayersWhoLeft() > 0)
+	
+	if (pDominatingPlayer)
 	{
 		pDominatingPlayer->CatchPlayer(player.GetCID(), CPlayer::REASON_PLAYER_JOINED);
 	}
-	else if (pDominatingPlayer && 
-			pDominatingPlayer->GetNumCaughtPlayers() + pDominatingPlayer->GetNumCaughtPlayersWhoLeft() == 0)
+	else 
 	{
 		if (m_IngamePlayerCount > g_Config.m_SvPlayersToStartRound 
 			&& m_IngamePlayerCount == m_PreviousIngamePlayerCount)
@@ -333,12 +310,8 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 			// no chat announcements
 			// when switching game modes/states
 			// or other stuff.
-			player.BeReleased();
+			player.BeReleased(); // silent join
 		}
-	}
-	else
-	{
-		player.BeReleased();
 	}
 	
 	UpdateBroadcastOfEverybody();
@@ -710,6 +683,92 @@ void CGameControllerZCATCH::ShowPlayerStatistics(class CPlayer *pOfPlayer)
 		// send them to the player
 		str_format(aBuf, sizeof(aBuf), "Ingame: %.2f%% Spectating: %.2f%% ", alivePercentage, caughtPercentage);
 		GameServer()->SendServerMessage(pOfPlayer->GetCID(), aBuf);
+	}
+}
+
+class CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
+{
+
+	std::vector<class CPlayer*> livingPlayers;
+
+	class CPlayer *pTmpPlayer = nullptr;
+
+	// fill vector with living players
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		// if we join, we cannot be the dominating player
+		// skip ourself.
+		if (excludeID == i)
+		{
+			continue;
+		}
+
+		pTmpPlayer = GameServer()->m_apPlayers[i];
+		if (pTmpPlayer && pTmpPlayer->IsNotCaught())
+		{
+			livingPlayers.push_back(pTmpPlayer);
+		}
+	}
+
+	if (livingPlayers.size() == 0)
+		return nullptr;
+	
+
+	// custom comparison structure
+	struct {
+        bool operator()(class CPlayer* a, CPlayer* b) const{
+			return a->GetNumCaughtPlayers() + a->GetNumCaughtPlayersWhoLeft() > b->GetNumCaughtPlayers() + b->GetNumCaughtPlayersWhoLeft();
+			}   
+    } caughtMore;
+
+	// sort by caught players
+	std::sort(livingPlayers.begin(), livingPlayers.end(), caughtMore);	
+
+
+	// super weird error might occur
+	int mostCaughtPlayers = livingPlayers.at(0)->GetNumCaughtPlayers() + livingPlayers.at(0)->GetNumCaughtPlayersWhoLeft();
+	
+	// super weird stuff - erase invalid players?
+	// in some weird case access to a living player causes a segfault.
+	// TODO: wtf?
+	auto it = livingPlayers.begin();
+	for (; it != livingPlayers.end(); it++)
+	{
+		if (!(*it))
+		{
+			// erase invalid pointer
+			livingPlayers.erase(it, it+1);
+		}
+		else if((*it)->GetNumCaughtPlayers() + (*it)->GetNumCaughtPlayersWhoLeft() != mostCaughtPlayers)
+		{
+			break;
+		}
+		
+		
+	}
+	dbg_msg("DEBUG", "Living players count: %lu", livingPlayers.size());
+
+
+	// remove player, that do not have the 
+	// same amount of caught players as the dominating player.
+	livingPlayers.erase(it, livingPlayers.end());
+
+	if(livingPlayers.size() == 0)
+		return nullptr;
+	else if(static_cast<int>(livingPlayers.size()) == m_IngamePlayerCount)
+		return nullptr;
+	
+	// choose random player
+	class CPlayer* pChosenDominatingPlayer = livingPlayers.at(Server()->Tick() % livingPlayers.size());
+
+	if(pChosenDominatingPlayer->GetNumCaughtPlayers() + pChosenDominatingPlayer->GetNumCaughtPlayersWhoLeft() > 0)
+	{
+		dbg_msg("DEBUG", "Chosen player to be added as victim of is: ID %d of %lu dominatig players.", pChosenDominatingPlayer->GetCID(), livingPlayers.size());
+		return pChosenDominatingPlayer;
+	}
+	else
+	{
+		return nullptr;
 	}
 }
 

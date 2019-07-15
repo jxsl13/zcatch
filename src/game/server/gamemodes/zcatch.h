@@ -33,6 +33,15 @@ public:
 private:
 
 	/**
+	 * When a player enters the game, and the game is
+	 * currently running, the player has to be added 
+	 * as victim to the dominating player.
+	 * As there can be multiple dominating players, 
+	 * one has to be chosen from multiple dominating players.
+	 */
+	class CPlayer* ChooseDominatingPlayer(int excludeID=-1);
+
+	/**
 	 * Send server message to the individual player about
 	 * their ingame statistics,
 	 */
