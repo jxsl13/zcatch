@@ -20,6 +20,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_pGameServer = pGameServer;
 	m_RespawnTick = Server()->Tick();
 	m_DieTick = Server()->Tick();
+	m_LastRespawnedTick = Server()->Tick();
 	m_ScoreStartTick = Server()->Tick();
 	m_pCharacter = 0;
 	m_ClientID = ClientID;
@@ -390,7 +391,11 @@ void CPlayer::Respawn()
 	m_DeadSpecMode = false;
 
 	if(m_Team != TEAM_SPECTATORS)
+	{
 		m_Spawning = true;
+		m_LastRespawnedTick = Server()->Tick();
+	}
+		
 }
 
 bool CPlayer::SetSpectatorID(int SpecMode, int SpectatorID)

@@ -86,7 +86,7 @@ void CProjectile::Tick()
 		{
 			// if the owner respawns before the projectile hits, invalidate the projectile
 			CPlayer *Owner = GameServer()->m_apPlayers[m_Owner];
-			if (Owner && Owner->m_RespawnTick < m_StartTick)
+			if (Owner && Owner->m_LastRespawnedTick <= m_StartTick)
 			{
 				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
 			}
