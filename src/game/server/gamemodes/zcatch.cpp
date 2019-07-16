@@ -151,17 +151,33 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	}
 }
 
- void CGameControllerZCATCH::EndRound()
- {
+bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason)
+{
+	dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
+	return true;
+}
+bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* pReason)
+{
+	dbg_msg("DEBUG", "Player %d called to ban %d with reason '%s'", ClientID, KickID, pReason);
+	return true;
+}
+bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason)
+{
+	dbg_msg("DEBUG", "Player %d called to move %d to spectators with reason '%s'", ClientID, SpectateID, pReason);
+	return true;
+}
+
+void CGameControllerZCATCH::EndRound()
+{
 
 	CPlayer *pPlayer = nullptr;
 
 	for (int ID = 0; ID < MAX_CLIENTS; ID++)
 	{
 		pPlayer = GameServer()->m_apPlayers[ID];
-		if(pPlayer)
+		if (pPlayer)
 		{
-			
+
 			ShowPlayerStatistics(pPlayer);
 
 			// do cleanup
@@ -173,7 +189,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 
 	// Change game state
 	IGameController::EndRound();
- }
+}
 
 // game
 void CGameControllerZCATCH::DoWincheckRound()

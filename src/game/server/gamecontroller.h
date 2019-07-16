@@ -171,6 +171,11 @@ public:
 
 	virtual void OnChatMessage(int ChatterClientID, int Mode, int toID, const char *pText);
 
+	// return true in order to allow the calling of the vote to be executed
+	virtual bool OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason);
+	virtual bool OnCallvoteBan(int ClientID, int KickID, const char* pReason);
+	virtual bool OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason);
+
 	void OnReset();
 
 	// game

@@ -1219,3 +1219,18 @@ void IGameController::OnChatMessage(int ChatterClientID, int Mode, int toID, con
 {
 	GameServer()->SendChat(ChatterClientID, Mode, toID, pText);
 }
+
+bool IGameController::OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason)
+{
+	return true;
+}
+
+bool IGameController::OnCallvoteBan(int ClientID, int KickID, const char* pReason)
+{
+	return true;
+}
+
+bool IGameController::OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason)
+{
+	return true;
+}

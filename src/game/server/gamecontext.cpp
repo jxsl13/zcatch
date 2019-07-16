@@ -880,6 +880,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 							ForceVote(VOTE_START_OP, aDesc, pReason);
 							return;
 						}
+
+						if(!m_pController->OnCallvoteOption(ClientID, aDesc, aCmd, pReason))
+							return;
+
 						m_VoteType = VOTE_START_OP;
 						break;
 					}
@@ -915,6 +919,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					Server()->SetRconCID(IServer::RCON_CID_SERV);
 					return;
 				}
+
+				if(!m_pController->OnCallvoteBan(ClientID, KickID, pReason))
+					return;
+
 				m_VoteType = VOTE_START_KICK;
 				m_VoteClientID = KickID;
 			}
@@ -937,6 +945,10 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					ForceVote(VOTE_START_SPEC, aDesc, pReason);
 					return;
 				}
+
+				if(!m_pController->OnCallvoteSpectate(ClientID, SpectateID, pReason))
+					return;
+
 				m_VoteType = VOTE_START_SPEC;
 				m_VoteClientID = SpectateID;
 			}

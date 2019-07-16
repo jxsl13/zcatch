@@ -30,6 +30,14 @@ public:
 	 */
 	virtual void OnChatMessage(int ofID, int Mode, int toID, const char *pText);
 
+	/**
+	 * Intercept callvotes in order to respond to them.
+	 * Return true in order for the calling of the votes to proceed.
+	 */
+	virtual bool OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason);
+	virtual bool OnCallvoteBan(int ClientID, int KickID, const char* pReason);
+	virtual bool OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason);
+
 private:
 
 	/**
