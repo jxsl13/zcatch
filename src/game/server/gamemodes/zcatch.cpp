@@ -520,6 +520,9 @@ void CGameControllerZCATCH::OnPlayerInfoChange(class CPlayer *pPlayer)
 
 void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 {
+	if(IsGameWarmup())
+		return;
+	
 	CPlayer *pTmpPlayer = nullptr;
 	char aBuf[32];
 	int enemiesLeft = 0;
@@ -559,6 +562,9 @@ void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 
 void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 {
+	if(IsGameWarmup())
+		return;
+	
 	CPlayer *pTmpPlayer = nullptr;
 	char aBuf[32];
 	int enemiesLeft = 0;
@@ -599,6 +605,9 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 
 void CGameControllerZCATCH::RefreshBroadcast()
 {
+	if(IsGameWarmup())
+		return;
+	
 	// basically only print the stored values of each player 
 	// and keeps the broadcast alive no updates are handled
 	// in here. Those should be handled at their occurrence place.
