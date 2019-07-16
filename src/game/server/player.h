@@ -55,6 +55,7 @@ public:
 		// release reasons
 		// #### one by one player release START
 		REASON_PLAYER_RELEASED,
+		REASON_PLAYER_WARMUP_RELEASED,
 
 		// player's state is reset to released when 
 		// joining the game after having been in spec
@@ -71,6 +72,7 @@ public:
 
 		// catch reasons
 		REASON_PLAYER_CAUGHT,
+		REASON_PLAYER_WARMUP_CAUGHT,
 
 		// caught & released reasons
 		REASON_PLAYER_JOINED,

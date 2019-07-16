@@ -173,9 +173,6 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 
 	// Change game state
 	IGameController::EndRound();
-
-	// reset skin colors
-	UpdateSkinsOfEverybody();
  }
 
 // game
@@ -363,6 +360,11 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	{
 		// any kind of warmup
 
+		// do warmup coloration of the skins.
+		killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
+		killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
+
+		dbg_msg("DEBUG", "Killer %d has killed %d players in a row.", killer.GetCID(), killer.GetNumCaughtPlayersInARow());
 		// respawn in one second
 		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 1.0f;
 		// simply die & respawn
