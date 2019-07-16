@@ -153,12 +153,6 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 
  void CGameControllerZCATCH::EndRound()
  {
-	 // don't do anything if we just switched from
-	 // warmup to zCatch or from zCatch to warmup
-	if(m_PreviousIngamePlayerCount != m_IngamePlayerCount)
-	{
-		return;
-	}
 
 	CPlayer *pPlayer = nullptr;
 
@@ -229,7 +223,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 			// no winner
 			EndRound();
 		}	
-		else if(alivePlayerCount == 1)	// 1 winner
+		else if(alivePlayerCount == 1 && m_IngamePlayerCount > 1)	// 1 winner
 		{
 			pAlivePlayer->m_Score++;
 			
