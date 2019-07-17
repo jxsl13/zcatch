@@ -284,7 +284,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 
 	// greeting
-	OnChatMessage(0, 0, player.GetCID(), "/welcome");
+	OnChatMessage(player.GetCID(), 0, player.GetCID(), "/welcome");
 	
 	// warmup
 	if (IsGameWarmup())
@@ -382,7 +382,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 
 		dbg_msg("DEBUG", "Killer %d has killed %d players in a row.", killer.GetCID(), killer.GetNumCaughtPlayersInARow());
 		// respawn in one second
-		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 1.0f;
+		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 3.0f;
 		// simply die & respawn
 		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 	}

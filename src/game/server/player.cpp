@@ -624,7 +624,9 @@ bool CPlayer::BeCaught(int byID, int reason)
 		m_NumCaughtPlayersWhoLeft = 0;
 		m_NumWillinglyReleasedPlayers = 0;
 		m_RespawnDisabled = true;
-		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);
+		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);	
+		
+		
 
 		// statistics
 		if(reason != REASON_PLAYER_JOINED)
@@ -869,6 +871,15 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 
 	int releasedPlayers = m_CaughtPlayers.size();
 
+	// don't send messages, when nobody was released.
+	if(releasedPlayers == 0)
+	{
+		// just update skin
+		UpdateSkinColors();
+		return 0;
+	}
+
+
 	// message to the releasing player
 	bool hasReasonMessage = true;
 	bool isStillIngame = true;
@@ -886,6 +897,9 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 		// no message, because the player leaves.
 		hasReasonMessage = false;
 		isStillIngame = false;
+		break;
+	case REASON_PLAYER_WARMUP_CAUGHT:
+		hasReasonMessage = false;
 		break;
 	case REASON_PLAYER_JOINED_SPEC:
 		str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d player%s to be set free!", GetNumCaughtPlayers(), GetNumCaughtPlayers() > 1 ? "s" : "");
