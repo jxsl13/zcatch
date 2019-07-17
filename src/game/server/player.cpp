@@ -393,7 +393,6 @@ void CPlayer::Respawn()
 	if(m_Team != TEAM_SPECTATORS)
 	{
 		m_Spawning = true;
-		m_LastRespawnedTick = Server()->Tick();
 	}
 		
 }
@@ -523,6 +522,7 @@ void CPlayer::TryRespawn()
 	m_pCharacter = new(m_ClientID) CCharacter(&GameServer()->m_World);
 	m_pCharacter->Spawn(this, SpawnPos);
 	GameServer()->CreatePlayerSpawn(SpawnPos);
+	m_LastRespawnedTick = Server()->Tick();
 }
 
 // affects oneself & caught player
