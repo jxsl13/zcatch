@@ -16,11 +16,14 @@
 
 CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
 {
-	m_pGameType = "zCatch/dev";
+	m_pGameType = "zCatch";
 	m_GameFlags = GAMEFLAG_SURVIVAL;
 
 	m_PreviousIngamePlayerCount = 0;
 	m_IngamePlayerCount = 0;
+
+	// refresh broadcast every 9 seconds.
+	m_BroadcastRefreshTime = Server()->TickSpeed() * 9;
 	
 }
 
@@ -29,7 +32,6 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	// message doesn't start with /, then it's no command message
 	if(pText && pText[0] && pText[0] != '/')
 	{
-		dbg_msg("DEBUG", "Message doesn't contain any leading command character.");
 		IGameController::OnChatMessage(ofID, Mode, toID, pText);
 		return;
 	}
@@ -44,7 +46,6 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
         tokens.push_back(tmpString); 
     } 
 	int size = tokens.size();
-
 
 	if (size > 0)
 	{
@@ -71,9 +72,11 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, "/help release - Learn how to release players.");
 						GameServer()->SendServerMessage(ofID, "/help warmup - Learn more about how the warmup works.");
 						GameServer()->SendServerMessage(ofID, "/help anticamper - Learn more about how the anti camper works.");
+						GameServer()->SendServerMessage(ofID, "/help servermessages - How to enable more detailed information.");
 					}
 					else if(tokens.at(1) == "release")
 					{
+						GameServer()->SendServerMessage(ofID, "First off, releasing other players is optional and is a way of improving fair play.");
 						GameServer()->SendServerMessage(ofID, "There are two ways to release a player, that you have caught:");
 						GameServer()->SendServerMessage(ofID, "The first one is to create a suicide bind like this 'bind k kill' using the F1 console. The second way is to write");
 						GameServer()->SendServerMessage(ofID, "'/release' in the chat. The difference between both methods is that if you use your kill bind, you will kill yourself if");
@@ -101,6 +104,11 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, aBuf);
 						str_format(aBuf, sizeof(aBuf), "Anticamper is currently %s.", g_Config.m_SvAnticamper > 0 ? "enabled" : "disabled");	
 						GameServer()->SendServerMessage(ofID, aBuf);
+					}
+					else if(tokens.at(1) == "servermessages")
+					{
+						GameServer()->SendServerMessage(ofID, "Type /allmessages to get all of the information about your and other player's deaths.");
+						GameServer()->SendServerMessage(ofID, "Type /allmessages again, in order to disable the extra information again.");
 					}
 					else
 					{
@@ -133,6 +141,21 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				if(pPlayer)
 				{
 					pPlayer->ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_RELEASED, true);
+				}
+			}
+			else if(tokens.at(0) == "allmessages")
+			{
+				class CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
+				bool isAlreadyDetailed = pPlayer->m_DetailedServerMessages;
+				if(isAlreadyDetailed)
+				{
+					pPlayer->m_DetailedServerMessages = false;
+					GameServer()->SendServerMessage(ofID, "Disabled detailed server messages.");
+				}
+				else
+				{
+					pPlayer->m_DetailedServerMessages = true;
+					GameServer()->SendServerMessage(ofID, "Enabled detailed server messages.");
 				}
 			}
 			else
@@ -169,7 +192,10 @@ bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, con
 
 void CGameControllerZCATCH::EndRound()
 {
+	// Change game state
+	IGameController::EndRound();
 
+	
 	CPlayer *pPlayer = nullptr;
 
 	for (int ID = 0; ID < MAX_CLIENTS; ID++)
@@ -187,8 +213,6 @@ void CGameControllerZCATCH::EndRound()
 		}
 	}
 
-	// Change game state
-	IGameController::EndRound();
 }
 
 // game
@@ -231,13 +255,17 @@ void CGameControllerZCATCH::DoWincheckRound()
 			}
 		}
 
-		if(alivePlayerCount == 0)
+
+		if(m_IngamePlayerCount == 1 && alivePlayerCount == 0)
 		{
-			// no winner
+			// this is needed if exactly one player joins the game
+			// the ound is being restarted in order for that player to join the game
+			// and walk around
 			EndRound();
 		}	
-		else if(alivePlayerCount == 1 && m_IngamePlayerCount > 1)	// 1 winner
+		else if(m_IngamePlayerCount > 1 && alivePlayerCount == 1)	// 1 winner
 		{
+			// player that is alive is the winnner
 			pAlivePlayer->m_Score++;
 			
 			// Inform everyone about the winner.
@@ -246,7 +274,11 @@ void CGameControllerZCATCH::DoWincheckRound()
 			GameServer()->SendServerMessage(-1, aBuf);
 			EndRound();
 		}
-		
+		else
+		{
+			// nobody won anything.
+			return;
+		}
 	}
 }
 
@@ -360,7 +392,6 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 		// player was in spectator mode, nothing to do.
 	}
 	
-
 	// needed to do the disconnect handling.
 	IGameController::OnPlayerDisconnect(pPlayer);
 }
@@ -370,15 +401,24 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 {
 	CPlayer& victim = (*pVictim->GetPlayer());
 	CPlayer& killer = (*pKiller);
+	dbg_assert(victim.IsNotCaught(), "victim is caught even tho it should not be caught.");
 
 	// warmup
 	if (IsGameWarmup())
 	{
-		// any kind of warmup
+		// not killed by enemy.
+		if(victim.GetCID() == killer.GetCID())
+			return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+		
+		// killed by enemy:
 
-		// do warmup coloration of the skins.
 		killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
+		dbg_assert(killer.IsNotCaught(), "killer is caught, but should not be");
+		dbg_assert(victim.IsCaught(), "victim is not caught, but should be");
+		
 		killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
+		dbg_assert(killer.IsNotCaught(), "killer is caught, but should not be");
+		dbg_assert(victim.IsNotCaught(), "victim is caught, but should not be");
 
 		dbg_msg("DEBUG", "Killer %d has killed %d players in a row.", killer.GetCID(), killer.GetNumCaughtPlayersInARow());
 		// respawn in one second
@@ -390,7 +430,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	// actual game
 	/**
 	 * CPlayer::KillCharacter -> CCharacter::Die -> IGameController::OnCharacterDeath
-	 * the cases, where victim.GetNumCaughtPlayers() > 0 are handled in 
+	 * the cases, where victim.GetNumCurrentlyCaughtPlayers() > 0 are handled in 
 	 * CPlayer::KillCharacter, prior to these cases, where it is possible to prevent 
 	 * the character from actually being killed, when releasing a player, 
 	 * that was killed by mistake.
@@ -398,7 +438,18 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	if(victim.GetCID() != killer.GetCID() && Weapon >= 0)
 	{
 		// someone killed me with a real weapon
-		killer.CatchPlayer(victim.GetCID());
+
+		// killer is still ingame
+		if (killer.IsNotCaught())
+		{
+			killer.CatchPlayer(victim.GetCID());
+		}
+		else
+		{
+			// if the killer was caught before he killed someone
+			// victim is not being caught, but must release everyone caught.
+			victim.ReleaseAllCaughtPlayers();
+		}		
 	}
 	else if(Weapon < 0 && victim.GetCID() == killer.GetCID())
 	{
@@ -437,16 +488,16 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	if(pKiller == pVictim->GetPlayer())
 	{
 		// suicide or falling out of the map
-		if (Weapon == WEAPON_WORLD || (Weapon == WEAPON_SELF && victim.GetNumCaughtPlayers() == 0))
+		if (Weapon == WEAPON_WORLD || (Weapon == WEAPON_SELF && victim.GetNumCurrentlyCaughtPlayers() == 0))
 		{
-			pVictim->GetPlayer()->m_Deaths += g_Config.m_SvSuicidePenalty;
+			victim.m_Deaths += g_Config.m_SvSuicidePenalty;
 		}		
 	}
 		
 	if(Weapon == WEAPON_SELF)
 	{
 		// respawn in 3 seconds
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
+		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
 	}
 
 	// update spectator modes for dead players in survival
@@ -466,8 +517,7 @@ void CGameControllerZCATCH::Tick()
 	// Broadcast Refresh is only needed for solely 
 	// keeping the broadcast visible, but not to push
 	// actual updates.
-	int nineSeconds = Server()->TickSpeed() * 9;
-	if (Server()->Tick() % nineSeconds == 0)
+	if (Server()->Tick() % m_BroadcastRefreshTime == 0)
 	{
 		// The broadcast is according to heinrich5991 kept shown
 		// by the client for 10 seconds.
@@ -503,7 +553,7 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		// do not change team, while you are caught.
 		return;
 	}
-	else if(player.IsNotCaught() && player.GetNumCaughtPlayers() > 0 && Team == TEAM_SPECTATORS)
+	else if(player.IsNotCaught() && player.GetNumCurrentlyCaughtPlayers() > 0 && Team == TEAM_SPECTATORS)
 	{
 		// player is not caught and wants to join the spectators.
 		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_JOINED_SPEC);
@@ -552,10 +602,9 @@ void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 		{
 			if (pTmpPlayer->GetTeam() != TEAM_SPECTATORS)
 			{
-				// this function is rather intense, so we want it to be called as 
-				// few times as possible
-				enemiesLeft = pTmpPlayer->UpdatePlayersLeftToCatch();
-
+				// players ingame, minus me, minus players that I caught
+				enemiesLeft = m_IngamePlayerCount - 1 - pTmpPlayer->GetNumCurrentlyCaughtPlayers();
+				pTmpPlayer->SetPlayersLeftToCatch(enemiesLeft);
 				if (enemiesLeft > 0)
 				{
 					str_format(aBuf, sizeof(aBuf), "%d enem%s left", enemiesLeft, enemiesLeft == 1 ? "y" : "ies");
@@ -594,9 +643,8 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 		{
 			if (pTmpPlayer->GetTeam() != TEAM_SPECTATORS)
 			{
-				// this function is rather intense, so we want it to be called as 
-				// few times as possible
-				enemiesLeft = pTmpPlayer->UpdatePlayersLeftToCatch();
+				enemiesLeft = m_IngamePlayerCount - 1 - pTmpPlayer->GetNumCurrentlyCaughtPlayers();
+				pTmpPlayer->SetPlayersLeftToCatch(enemiesLeft);
 
 				if (enemiesLeft > 0)
 				{
@@ -718,93 +766,52 @@ void CGameControllerZCATCH::ShowPlayerStatistics(class CPlayer *pOfPlayer)
 	}
 }
 
-class CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
+CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 {
 
-	std::vector<class CPlayer*> livingPlayers;
+	std::vector<class CPlayer*> dominatingPlayers;
 
 	class CPlayer *pTmpPlayer = nullptr;
+	int tmpMaxCaughtPlayers = -1;
 
-	// fill vector with living players
+	// find number of catches of dominating player
 	for (int i = 0; i < MAX_CLIENTS; i++)
 	{
-		// if we join, we cannot be the dominating player
-		// skip ourself.
 		if (excludeID == i)
-		{
 			continue;
-		}
-
+		
 		pTmpPlayer = GameServer()->m_apPlayers[i];
 		if (pTmpPlayer && pTmpPlayer->IsNotCaught())
 		{
-			livingPlayers.push_back(pTmpPlayer);
+			if (pTmpPlayer->GetNumTotalCaughtPlayers() > tmpMaxCaughtPlayers )
+			{
+				tmpMaxCaughtPlayers = pTmpPlayer->GetNumTotalCaughtPlayers();
+			}	
 		}
 	}
 
-	if (livingPlayers.size() == 0)
-		return nullptr;
-	
-
-	// custom comparison structure
-	struct {
-        bool operator()(class CPlayer* a, CPlayer* b) const{
-			return a->GetNumCaughtPlayers() + a->GetNumCaughtPlayersWhoLeft() > b->GetNumCaughtPlayers() + b->GetNumCaughtPlayersWhoLeft();
-			}   
-    } caughtMore;
-
-	// sort by caught players
-	std::sort(livingPlayers.begin(), livingPlayers.end(), caughtMore);	
-
-
-	// super weird error might occur
-	int mostCaughtPlayers = livingPlayers.at(0)->GetNumCaughtPlayers() + livingPlayers.at(0)->GetNumCaughtPlayersWhoLeft();
-	
-	// super weird stuff - erase invalid players?
-	// in some weird case access to a living player causes a segfault.
-	// TODO: wtf?
-	auto it = livingPlayers.begin();
-	for (; it != livingPlayers.end(); it++)
+	// if invalid number
+	if (tmpMaxCaughtPlayers <= 0)
 	{
-		if (!(*it))
+		return nullptr;
+	}
+	
+	pTmpPlayer = nullptr;
+
+	// find all players with the same catched players streak
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		pTmpPlayer = GameServer()->m_apPlayers[i];
+		// totalcaughtplayers = currently caught + those who left while being caught.
+		if (pTmpPlayer && pTmpPlayer->GetNumTotalCaughtPlayers() == tmpMaxCaughtPlayers)
 		{
-			// erase invalid pointer
-			livingPlayers.erase(it, it+1);
+			dominatingPlayers.push_back(pTmpPlayer);
 		}
-		else if((*it)->GetNumCaughtPlayers() + (*it)->GetNumCaughtPlayersWhoLeft() != mostCaughtPlayers)
-		{
-			break;
-		}
-		
-		
-	}
-	dbg_msg("DEBUG", "Choosing dominating player.Living players count: %lu", livingPlayers.size());
-
-
-	// remove player, that do not have the 
-	// same amount of caught players as the dominating player.
-	livingPlayers.erase(it, livingPlayers.end());
-
-	if(livingPlayers.size() == 0)
-	{
-		return nullptr;
-	}
-	else if(static_cast<int>(livingPlayers.size()) == m_IngamePlayerCount)
-	{
-		return nullptr;
+		pTmpPlayer = nullptr;
 	}
 	
-	// choose random player
-	class CPlayer* pChosenDominatingPlayer = livingPlayers.at(Server()->Tick() % livingPlayers.size());
-
-	if(pChosenDominatingPlayer->GetNumCaughtPlayers() + pChosenDominatingPlayer->GetNumCaughtPlayersWhoLeft() > 0)
-	{
-		return pChosenDominatingPlayer;
-	}
-	else
-	{
-		return nullptr;
-	}
+	std::size_t pickedPlayer = Server()->Tick() % dominatingPlayers.size();
+	return dominatingPlayers.at(pickedPlayer);
 }
 
 

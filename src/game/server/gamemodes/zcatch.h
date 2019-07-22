@@ -85,6 +85,10 @@ private:
 	int m_IngamePlayerCount;
 
 
+	// refresh time in ticks, after how many ticks 
+	// the broadcast refresh is being resent.
+	int m_BroadcastRefreshTime;
+
 };
 
 #endif

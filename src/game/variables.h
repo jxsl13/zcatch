@@ -148,7 +148,7 @@ MACRO_CONFIG_INT(SvAnticamperFreeze, sv_anticamper_freeze, 7, 0, 15, CFGFLAG_SER
 MACRO_CONFIG_INT(SvAnticamperTime, sv_anticamper_time, 10, 5, 120, CFGFLAG_SERVER, "How many seconds to wait till the player dies/freezes")
 MACRO_CONFIG_INT(SvAnticamperRange, sv_anticamper_range, 200, 0, 1000, CFGFLAG_SERVER, "Distance how far away the player must move to escape anticamper")
 
-MACRO_CONFIG_INT(SvWarmupAutostart, sv_warmup_autostart, 0, 0, 1, CFGFLAG_SERVER, "Whether warmup should automatically start if there are not enough players to end a round.")
+MACRO_CONFIG_INT(SvWarmupAutostart, sv_warmup_autostart, 1, 0, 1, CFGFLAG_SERVER, "Whether warmup should automatically start if there are not enough players to end a round.")
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

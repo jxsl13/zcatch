@@ -78,6 +78,8 @@ public:
 		REASON_PLAYER_JOINED,
 	};
 
+	bool m_DetailedServerMessages;
+
 	bool CatchPlayer(int ID, int reason=REASON_PLAYER_CAUGHT);
 	bool IsCaught();
 	bool IsNotCaught();
@@ -87,9 +89,8 @@ public:
 	// return internally saved value
 	int GetPlayersLeftToCatch();
 	
-	// goes through all players and calculates,
-	// how many there are left for me to catch
-	int UpdatePlayersLeftToCatch();
+	// set this externally
+	void SetPlayersLeftToCatch(int leftToCatch);
 
 	// forcefully remove player from another player's victims
 	// used to set 
@@ -102,7 +103,10 @@ public:
 	int GetCaughtReason();
 
 	// how many players did I catch
-	int GetNumCaughtPlayers();
+	int GetNumCurrentlyCaughtPlayers();
+
+	// players who are caught + players who left that were caught
+	int GetNumTotalCaughtPlayers();
 
 	// how many of my caught player did leave the game
 	int GetNumCaughtPlayersWhoLeft();

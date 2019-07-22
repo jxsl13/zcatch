@@ -1037,7 +1037,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 
 			if (pPlayer->m_LastKill && pPlayer->GetTeam() != TEAM_SPECTATORS)
 			{
-				if (cooldownSecondsLeft > 0 && pPlayer->GetNumCaughtPlayers() == 0)
+				if (cooldownSecondsLeft > 0 && pPlayer->GetNumCurrentlyCaughtPlayers() == 0)
 				{
 					// if cooldown not yet reached
 					char aBuf[64];
@@ -1048,7 +1048,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 						SendServerMessage(pPlayer->GetCID(), aBuf);
 					return;
 				} 
-				else if (pPlayer->GetNumCaughtPlayers() == 0)
+				else if (pPlayer->GetNumCurrentlyCaughtPlayers() == 0)
 				{
 					// only prevent suicides, when a player actually does one.
 					pPlayer->m_LastKill = Server()->Tick();
