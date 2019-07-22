@@ -704,7 +704,7 @@ bool CPlayer::BeReleased(int reason)
 			default:
 				break;
 			}
-			if(m_DetailedServerMessages && sendServerMessage)
+			if(sendServerMessage)
 				GameServer()->SendServerMessage(GetCID(), aBuf);
 		}
 
