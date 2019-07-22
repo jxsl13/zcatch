@@ -587,13 +587,7 @@ bool CPlayer::BeCaught(int byID, int reason)
 		// do not be caught
 		return false;
 	}
-
-	if (m_CaughtBy >= 0)	
-	{
-		// already caught by someone else
-		return false;
-	}
-	else if(GameServer()->m_apPlayers[byID])
+	else if(m_CaughtBy == NOT_CAUGHT && GameServer()->m_apPlayers[byID])
 	{
 		// not caught case: be caught by ID
 		// can only be caught if player actually exists
@@ -626,10 +620,10 @@ bool CPlayer::BeCaught(int byID, int reason)
 		m_NumCaughtPlayersWhoLeft = 0;
 		m_NumWillinglyReleasedPlayers = 0;
 		m_RespawnDisabled = true;
-		m_DieTick = Server()->Tick();
 
 		// respawn at least 3 seconds after being caught.
-		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed() * 3.0f);
+		m_RespawnTick = Server()->Tick() + (Server()->TickSpeed() * 3);
+
 		ReleaseAllCaughtPlayers(REASON_PLAYER_DIED);	
 		
 		
@@ -640,7 +634,12 @@ bool CPlayer::BeCaught(int byID, int reason)
 
 		return true;
 	}
-	return false;
+	else	
+	{
+		// already caught by someone else
+		// or player is not ingame anymore, that should catch me
+		return false;
+	}
 }
 
 // only affects oneself
@@ -712,8 +711,12 @@ bool CPlayer::BeReleased(int reason)
 		m_CaughtReason = REASON_NONE;
 		m_SpectatorID = -1;
 		m_RespawnDisabled = false;
-		Respawn();
 
+		// as we ought to wait at least 3 seconds between kill & respawn, we check
+		// whether the respawntick is already set to a higher value.
+		if(m_RespawnTick < Server()->Tick() + (Server()->TickSpeed()))
+			m_RespawnTick = Server()->Tick() + (Server()->TickSpeed());
+		
 		return true;
 	}
 	else
@@ -787,6 +790,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 	}
 	else
 	{
+		// nobody caught, thus nobody to release
 		return NOT_CAUGHT;
 	}
 }
@@ -794,7 +798,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 // remove given id from my caught players
 bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 {
-	// move to the end of vector
+	// removes elements, but leaves garbage at the end of the vector
 	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [&](int lookAtID) {
 		if (lookAtID == ID)
 		{
@@ -814,7 +818,7 @@ bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 
 	if(it != m_CaughtPlayers.end())
 	{
-		// erase elements from end of vector
+		// erase garbage elements from end of vector
 		m_CaughtPlayers.erase(it, m_CaughtPlayers.end());
 		switch(reason)
 		{
@@ -866,6 +870,7 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 	if(releasedPlayers == 0)
 	{
 		// just update skin
+		// when in warmup, your color changes, even tho you have nobody caught.
 		UpdateSkinColors();
 		return 0;
 	}
@@ -925,7 +930,7 @@ void CPlayer::SetPlayersLeftToCatch(int leftToCatch)
 {
 	dbg_assert(leftToCatch >= -1 && leftToCatch <= MAX_PLAYERS - 1, "invalid players left to catch counter");
 	if(leftToCatch < 0)
-		m_PlayersLeftToCatch = 0;
+		m_PlayersLeftToCatch = 0; // case when nobody is ingame oher than you
 	else 
 		m_PlayersLeftToCatch = leftToCatch;
 		
@@ -1022,7 +1027,7 @@ unsigned int CPlayer::GetColor()
 	else
 	{
 		// coloration when zCatch is running
-		color = max(0, 160 - GetNumCurrentlyCaughtPlayers() * 10) * 0x010000 + 0xff00;
+		color = max(0, 160 - GetNumTotalCaughtPlayers() * 10) * 0x010000 + 0xff00;
 	}
 	return color;
 }

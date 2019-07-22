@@ -421,8 +421,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		dbg_assert(victim.IsNotCaught(), "victim is caught, but should not be");
 
 		dbg_msg("DEBUG", "Killer %d has killed %d players in a row.", killer.GetCID(), killer.GetNumCaughtPlayersInARow());
-		// respawn in one second
-		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 3.0f;
+		
 		// simply die & respawn
 		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 	}
