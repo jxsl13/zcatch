@@ -66,6 +66,9 @@ public:
 	virtual bool IsBanned(int ClientID) = 0;
 	virtual void Kick(int ClientID, const char *pReason) = 0;
 
+	virtual void AddVoteban(int ClientID, int time) = 0;
+	virtual int ClientVotebannedTime(int ClientID) = 0;
+
 	virtual void DemoRecorder_HandleAutoStart() = 0;
 	virtual bool DemoRecorder_IsRecording() = 0;
 };
@@ -101,6 +104,8 @@ public:
 	virtual const char *NetVersion() const = 0;
 	virtual const char *NetVersionHashUsed() const = 0;
 	virtual const char *NetVersionHashReal() const = 0;
+
+	virtual void SendServerMessage(int To, const char *pText) = 0;
 };
 
 extern IGameServer *CreateGameServer();

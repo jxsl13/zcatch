@@ -176,16 +176,53 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 
 bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason)
 {
+	if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	{
+		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		return false;
+	}
+
 	dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
 	return true;
 }
 bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* pReason)
 {
+	// check voteban
+	int left = Server()->ClientVotebannedTime(ClientID);
+	if (left)
+	{
+		char aChatmsg[128];
+		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", left / 60, left % 60);
+		GameServer()->SendServerMessage(ClientID, aChatmsg);
+		return false;
+	}
+	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	{
+		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		return false;
+	}
+	
+
 	dbg_msg("DEBUG", "Player %d called to ban %d with reason '%s'", ClientID, KickID, pReason);
 	return true;
 }
 bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason)
 {
+	// check voteban
+	int left = Server()->ClientVotebannedTime(ClientID);
+	if (left)
+	{
+		char aChatmsg[128];
+		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", left / 60, left % 60);
+		GameServer()->SendServerMessage(ClientID, aChatmsg);
+		return false;
+	}
+	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	{
+		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		return false;
+	}
+
 	dbg_msg("DEBUG", "Player %d called to move %d to spectators with reason '%s'", ClientID, SpectateID, pReason);
 	return true;
 }
@@ -390,6 +427,21 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	else
 	{
 		// player was in spectator mode, nothing to do.
+	}
+
+	// if player voted something/someone and it did not pass
+    // before leaving the server, voteban him for the remaining time.
+	if(GameServer()->m_apPlayers[player.GetCID()])
+	{
+		int Now = Server()->Tick();
+    	int Timeleft = (GameServer()->m_apPlayers[player.GetCID()]->m_LastVoteCall - Now) + Server()->TickSpeed() * 60 ;
+    	// convert to seconds
+    	Timeleft = Timeleft / Server()->TickSpeed();
+
+    	if (GameServer()->m_apPlayers[player.GetCID()]->m_LastVoteCall && Timeleft > 0)
+    	{
+        	Server()->AddVoteban(player.GetCID(), Timeleft);
+		}
 	}
 	
 	// needed to do the disconnect handling.
