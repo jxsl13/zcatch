@@ -229,7 +229,7 @@ int IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int
 			pKiller->m_Score++; // normal kill
 	}
 	if(Weapon == WEAPON_SELF)
-		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
+		pVictim->GetPlayer()->m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 3;
 
 
 	// update spectator modes for dead players in survival

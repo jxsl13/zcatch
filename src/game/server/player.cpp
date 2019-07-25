@@ -165,7 +165,7 @@ void CPlayer::PostTick()
 	{
 		if(m_pSpecFlag)
 			m_ViewPos = m_pSpecFlag->GetPos();
-		else if (GameServer()->m_apPlayers[m_SpectatorID])
+		else if (m_SpectatorID >= 0 && GameServer()->m_apPlayers[m_SpectatorID])
 			m_ViewPos = GameServer()->m_apPlayers[m_SpectatorID]->m_ViewPos;
 	}
 }
@@ -616,9 +616,6 @@ bool CPlayer::BeCaught(int byID, int reason)
 		m_CaughtBy = byID;
 		m_CaughtReason = reason;
 		m_SpectatorID = m_CaughtBy;
-		m_NumCaughtPlayersWhoJoined = 0;
-		m_NumCaughtPlayersWhoLeft = 0;
-		m_NumWillinglyReleasedPlayers = 0;
 		m_RespawnDisabled = true;
 
 		// respawn at least 3 seconds after being caught.
@@ -716,7 +713,11 @@ bool CPlayer::BeReleased(int reason)
 		// whether the respawntick is already set to a higher value.
 		if(m_RespawnTick < Server()->Tick() + (Server()->TickSpeed()))
 			m_RespawnTick = Server()->Tick() + (Server()->TickSpeed());
-		
+
+		// this respawn trigger is needed, otherwise 
+		// the player will respawn only when the fire key is
+		// pressed, causing the player to be stuck in the "twilight zone"
+		Respawn();
 		return true;
 	}
 	else

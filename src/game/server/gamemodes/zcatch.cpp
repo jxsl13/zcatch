@@ -548,7 +548,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	if(Weapon == WEAPON_SELF)
 	{
 		// respawn in 3 seconds
-		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3.0f;
+		victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed()*3;
 	}
 
 	// update spectator modes for dead players in survival
