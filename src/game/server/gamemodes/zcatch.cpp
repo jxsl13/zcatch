@@ -32,7 +32,14 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	// message doesn't start with /, then it's no command message
 	if(pText && pText[0] && pText[0] != '/')
 	{
-		IGameController::OnChatMessage(ofID, Mode, toID, pText);
+		CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
+
+		// check if player is allowed to chat handle auto mute.
+		// IsAllowedToChat also informs the player about him being muted.
+		if(pPlayer && GameServer()->IsAllowedToChat(ofID))
+		{
+			IGameController::OnChatMessage(ofID, Mode, toID, pText);
+		}
 		return;
 	}
 
@@ -126,6 +133,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime");
 				GameServer()->SendServerMessage(ofID, "and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank ");
 				GameServer()->SendServerMessage(ofID, "you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
+				GameServer()->SendServerMessage(ofID, "This zCatch modification is being created by jxsl13.");
 			}
 			else if(tokens.at(0) == "rules")
 			{  
@@ -188,11 +196,11 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* pReason)
 {
 	// check voteban
-	int left = Server()->ClientVotebannedTime(ClientID);
-	if (left)
+	int TimeLeft = Server()->ClientVotebannedTime(ClientID);
+	if (TimeLeft > 0)
 	{
 		char aChatmsg[128];
-		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", left / 60, left % 60);
+		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", TimeLeft / 60, TimeLeft % 60);
 		GameServer()->SendServerMessage(ClientID, aChatmsg);
 		return false;
 	}
@@ -209,11 +217,11 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason)
 {
 	// check voteban
-	int left = Server()->ClientVotebannedTime(ClientID);
-	if (left)
+	int TimeLeft = Server()->ClientVotebannedTime(ClientID);
+	if (TimeLeft > 0)
 	{
 		char aChatmsg[128];
-		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", left / 60, left % 60);
+		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", TimeLeft / 60, TimeLeft % 60);
 		GameServer()->SendServerMessage(ClientID, aChatmsg);
 		return false;
 	}
@@ -358,11 +366,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// warmup
 	if (IsGameWarmup())
 	{	
-		if (g_Config.m_Debug)
-		{
-			dbg_msg("DEBUG", "Player %d joined the game.", player.GetCID());
-		}
-		
 		UpdateSkinsOf({player.GetCID()});
 		UpdateBroadcastOfEverybody();
 
@@ -371,6 +374,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		return;
 	}
 
+	// add tocaught players of dominatig player.
 	class CPlayer *pDominatingPlayer = ChooseDominatingPlayer(player.GetCID());
 
 	
@@ -394,7 +398,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 			// no chat announcements
 			// when switching game modes/states
 			// or other stuff.
-			dbg_msg("DEBUG", "Player silently joined the game.");
 			player.BeReleased(); // silent join
 		}
 	}
@@ -463,17 +466,9 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 		
 		// killed by enemy:
-
 		killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
-		dbg_assert(killer.IsNotCaught(), "killer is caught, but should not be");
-		dbg_assert(victim.IsCaught(), "victim is not caught, but should be");
-		
 		killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
-		dbg_assert(killer.IsNotCaught(), "killer is caught, but should not be");
-		dbg_assert(victim.IsNotCaught(), "victim is caught, but should not be");
 
-		dbg_msg("DEBUG", "Killer %d has killed %d players in a row.", killer.GetCID(), killer.GetNumCaughtPlayersInARow());
-		
 		// simply die & respawn
 		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
 	}
@@ -514,16 +509,12 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			GameServer()->SendServerMessage(victim.GetCID(), "Was it really necessary to kill yourself?");
 			break;
 		case WEAPON_GAME: // team change, etc.
-			if (g_Config.m_Debug)
-			{
-				dbg_msg("DEBUG", "ID: %d was killed by the game.", victim.GetCID());
-			}
+			// silent
 			break;
 		default:
 			break;
 		}
 	}
-
 
 	// send broadcast update to victim and killer
 	UpdateBroadcastOf({victim.GetCID(), killer.GetCID()});
@@ -618,12 +609,10 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 
 		// force player to spawn
 		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
-		// TODO: check if this here needs either skinupdates or brodcast updates
 		return;
 	}
 	
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
-	// TODO: check if this here needs either skinupdates or brodcast updates
 }
 
 

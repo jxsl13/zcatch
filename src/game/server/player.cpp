@@ -49,6 +49,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	UpdateSkinColors();
 	ResetStatistics();
 	m_DetailedServerMessages = false;
+	m_ChatTicks = 0;
 
 }
 
@@ -81,8 +82,10 @@ void CPlayer::Tick()
 		{
 			Anticamper();
 		}
-		
 	}
+
+	if(m_ChatTicks > 0)
+		m_ChatTicks--;
 
 	// do latency stuff
 	{

@@ -117,14 +117,19 @@ public:
 	// how many players were killed in a row.
 	int GetNumCaughtPlayersInARow();
 
+	// set my state to released, doesn't remove from
+	// possible caught list of another player
 	bool BeReleased(int reason=REASON_NONE);
 	
-
+	// handle auto joining spectators flag
 	bool GetWantsToJoinSpectators();
 	void SetWantsToJoinSpectators();
 	void ResetWantsToJoinSpectators();
 
 	void UpdateSkinColors();
+
+	// Anti chat spam
+	int m_ChatTicks;
 
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player

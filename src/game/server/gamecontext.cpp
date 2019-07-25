@@ -22,6 +22,8 @@
 #include "gamecontext.h"
 #include "player.h"
 
+#include <algorithm>
+
 enum
 {
 	RESET,
@@ -1532,6 +1534,12 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("remove_vote", "s", CFGFLAG_SERVER, ConRemoveVote, this, "remove a voting option");
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
+
+	Console()->Register("mute", "ii", CFGFLAG_SERVER, ConMute, this, "Mutes a player for x sec");
+	Console()->Register("unmute", "i", CFGFLAG_SERVER, ConUnmuteID, this, "Unmutes a player by its id");
+	Console()->Register("unmuteid", "i", CFGFLAG_SERVER, ConUnmuteID, this, "Unmutes a player by its client id");
+	Console()->Register("unmuteip", "i", CFGFLAG_SERVER, ConUnmuteIP, this, "Removes a mute by its index");
+	Console()->Register("mutes", "", CFGFLAG_SERVER, ConMutes, this, "Show all mutes");
 }
 
 void CGameContext::OnInit()
@@ -1675,3 +1683,149 @@ bool CGameContext::IsVanillaGameType() const
 		str_comp_nocase(pGameType, "TDM") == 0;
 }
 IGameServer *CreateGameServer() { return new CGameContext; }
+
+void CGameContext::AddMute(const char* pIP, int Secs)
+{
+	int Pos = IsMuted(pIP);
+	if(Pos > -1)
+		m_Mutes.at(Pos).m_ExpiresTick = Server()->TickSpeed() * Secs + Server()->Tick();	// overwrite mute
+	else
+		m_Mutes.push_back({ pIP, Server()->TickSpeed() * Secs + Server()->Tick() });
+}
+
+void CGameContext::AddMute(int ClientID, int Secs, bool Auto)
+{
+	char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+	AddMute(aAddrStr, Secs);
+	
+	char aBuf[128];
+	if(Secs > 0)
+		str_format(aBuf, sizeof(aBuf), "%s has been %smuted for %d:%02d min.", Server()->ClientName(ClientID), Auto ? "auto-" : "", Secs/60, Secs%60);
+	else
+		str_format(aBuf, sizeof(aBuf), "%s has been unmuted.", Server()->ClientName(ClientID));
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	SendServerMessage(-1, aBuf);
+}
+
+int CGameContext::IsMuted(const char *pIP)
+{
+	CleanMutes();
+	int Pos = -1;
+
+	for (size_t i = 0; i < m_Mutes.size(); i++)
+	{
+		CMute& Mute = m_Mutes.at(i);
+		if(!str_comp_num(pIP, Mute.m_aIP, sizeof(Mute.m_aIP)))
+		{
+			Pos = i;
+			break;
+		}
+	}
+	
+	return Pos;
+}
+
+int CGameContext::IsMuted(int ClientID)
+{
+	char aIP[NETADDR_MAXSTRSIZE] = {0};
+	Server()->GetClientAddr(ClientID, aIP, sizeof(aIP));
+	return IsMuted(aIP);
+}
+
+void CGameContext::CleanMutes()
+{
+	int CurrentTick = Server()->Tick();
+	auto it = std::remove_if(m_Mutes.begin(), m_Mutes.end(), [CurrentTick](CMute& lookedAtMute) -> bool
+	{
+		// remove from mutes if expiration tick is reached.
+		return lookedAtMute.m_ExpiresTick < CurrentTick;
+	});
+	m_Mutes.erase(it, m_Mutes.end());
+}
+
+void CGameContext::ConMute(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int CID = pResult->GetInteger(0);
+	if(CID < 0 || CID >= MAX_CLIENTS || !pSelf->m_apPlayers[CID])
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+	else
+		pSelf->AddMute(CID, pResult->GetInteger(1));
+}
+
+void CGameContext::ConMutes(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	char aBuf[128];
+	int Sec, Size = pSelf->m_Mutes.size();
+	pSelf->CleanMutes();
+
+	for(int i = 0; i < Size; i++)
+	{
+		Sec = (pSelf->m_Mutes.at(i).m_ExpiresTick - pSelf->Server()->Tick())/pSelf->Server()->TickSpeed();
+		str_format(aBuf, sizeof(aBuf), "#%d: %s for %d:%02d min", i, pSelf->m_Mutes.at(i).m_aIP, Sec/60, Sec%60);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	}
+	str_format(aBuf, sizeof(aBuf), "%d mute(s)", Size);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);	
+}
+
+void CGameContext::ConUnmuteID(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int CID = pResult->GetInteger(0);
+	if(CID < 0 || CID >= MAX_CLIENTS || !pSelf->m_apPlayers[CID])
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+	}
+	else
+		pSelf->AddMute(CID, 0);
+}
+
+void CGameContext::ConUnmuteIP(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int MuteID = pResult->GetInteger(0);
+	char aBuf[128];
+	
+	if(MuteID < 0 || MuteID >= static_cast<int>(pSelf->m_Mutes.size()) || pSelf->IsMuted(pSelf->m_Mutes.at(MuteID).m_aIP) == -1)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Mute not found");
+	}
+	else
+	{
+		str_format(aBuf, sizeof(aBuf), "unmuted %s", pSelf->m_Mutes.at(MuteID).m_aIP);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		pSelf->AddMute(pSelf->m_Mutes.at(MuteID).m_aIP, 0);
+	}
+}
+
+// returns whether the player is allowed to chat, informs the player and mutes him if needed
+bool CGameContext::IsAllowedToChat(int ClientID)
+{
+	CPlayer* pPlayer = m_apPlayers[ClientID];
+	
+	int i = IsMuted(ClientID);
+	if(i > -1)
+	{
+		char aBuf[48];
+		int ExpiresSeconds = (m_Mutes.at(i).m_ExpiresTick - Server()->Tick())/Server()->TickSpeed();
+		str_format(aBuf, sizeof(aBuf), "You are muted for %d:%02d min.", ExpiresSeconds/60, ExpiresSeconds%60);
+		SendServerMessage(ClientID, aBuf);
+		return false;
+	}
+	//mute the player if he's spamming
+	else if(g_Config.m_SvMuteDuration)
+	{
+		pPlayer->m_ChatTicks += g_Config.m_SvChatValue;
+		if (pPlayer->m_ChatTicks > g_Config.m_SvChatThreshold)
+		{
+			// auto mute player.
+			AddMute(ClientID, g_Config.m_SvMuteDuration, true);
+			pPlayer->m_ChatTicks = 0;
+			return false;
+		}
+	}
+	return true;
+}

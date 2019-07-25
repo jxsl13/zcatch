@@ -14,6 +14,8 @@
 #include "gamecontroller.h"
 #include "gameworld.h"
 
+#include <vector>
+
 /*
 	Tick
 		Game Context (CGameContext::tick)
@@ -65,6 +67,12 @@ class CGameContext : public IGameServer
 	static void ConchainSpecialMotdupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSettingUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	// mutes
+	static void ConMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnmuteID(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnmuteIP(IConsole::IResult *pResult, void *pUserData);
+	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
@@ -188,6 +196,32 @@ public:
 	virtual const char *NetVersionHashReal() const;
 
 	bool IsVanillaGameType() const;
+
+
+	// mutes
+	struct CMute
+	{
+		CMute(const char* pIP, int ExpirationTick) : m_ExpiresTick{ExpirationTick}{
+			str_copy(m_aIP, pIP, sizeof(m_aIP));
+		};
+		char m_aIP[NETADDR_MAXSTRSIZE];
+		int m_ExpiresTick;
+	};
+
+	std::vector<CMute> m_Mutes;
+	void AddMute(const char* pIP, int Secs);
+	void AddMute(int ClientID, int Secs, bool Auto = false);
+	
+	// returns -1 if is not mutes, otherwise returns the 
+	// index of position, at which to find the mute
+	int IsMuted(const char *pIP);
+	int IsMuted(int ClientID);
+
+	// remove expired mutes
+	void CleanMutes();
+
+	// handles auto mute & checks whether a player is muted.
+	bool IsAllowedToChat(int ClientID);
 };
 
 inline int64 CmaskAll() { return -1; }
