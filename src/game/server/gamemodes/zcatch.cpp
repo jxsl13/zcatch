@@ -160,7 +160,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 			}
 			else
 			{
-				return;
+				throw std::invalid_argument("");
 			}
 		}
 		catch (std::invalid_argument &e)
