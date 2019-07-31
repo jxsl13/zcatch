@@ -2,7 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
-#include <set>
 
 #include <engine/console.h>
 #include <engine/server.h>
@@ -15,6 +14,7 @@
 #include "gameworld.h"
 
 #include <vector>
+#include <set>
 
 /*
 	Tick
@@ -83,7 +83,7 @@ class CGameContext : public IGameServer
 	// We want to minimize the number of iterations, that are needed to find all
 	// valid players. Thus every valid player is added at join time to the set
 	// and removed when leaving.
-	std::set<int> m_PlayerIDs;
+	std::vector<int> m_PlayerIDs;
 
 
 public:
@@ -234,7 +234,7 @@ public:
 
 	void AddPlayer(int ClientID);
 	void RemovePlayer(int ClientID);
-	const std::set<int>& PlayerIDs();
+	const std::vector<int>& PlayerIDs();
 };
 
 inline int64 CmaskAll() { return -1; }

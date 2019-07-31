@@ -1833,15 +1833,18 @@ bool CGameContext::IsAllowedToChat(int ClientID)
 
 void CGameContext::AddPlayer(int ClientID) 
 {
-	m_PlayerIDs.insert(ClientID); 
+
+	m_PlayerIDs.insert(m_PlayerIDs.end(), ClientID); 
+	std::sort(m_PlayerIDs.begin(), m_PlayerIDs.end());
 }
 
 void CGameContext::RemovePlayer(int ClientID) 
 { 
-	m_PlayerIDs.erase(ClientID); 
+	m_PlayerIDs.erase(std::remove(m_PlayerIDs.begin(), m_PlayerIDs.end(), ClientID), m_PlayerIDs.end());
+	std::sort(m_PlayerIDs.begin(), m_PlayerIDs.end());
 }
 
-const std::set<int>& CGameContext::PlayerIDs() 
+const std::vector<int>& CGameContext::PlayerIDs() 
 { 
 	return m_PlayerIDs; 
 }
