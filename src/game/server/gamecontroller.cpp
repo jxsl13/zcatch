@@ -58,7 +58,7 @@ void IGameController::DoActivityCheck()
 	if(g_Config.m_SvInactiveKickTime == 0)
 		return;
 
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(GameServer()->m_apPlayers[i] && !GameServer()->m_apPlayers[i]->IsDummy() && (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS || g_Config.m_SvInactiveKick > 0) &&
 			!Server()->IsAuthed(i) && (GameServer()->m_apPlayers[i]->m_InactivityTickCounter > g_Config.m_SvInactiveKickTime*Server()->TickSpeed()*60))
@@ -82,7 +82,7 @@ void IGameController::DoActivityCheck()
 					{
 						// move player to spectator if the reserved slots aren't filled yet, kick him otherwise
 						int Spectators = 0;
-						for(int j = 0; j < MAX_CLIENTS; ++j)
+						for(int j : GameServer()->PlayerIDs())
 							if(GameServer()->m_apPlayers[j] && GameServer()->m_apPlayers[j]->GetTeam() == TEAM_SPECTATORS)
 								++Spectators;
 						if(Spectators >= Server()->MaxClients() - g_Config.m_SvPlayerSlots)
@@ -104,7 +104,7 @@ void IGameController::DoActivityCheck()
 
 bool IGameController::GetPlayersReadyState(int WithoutID)
 {
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(i == WithoutID)
 			continue; // skip
@@ -117,7 +117,7 @@ bool IGameController::GetPlayersReadyState(int WithoutID)
 
 void IGameController::SetPlayersReadyState(bool ReadyState)
 {
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && (ReadyState || !GameServer()->m_apPlayers[i]->m_DeadSpecMode))
 			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = ReadyState;
@@ -165,7 +165,7 @@ void IGameController::DoTeamBalance()
 	float aPlayerScore[MAX_CLIENTS] = {0.0f};
 
 	// gather stats
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 		{
@@ -183,7 +183,7 @@ void IGameController::DoTeamBalance()
 	{
 		CPlayer *pPlayer = 0;
 		float ScoreDiff = aTeamScore[BiggerTeam];
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(!GameServer()->m_apPlayers[i] || !CanBeMovedOnBalance(i))
 				continue;
@@ -235,7 +235,7 @@ int IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int
 	// update spectator modes for dead players in survival
 	if(m_GameFlags&GAMEFLAG_SURVIVAL)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
 				GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
 	}
@@ -411,7 +411,7 @@ void IGameController::CheckReadyStates(int WithoutID)
 
 void IGameController::OnReset()
 {
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(GameServer()->m_apPlayers[i])
 		{
@@ -451,7 +451,7 @@ bool IGameController::DoWincheckMatch()
 		// gather some stats
 		int Topscore = 0;
 		int TopscoreCount = 0;
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i])
 			{
@@ -514,7 +514,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 				// enable respawning in survival when activating warmup
 				if(m_GameFlags&GAMEFLAG_SURVIVAL)
 				{
-					for(int i = 0; i < MAX_CLIENTS; ++i)
+					for(int i : GameServer()->PlayerIDs())
 						if(GameServer()->m_apPlayers[i])
 							GameServer()->m_apPlayers[i]->m_RespawnDisabled = false;
 				}
@@ -553,7 +553,7 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 				// enable respawning in survival when activating warmup
 				if(m_GameFlags&GAMEFLAG_SURVIVAL)
 				{
-					for(int i = 0; i < MAX_CLIENTS; ++i)
+					for(int i : GameServer()->PlayerIDs())
 						if(GameServer()->m_apPlayers[i])
 							GameServer()->m_apPlayers[i]->m_RespawnDisabled = false;
 				}
@@ -907,7 +907,7 @@ void IGameController::UpdateGameInfo(int ClientID)
 
 	if(ClientID == -1)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(!GameServer()->m_apPlayers[i] || !Server()->ClientIngame(i))
 				continue;

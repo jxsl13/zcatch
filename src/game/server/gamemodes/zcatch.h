@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_GAMEMODES_ZCATCH_H
 #define GAME_SERVER_GAMEMODES_ZCATCH_H
 #include <initializer_list>
+#include <set>
 #include <game/server/gamecontroller.h>
 
 class CGameControllerZCATCH : public IGameController

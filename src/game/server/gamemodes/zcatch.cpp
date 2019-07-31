@@ -243,7 +243,7 @@ void CGameControllerZCATCH::EndRound()
 	
 	CPlayer *pPlayer = nullptr;
 
-	for (int ID = 0; ID < MAX_CLIENTS; ID++)
+	for (int ID : GameServer()->PlayerIDs())
 	{
 		pPlayer = GameServer()->m_apPlayers[ID];
 		if (pPlayer)
@@ -266,7 +266,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 	if(m_GameInfo.m_TimeLimit > 0 && (Server()->Tick()-m_GameStartTick) >= m_GameInfo.m_TimeLimit*Server()->TickSpeed()*60)
 	{
 		// check for time based win
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->IsNotCaught())
 				GameServer()->m_apPlayers[i]->m_Score++;
@@ -283,7 +283,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 		m_PreviousIngamePlayerCount = m_IngamePlayerCount;
 		m_IngamePlayerCount = 0;
 
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i])
 			{
@@ -545,7 +545,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	// update spectator modes for dead players in survival
 	if(m_GameFlags&GAMEFLAG_SURVIVAL)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
 				GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
 	}
@@ -676,7 +676,7 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 	char aBuf[32];
 	int enemiesLeft = 0;
 
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	for (int i : GameServer()->PlayerIDs())
 	{
 		pTmpPlayer = GameServer()->m_apPlayers[i];
 		if (pTmpPlayer)
@@ -721,7 +721,7 @@ void CGameControllerZCATCH::RefreshBroadcast()
 	char aBuf[32];
 	int enemiesLeft = 0;
 
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	for (int i : GameServer()->PlayerIDs())
 	{
 		pTmpPlayer = GameServer()->m_apPlayers[i];
 
@@ -755,7 +755,7 @@ void CGameControllerZCATCH::RefreshBroadcast()
 
 void CGameControllerZCATCH::UpdateSkinsOf(std::initializer_list<int> IDs)
 {
-	for (int toID = 0; toID < MAX_CLIENTS; toID++)
+	for (int toID : GameServer()->PlayerIDs())
 	{
 		if (GameServer()->m_apPlayers[toID])
 		{
@@ -770,12 +770,12 @@ void CGameControllerZCATCH::UpdateSkinsOf(std::initializer_list<int> IDs)
 
 void CGameControllerZCATCH::UpdateSkinsOfEverybody()
 {
-	for (int toID = 0; toID < MAX_CLIENTS; toID++)
+	for (int toID : GameServer()->PlayerIDs())
 	{
 		if (GameServer()->m_apPlayers[toID])
 		{
 			// send skin update message of id to everyone
-			for (int ofID = 0; ofID < MAX_CLIENTS; ofID++)
+			for (int ofID : GameServer()->PlayerIDs())
 			{
 				if (GameServer()->m_apPlayers[ofID])
 				{
@@ -815,7 +815,7 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 	int tmpMaxCaughtPlayers = -1;
 
 	// find number of catches of dominating player
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	for (int i : GameServer()->PlayerIDs())
 	{
 		if (excludeID == i)
 			continue;
@@ -839,7 +839,7 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 	pTmpPlayer = nullptr;
 
 	// find all players with the same catched players streak
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	for (int i : GameServer()->PlayerIDs())
 	{
 		pTmpPlayer = GameServer()->m_apPlayers[i];
 		// totalcaughtplayers = currently caught + those who left while being caught.

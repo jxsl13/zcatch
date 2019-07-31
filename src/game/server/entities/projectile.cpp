@@ -132,7 +132,7 @@ void CProjectile::FillValidTargets()
 	{	
 		class CPlayer *pPlayer;
 		int tmpID;
-		for (int i = 0; i < MAX_CLIENTS; i++)
+		for (int i : pGameServer->PlayerIDs())
 		{
 			pPlayer = pGameServer->m_apPlayers[i];
 

@@ -78,6 +78,14 @@ class CGameContext : public IGameServer
 	void Construct(int Resetting);
 
 	bool m_Resetting;
+
+
+	// We want to minimize the number of iterations, that are needed to find all
+	// valid players. Thus every valid player is added at join time to the set
+	// and removed when leaving.
+	std::set<int> m_PlayerIDs;
+
+
 public:
 	IServer *Server() const { return m_pServer; }
 	class IConsole *Console() { return m_pConsole; }
@@ -222,6 +230,11 @@ public:
 
 	// handles auto mute & checks whether a player is muted.
 	bool IsAllowedToChat(int ClientID);
+
+
+	void AddPlayer(int ClientID);
+	void RemovePlayer(int ClientID);
+	const std::set<int>& PlayerIDs();
 };
 
 inline int64 CmaskAll() { return -1; }

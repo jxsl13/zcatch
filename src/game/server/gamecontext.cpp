@@ -256,7 +256,7 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 		To = m_apPlayers[ChatterClientID]->GetTeam();
 
 		// send to the clients
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		for(int i : PlayerIDs())
 		{
 			if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() == To)
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
@@ -364,7 +364,7 @@ void CGameContext::StartVote(const char *pDesc, const char *pCommand, const char
 
 	// reset votes
 	m_VoteEnforce = VOTE_ENFORCE_UNKNOWN;
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : PlayerIDs())
 	{
 		if(m_apPlayers[i])
 		{
@@ -491,7 +491,7 @@ void CGameContext::SwapTeams()
 
 	SendGameMsg(GAMEMSG_TEAM_SWAP, -1);
 
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : PlayerIDs())
 	{
 		if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			m_pController->DoTeamChange(m_apPlayers[i], m_apPlayers[i]->GetTeam()^1, false);
@@ -512,7 +512,7 @@ void CGameContext::OnTick()
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : PlayerIDs())
 	{
 		if(m_apPlayers[i])
 		{
@@ -534,7 +534,7 @@ void CGameContext::OnTick()
 			{
 				// count votes
 				char aaBuf[MAX_CLIENTS][NETADDR_MAXSTRSIZE] = {{0}};
-				for(int i = 0; i < MAX_CLIENTS; i++)
+				for(int i : PlayerIDs())
 					if(m_apPlayers[i])
 						Server()->GetClientAddr(i, aaBuf[i], NETADDR_MAXSTRSIZE);
 				bool aVoteChecked[MAX_CLIENTS] = {0};
@@ -665,7 +665,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	}
 
 
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : PlayerIDs())
 	{
 		if(i == ClientID || !m_apPlayers[i] || (!Server()->ClientIngame(i) && !m_apPlayers[i]->IsDummy()))
 			continue;
@@ -1089,7 +1089,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			}
 
 			// update all clients
-			for(int i = 0; i < MAX_CLIENTS; ++i)
+			for(int i : PlayerIDs())
 			{
 				if(!m_apPlayers[i] || (!Server()->ClientIngame(i) && !m_apPlayers[i]->IsDummy()) || Server()->GetClientVersion(i) < MIN_SKINCHANGE_CLIENTVERSION)
 					continue;
@@ -1257,7 +1257,7 @@ void CGameContext::ConSetTeamAll(IConsole::IResult *pResult, void *pUserData)
 
 	pSelf->SendGameMsg(GAMEMSG_TEAM_ALL, Team, -1);
 
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : pSelf->PlayerIDs())
 		if(pSelf->m_apPlayers[i] && pSelf->m_pController->CanJoinTeam(Team, i))
 			pSelf->m_pController->DoTeamChange(pSelf->m_apPlayers[i], Team, false);
 }
@@ -1278,7 +1278,7 @@ void CGameContext::ConShuffleTeams(IConsole::IResult *pResult, void *pUserData)
 	int PlayerTeam = 0;
 	int aPlayer[MAX_CLIENTS];
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : pSelf->PlayerIDs())
 		if(pSelf->m_apPlayers[i] && pSelf->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			aPlayer[PlayerTeam++]=i;
 
@@ -1641,7 +1641,7 @@ void CGameContext::OnSnap(int ClientID)
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int i : PlayerIDs())
 	{
 		if(m_apPlayers[i])
 			m_apPlayers[i]->Snap(ClientID);
@@ -1828,4 +1828,20 @@ bool CGameContext::IsAllowedToChat(int ClientID)
 		}
 	}
 	return true;
+}
+
+
+void CGameContext::AddPlayer(int ClientID) 
+{
+	m_PlayerIDs.insert(ClientID); 
+}
+
+void CGameContext::RemovePlayer(int ClientID) 
+{ 
+	m_PlayerIDs.erase(ClientID); 
+}
+
+const std::set<int>& CGameContext::PlayerIDs() 
+{ 
+	return m_PlayerIDs; 
 }

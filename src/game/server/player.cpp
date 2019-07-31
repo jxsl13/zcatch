@@ -38,6 +38,9 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_DeadSpecMode = false;
 	m_Spawning = false;
 
+	// Optimizations
+	m_pGameServer->AddPlayer(m_ClientID);
+
 	// zCatch
 	m_CaughtBy = NOT_CAUGHT;
 	m_CaughtReason = REASON_NONE;
@@ -55,6 +58,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 CPlayer::~CPlayer()
 {
+	m_pGameServer->RemovePlayer(m_ClientID);
 	delete m_pCharacter;
 	m_pCharacter = 0;
 }
@@ -156,7 +160,7 @@ void CPlayer::PostTick()
 	// update latency value
 	if(m_PlayerFlags&PLAYERFLAG_SCOREBOARD)
 	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 				m_aActLatency[i] = GameServer()->m_apPlayers[i]->m_Latency.m_Min;
@@ -244,7 +248,7 @@ void CPlayer::OnDisconnect()
 	if(m_Team != TEAM_SPECTATORS)
 	{
 		// update spectator modes
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_SpecMode == SPEC_PLAYER && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
 			{
@@ -469,7 +473,7 @@ void CPlayer::UpdateDeadSpecMode()
 		return;
 
 	// find player to follow
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i : GameServer()->PlayerIDs())
 	{
 		if(GameServer()->m_apPlayers[i] && DeadCanFollow(GameServer()->m_apPlayers[i]))
 		{
@@ -499,7 +503,7 @@ void CPlayer::SetTeam(int Team, bool DoChatMsg)
 	if(Team == TEAM_SPECTATORS)
 	{
 		// update spectator modes
-		for(int i = 0; i < MAX_CLIENTS; ++i)
+		for(int i : GameServer()->PlayerIDs())
 		{
 			if(GameServer()->m_apPlayers[i] && GameServer()-> m_apPlayers[i]->m_SpecMode == SPEC_PLAYER && GameServer()->m_apPlayers[i]->m_SpectatorID == m_ClientID)
 			{
@@ -773,7 +777,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 				// our updated skin color in here.
 				if (reason == REASON_PLAYER_RELEASED || reason == REASON_PLAYER_WARMUP_RELEASED)
 				{
-					for (int toID = 0; toID < MAX_CLIENTS; toID++)
+					for (int toID : GameServer()->PlayerIDs())
 					{
 						if (GameServer()->m_apPlayers[toID])
 						{
