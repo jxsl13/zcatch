@@ -58,6 +58,9 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 CPlayer::~CPlayer()
 {
+	std::lock_guard<std::mutex> lock(m_PreventDestruction);
+
+	// player doesn't exist -> no need to iterate over that player anymore.
 	m_pGameServer->RemovePlayer(m_ClientID);
 	delete m_pCharacter;
 	m_pCharacter = 0;
@@ -79,7 +82,7 @@ void CPlayer::Tick()
 		}
 		else if(IsNotCaught())
 		{
-			m_TicksAlive++;
+			m_TicksIngame++;
 		}
 
 		if (g_Config.m_SvAnticamper > 0)
@@ -1018,10 +1021,13 @@ void CPlayer::SetWantsToJoinSpectators()
 
 void CPlayer::ResetStatistics()
 {
+	m_Score = 0;
 	m_Kills = 0;
 	m_Deaths = 0;
 	m_TicksCaught = 0;
-	m_TicksAlive = 0;
+	m_TicksIngame = 0;
+	m_Shots = 0;
+	m_Fails = 0;
 }
 
 unsigned int CPlayer::GetColor()

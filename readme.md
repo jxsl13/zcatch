@@ -29,6 +29,10 @@ Building on Linux or macOS
 
 Installing dependencies
 -----------------------
+    ## Requirements: gcc >= 8.10 (supporting C++17) / macOS usually ships with the latest clang version.
+    ## It might also be necessary to add these two lines to your .bashrc/.zshrc etc.
+    export PATH=/usr/local/gcc-8.10/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/gcc-8.10/lib64:$LD_LIBRARY_PATH
 
     # Debian/Ubuntu
     sudo apt install build-essential cmake git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3
@@ -46,10 +50,20 @@ Installing dependencies
 Downloading repository
 ----------------------
 
-    git clone https://github.com/teeworlds/teeworlds --recurse-submodules
-    cd teeworlds
+    git clone https://github.com/jxsl13/zcatch --recurse-submodules
+    cd zcatch
+
+    # Checkout the 0.7.x branch with:
+    # git checkout zCatch-0.7.x
 
     # If you already cloned the repository before, use:
+    # git submodule update --init
+    # in order to download all external libraries
+
+    # Then go into:
+    # cd src/engine/external/cpp_redis
+
+    # And initialize that repository's submodules:
     # git submodule update --init
 
 
@@ -59,7 +73,11 @@ Building
     mkdir -p build
     cd build
     cmake ..
-    make
+    make -j4 zcatch_srv
+
+    If your latest GCC version has been installed in a non-default path, 
+    you can set take that into account by using instead of "cmake .."
+    something like "cmake .. -DCMAKE_CXX_COMPILER=g++-8.10 -DCMAKE_CC_COMPILER=gcc-8.10"
 
 On subsequent builds, you only have to repeat the `make` step.
 

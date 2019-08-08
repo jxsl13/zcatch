@@ -5,11 +5,13 @@
 #include <initializer_list>
 #include <set>
 #include <game/server/gamecontroller.h>
+#include <game/server/gamemodes/zcatch/rankingserver.h>
 
 class CGameControllerZCATCH : public IGameController
 {
 public:
 	CGameControllerZCATCH(class CGameContext *pGameServer);
+	~CGameControllerZCATCH();
 
 	// game
 	virtual void Tick();
@@ -25,6 +27,7 @@ public:
 	virtual void DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg=true);
 
 	virtual void EndRound();
+
 
 	/**
 	 * Intercept chat messages in order to respond to chat commands
@@ -89,6 +92,34 @@ private:
 	// refresh time in ticks, after how many ticks 
 	// the broadcast refresh is being resent.
 	int m_BroadcastRefreshTime;
+
+
+	// an encapsulated class, that handles the database connection.
+	CRankingServer* m_pRankingServer;
+
+	// initializes ranking server
+	void InitRankingServer();
+
+	// fill s player stats with data from the database
+	void RetrieveRankingData(int ofID);
+
+	// saves player data to the database
+	void SaveRankingData(int ofID);
+
+	// depending on the current mod, grenade, laser, etc, 
+	// a prefix is created for the specific database columns, fields, etc.
+	std::string GetDatabasePrefix();
+
+
+	// if a player requests data from the database, the retrieved messages are firstly pu into this queue
+	// in order for them to be handled in the main thread. As sending packages to specific clients can only be done in
+	// the main thread, because teeworlds does not support multithreading on the server side.
+	std::mutex m_MessageQueueMutex;
+	std::vector<std::pair<int, std::vector<std::string>> > m_MessageQueue;
+
+	void ProcessMessageQueue();
+
+	void RequestRankingData(int requestingID, std::string ofNickname);
 
 };
 

@@ -442,6 +442,8 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / 1000;
+
+	GetPlayer()->m_Shots++;
 }
 
 void CCharacter::HandleWeapons()

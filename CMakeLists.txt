@@ -52,6 +52,25 @@ include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(CheckSymbolExists)
 
+
+if(MSVC)
+  # MSVC PART NOT TESTED
+  CHECK_CXX_COMPILER_FLAG("/std:c++17" COMPILER_SUPPORTS_CXX17)
+  if(COMPILER_SUPPORTS_CXX17)
+	  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+  else()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
+  endif()
+else(MSVC)
+  CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
+  if(COMPILER_SUPPORTS_CXX17)
+	  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+  else()
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
+  endif()
+endif(MSVC)
+
+
 check_symbol_exists(__i386 "" TARGET_ARCH_X86_i386)
 if(TARGET_ARCH_X86_i386)
   set(TARGET_ARCH x86)
@@ -450,6 +469,17 @@ if(NOT(GTEST_FOUND) AND DOWNLOAD_GTEST)
     endif()
   endif()
 endif()
+
+########################################################################
+# LIBRARY SUBDIRECTORIES
+########################################################################
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
+
+target_include_directories(cpp_redis PUBLIC 
+    ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
+    ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
+)
 
 ########################################################################
 # DEPENDENCY COMPILATION
@@ -1506,15 +1536,21 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gamemodes/tdm.h
   gamemodes/zcatch.cpp
   gamemodes/zcatch.h
+  gamemodes/zcatch/playerstats.cpp
+  gamemodes/zcatch/playerstats.h
+  gamemodes/zcatch/rankingserver.cpp
+  gamemodes/zcatch/rankingserver.h
   gameworld.cpp
   gameworld.h
   player.cpp
   player.h
 )
+
 set(GAME_GENERATED_SERVER
   src/generated/server_data.cpp
   src/generated/server_data.h
 )
+
 set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER})
 if(TARGET_OS STREQUAL "windows")
   set(SERVER_ICON "other/icons/${SERVER_EXECUTABLE}.rc")
@@ -1523,10 +1559,14 @@ else()
 endif()
 
 # Libraries
-set(LIBS_SERVER ${LIBS})
+set(LIBS_SERVER 
+  ${LIBS}
+  cpp_redis
+)
 
 # Target
 set(TARGET_SERVER ${SERVER_EXECUTABLE})
+
 add_executable(${TARGET_SERVER}
   ${DEPS}
   ${SERVER_SRC}
@@ -1534,7 +1574,18 @@ add_executable(${TARGET_SERVER}
   $<TARGET_OBJECTS:engine-shared>
   $<TARGET_OBJECTS:game-shared>
 )
+
+target_compile_features(${TARGET_SERVER} PRIVATE cxx_std_17)
+
+set_target_properties(${TARGET_SERVER} PROPERTIES
+  CXX_STANDARD 17
+  CXX_STANDARD_REQUIRED ON
+)
+
+
 target_link_libraries(${TARGET_SERVER} ${LIBS_SERVER})
+
+
 list(APPEND TARGETS_OWN ${TARGET_SERVER})
 list(APPEND TARGETS_LINK ${TARGET_SERVER})
 
