@@ -121,6 +121,8 @@ private:
 
 	void RequestRankingData(int requestingID, std::string ofNickname);
 
+	void RequestTopRankingData(int requestingID, std::string key);
+
 };
 
 #endif

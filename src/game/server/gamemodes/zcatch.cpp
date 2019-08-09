@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 
 CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
@@ -82,11 +83,11 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	{
 		try
 		{
-			if(tokens.at(0) == "welcome")
+			if(tokens[0] == "welcome")
 			{
 				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
 			}
-			else if (tokens.at(0) == "help")
+			else if (tokens[0] == "help")
 			{
 				if (size == 1)
 				{
@@ -152,14 +153,14 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				}
 				
 			}
-			else if (tokens.at(0) == "info" && size == 1)
+			else if (tokens[0] == "info" && size == 1)
 			{
 				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime");
 				GameServer()->SendServerMessage(ofID, "and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank ");
 				GameServer()->SendServerMessage(ofID, "you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
 				GameServer()->SendServerMessage(ofID, "This zCatch modification is being created by jxsl13.");
 			}
-			else if(tokens.at(0) == "rules")
+			else if(tokens[0] == "rules")
 			{  
 				GameServer()->SendServerMessage(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is");
 				GameServer()->SendServerMessage(ofID, "considered as caught. If you die, all of you caught players are released.");
@@ -167,7 +168,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				GameServer()->SendServerMessage(ofID, "As a measure of fair play, you are able to release your caught players manually in reverse order.");
 				GameServer()->SendServerMessage(ofID, "Releasing players is optional in zCatch. Type '/help release' for more information.");
 			}
-			else if(tokens.at(0) == "release" && size == 1)
+			else if(tokens[0] == "release" && size == 1)
 			{
 				class CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
 				if(pPlayer)
@@ -175,7 +176,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 					pPlayer->ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_RELEASED, true);
 				}
 			}
-			else if(tokens.at(0) == "allmessages")
+			else if(tokens[0] == "allmessages")
 			{
 				class CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
 				bool isAlreadyDetailed = pPlayer->m_DetailedServerMessages;
@@ -190,24 +191,37 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 					GameServer()->SendServerMessage(ofID, "Enabled detailed server messages.");
 				}
 			}
-			else if(tokens.at(0) == "rank" && size > 1)
+			else if(tokens[0] == "rank")
 			{
-				// basically a nickname can caontain whitespaces, thus we concatenate all
-				// of the tokens that follow the first one
-
-				std::stringstream ss;
-				for (int i = 1; i < size; i++)
+				if(size > 1)
 				{
-					ss << tokens[i];
+					// basically a nickname can caontain whitespaces, thus we concatenate all
+					// of the tokens that follow the first one
 
-					// previously we split the tokens removing single whitespace
-					// now we need to add possible in nickname whitespaces back between the tokens.
-					if(i < size - 1)
-						ss << " "; 
+					std::stringstream ss;
+					for (int i = 1; i < size; i++)
+					{
+						ss << tokens[i];
+
+						// previously we split the tokens removing single whitespace
+						// now we need to add possible in nickname whitespaces back between the tokens.
+						if(i < size - 1)
+							ss << " "; 
+					}
+
+					// ofID requests the data of nickname(ss.str())
+					RequestRankingData(ofID, ss.str());
 				}
-
-				// ofID requests the data of nickname(ss.str())
-				RequestRankingData(ofID, ss.str());
+				else
+				{
+					// size == 1
+					// request your own ranking data
+					RequestRankingData(ofID, {Server()->ClientName(ofID)});
+				}
+			}
+			else if (tokens[0] == "top")
+			{
+				RequestTopRankingData(ofID, "Score");
 			}
 			else
 			{
@@ -289,10 +303,11 @@ void CGameControllerZCATCH::EndRound()
 	for (int ID : GameServer()->PlayerIDs())
 	{
 		pPlayer = GameServer()->m_apPlayers[ID];
-		if (pPlayer)
+		if (pPlayer && pPlayer->GetTeam() != TEAM_SPECTATORS)
 		{
 
 			ShowPlayerStatistics(pPlayer);
+			SaveRankingData(ID);
 
 			// do cleanup
 			pPlayer->ReleaseAllCaughtPlayers(CPlayer::REASON_EVERYONE_RELEASED);
@@ -505,6 +520,7 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 
 int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *pKiller, int Weapon)
 {
+	
 	CPlayer& victim = (*pVictim->GetPlayer());
 	CPlayer& killer = (*pKiller);
 	dbg_assert(victim.IsNotCaught(), "victim is caught even tho it should not be caught.");
@@ -514,14 +530,39 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	{
 		// not killed by enemy.
 		if(victim.GetCID() == killer.GetCID())
-			return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
-		
-		// killed by enemy:
-		killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
-		killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
+		{
+			if(Weapon == WEAPON_SELF)
+			{
+				victim.m_RespawnTick = Server()->Tick()+Server()->TickSpeed() * 3;
+				victim.m_Deaths++;
+			}
+			else if(Weapon == WEAPON_WORLD)
+			{
+				// fell into death tiles
+				victim.m_Fails++;
+				return 0;	
+			}
+			else if (Weapon == WEAPON_GAME)
+			{
+				return 0;
+			}
+		}
+		else
+		{
+			// killed by enemy:
+			killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
+			killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
+		}
 
-		// simply die & respawn
-		return IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+
+		// update spectator modes for dead players in survival
+		if(m_GameFlags&GAMEFLAG_SURVIVAL)
+		{
+			for(int i : GameServer()->PlayerIDs())
+				if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
+					GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
+		}
+		return 0;
 	}
 	
 	// actual game
@@ -847,12 +888,12 @@ void CGameControllerZCATCH::UpdateSkinsOfEverybody()
 void CGameControllerZCATCH::ShowPlayerStatistics(class CPlayer *pOfPlayer)
 {
 	// release all players at the end of the round.
-	float alivePercentage = 0.0f, caughtPercentage = 0.0f;
-	float totalTicksPlayed = 0.0f;
+	double alivePercentage = 0.0f, caughtPercentage = 0.0f;
+	double totalTicksPlayed = 0.0f;
 	char aBuf[64];
 
 	// calculate some small player statistics
-	totalTicksPlayed = static_cast<float>(pOfPlayer->m_TicksIngame + pOfPlayer->m_TicksCaught);
+	totalTicksPlayed = static_cast<double>(pOfPlayer->m_TicksIngame + pOfPlayer->m_TicksCaught);
 	if (totalTicksPlayed > 0.0)
 	{
 		alivePercentage = (pOfPlayer->m_TicksIngame / totalTicksPlayed) * 100.0f;
@@ -938,8 +979,11 @@ void CGameControllerZCATCH::RetrieveRankingData(int ofID)
 			pPlayer->m_Deaths += stats["Deaths"];
 			pPlayer->m_TicksCaught += stats["TicksCaught"];
 			pPlayer->m_TicksIngame += stats["TicksIngame"];
+			pPlayer->m_TicksWarmup += stats["TicksWarmup"];
 			pPlayer->m_Shots += stats["Shots"];
 			pPlayer->m_Fails += stats["Fails"];
+
+			dbg_msg("DEBUG", "RETRIEVING DATA: tickscaught:%d", pPlayer->m_TicksCaught.load());
 		}
 
 	}, GetDatabasePrefix());
@@ -959,9 +1003,10 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 		pPlayer->m_Deaths,
 		pPlayer->m_TicksCaught,
 		pPlayer->m_TicksIngame,
+		pPlayer->m_TicksWarmup,
 		pPlayer->m_Score,
+		pPlayer->m_Fails,
 		pPlayer->m_Shots,
-		pPlayer->m_Fails
 	}, GetDatabasePrefix());
 }
 
@@ -974,9 +1019,31 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 	}
 
 	m_pRankingServer->GetRanking(ofNickname, [this, requestingID, ofNickname](CPlayerStats& stats){
-		std::lock_guard<std::mutex> lock(m_MessageQueueMutex);
+		std::stringstream ssIngameTime;
+		std::stringstream ssCaughtTime;
+		std::stringstream ssWarmupTime;
+
+		int SecondsIngame = stats["TicksIngame"] / SERVER_TICK_SPEED;
+		ssIngameTime << std::setw(2) << std::setfill('0') << (SecondsIngame / 3600) << ":"
+		<< std::setw(2) << std::setfill('0') << ((SecondsIngame / 60) % 60) << ":"
+		<< std::setw(2) << std::setfill('0') << (SecondsIngame % 60)
+		<< "h";
+
+		int SecondsCaught = stats["TicksCaught"] / SERVER_TICK_SPEED;
+		ssCaughtTime << std::setw(2) << std::setfill('0') << (SecondsCaught / 3600) << ":" 
+		<< std::setw(2) << std::setfill('0') << ((SecondsCaught / 60) % 60) << ":" 
+		<< std::setw(2) << std::setfill('0') << (SecondsCaught % 60)
+		<< "h";
+				
+		int SecondsWarmup = stats["TicksWarmup"] / SERVER_TICK_SPEED;
+		ssWarmupTime << std::setw(2) << std::setfill('0') << (SecondsWarmup / 3600) << ":" 
+		<< std::setw(2) << std::setfill('0') << ((SecondsWarmup / 60) % 60) << ":" 
+		<< std::setw(2) << std::setfill('0') << (SecondsWarmup % 60)
+		<< "h";
+		
 
 		// fill our message queue
+		std::lock_guard<std::mutex> lock(m_MessageQueueMutex);
 		m_MessageQueue.push_back(
 			{
 				requestingID,
@@ -985,8 +1052,9 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 					"  Score:  " + std::to_string(stats["Score"]),
 					"  Kills:  " + std::to_string(stats["Kills"]),
 					"  Deaths: " + std::to_string(stats["Deaths"]),
-					"  Ingame: " + std::to_string(stats["TicksIngame"] / SERVER_TICK_SPEED) + " secs.", 
-					"  Caught: " + std::to_string(stats["TicksCaught"] / SERVER_TICK_SPEED) + " secs.",
+					"  Ingame: " + ssIngameTime.str(), 
+					"  Caught: " + ssCaughtTime.str(), 
+					"  Warmup: " + ssWarmupTime.str(), 
 					"  Fails:  " + std::to_string(stats["Fails"]),
 					"  Shots:  " + std::to_string(stats["Shots"]),
 				}
@@ -995,6 +1063,48 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 	}, GetDatabasePrefix());
 	
 }
+
+
+void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string key)
+{
+	if (m_pRankingServer == nullptr)
+	{
+		GameServer()->SendServerMessage(requestingID, "This server does not track any player statistics.");
+		return;
+	}
+
+	// constants
+	constexpr int topNumber = 5;
+	constexpr bool biggestFirst = true;
+
+	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
+	
+	// messages that will be shown to the player
+	std::vector<std::string> messages;
+
+	// headline, in order for the player to see, what kind of ranking is being shown.
+	std::stringstream ssHeadline;
+	ssHeadline << "Top " << topNumber << " by " << key;
+	messages.push_back(ssHeadline.str());
+
+	// fill messages vector with retrieved ranks
+	for (auto& [nickname, stats] : data)
+	{
+		messages.push_back("[" + std::to_string(stats[key]) + "] " + nickname);
+	}
+
+	// add messages to MessageQueue
+	std::lock_guard<std::mutex> lock(m_MessageQueueMutex);
+	m_MessageQueue.push_back(
+		{
+			requestingID, 
+			messages
+		}
+	);
+	}, GetDatabasePrefix(), biggestFirst);
+
+}
+
 
 void CGameControllerZCATCH::ProcessMessageQueue()
 {

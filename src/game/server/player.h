@@ -57,6 +57,7 @@ public:
 	std::atomic<int> m_Score; // specific value based on players killed
 	std::atomic<int> m_Kills; // players killed
 	std::atomic<int> m_Deaths; // died
+	std::atomic<int> m_TicksWarmup; // playing warmup
 	std::atomic<int> m_TicksCaught; // 
 	std::atomic<int> m_TicksIngame; // ticks ingame
 	std::atomic<int> m_Shots; // number of shot projectiles

@@ -90,6 +90,10 @@ void CPlayer::Tick()
 			Anticamper();
 		}
 	}
+	else if (GameServer()->m_pController->IsGameWarmup())
+	{
+		m_TicksWarmup++;
+	}
 
 	if(m_ChatTicks > 0)
 		m_ChatTicks--;
