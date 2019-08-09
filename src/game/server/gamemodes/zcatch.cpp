@@ -99,14 +99,15 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				}
 				else if (size == 2)
 				{
-					if(tokens.at(1) == "list")
+					if(tokens[1] == "list")
 					{
 						GameServer()->SendServerMessage(ofID, "/help release - Learn how to release players.");
 						GameServer()->SendServerMessage(ofID, "/help warmup - Learn more about how the warmup works.");
 						GameServer()->SendServerMessage(ofID, "/help anticamper - Learn more about how the anti camper works.");
 						GameServer()->SendServerMessage(ofID, "/help servermessages - How to enable more detailed information.");
+						GameServer()->SendServerMessage(ofID, "/help ranking - Some information about the ranking.");
 					}
-					else if(tokens.at(1) == "release")
+					else if(tokens[1] == "release")
 					{
 						GameServer()->SendServerMessage(ofID, "First off, releasing other players is optional and is a way of improving fair play.");
 						GameServer()->SendServerMessage(ofID, "There are two ways to release a player, that you have caught:");
@@ -114,7 +115,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, "'/release' in the chat. The difference between both methods is that if you use your kill bind, you will kill yourself if");
 						GameServer()->SendServerMessage(ofID, "nobody is left to be released. In contrast, the second method will not do anything if there is nobody left to be released.");
 					}
-					else if(tokens.at(1) == "warmup")
+					else if(tokens[1] == "warmup")
 					{
 						char aBuf[128];
 						str_format(aBuf, sizeof(aBuf), "As long as there are less than %d players ingame, warmup is enabled.", g_Config.m_SvPlayersToStartRound);
@@ -122,7 +123,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, "While in warmup, any player caught will respawn immediatly.");
 						GameServer()->SendServerMessage(ofID, "If there are enough players for a round of zCatch, the warmup ends and players are caught normally.");
 					}
-					else if(tokens.at(1) == "anticamper")
+					else if(tokens[1] == "anticamper")
 					{
 						char aBuf[128];
 						if(g_Config.m_SvAnticamperFreeze > 0)
@@ -137,10 +138,24 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						str_format(aBuf, sizeof(aBuf), "Anticamper is currently %s.", g_Config.m_SvAnticamper > 0 ? "enabled" : "disabled");	
 						GameServer()->SendServerMessage(ofID, aBuf);
 					}
-					else if(tokens.at(1) == "servermessages")
+					else if(tokens[1] == "servermessages")
 					{
 						GameServer()->SendServerMessage(ofID, "Type /allmessages to get all of the information about your and other player's deaths.");
 						GameServer()->SendServerMessage(ofID, "Type /allmessages again, in order to disable the extra information again.");
+					}
+					else if (tokens[1] == "ranking" && size == 2)
+					{
+						bool rankingEnabled = m_pRankingServer != nullptr;
+						if(rankingEnabled)
+							GameServer()->SendServerMessage(ofID, "Ranking is currently enabled on this server.");
+						else
+							GameServer()->SendServerMessage(ofID, "There is currently no player ranking enabled.");
+
+						GameServer()->SendServerMessage(ofID, "The player ranking saves some of your playing statistics in a database.");
+						GameServer()->SendServerMessage(ofID, "You can see your own statistics by typing the command /rank in the chat.");
+						GameServer()->SendServerMessage(ofID, "If you want to see somone else's statistics, write /rank <nickname> instead.");
+						GameServer()->SendServerMessage(ofID, "In order to see the top players on the server, use the /top command.");
+						
 					}
 					else
 					{
@@ -369,11 +384,15 @@ void CGameControllerZCATCH::DoWincheckRound()
 		else if(m_IngamePlayerCount > 1 && alivePlayerCount == 1)	// 1 winner
 		{
 			// player that is alive is the winnner
-			pAlivePlayer->m_Score++;
+			int ScorePointsEarned = CalculateScore(pAlivePlayer->GetNumTotalCaughtPlayers());
+
+			pAlivePlayer->m_Score += ScorePointsEarned;
+
+
 			
 			// Inform everyone about the winner.
 			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(pAlivePlayer->GetCID()));
+			str_format(aBuf, sizeof(aBuf), "'%s' won the round and earned %d score points!", Server()->ClientName(pAlivePlayer->GetCID()), ScorePointsEarned);
 			GameServer()->SendServerMessage(-1, aBuf);
 			EndRound();
 		}
@@ -955,6 +974,18 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 
 std::string CGameControllerZCATCH::GetDatabasePrefix(){
 	return std::to_string(g_Config.m_SvWeaponMode) + "_";
+}
+
+int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
+{	
+
+	// clip
+	PlayersCaught = std::min(PlayersCaught, MAX_PLAYERS - 1);
+
+	// should be calculated at compile time.
+	constexpr double normalizeFactor = std::exp((MAX_PLAYERS - 1) / 5.0f);
+
+	return static_cast<int>(10 * std::exp(PlayersCaught / 5.0f) / normalizeFactor);
 }
 
 void CGameControllerZCATCH::RetrieveRankingData(int ofID)

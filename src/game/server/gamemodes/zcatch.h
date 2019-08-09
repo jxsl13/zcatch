@@ -111,16 +111,26 @@ private:
 	std::string GetDatabasePrefix();
 
 
+	// based on the Total Players caught, the winner 
+	// receives a specific score rating.
+	// calculates an 10 * e^(x/5) / e^((MAX_PLAYERS - 1) / 5) function, 
+	// that is normalized between 0 and 10 and discretized to integer values.
+	int CalculateScore(int PlayersCaught);
+
+
 	// if a player requests data from the database, the retrieved messages are firstly pu into this queue
 	// in order for them to be handled in the main thread. As sending packages to specific clients can only be done in
 	// the main thread, because teeworlds does not support multithreading on the server side.
 	std::mutex m_MessageQueueMutex;
 	std::vector<std::pair<int, std::vector<std::string>> > m_MessageQueue;
 
+	// try to send messages in the MessageQueue to the requesting players.
 	void ProcessMessageQueue();
 
+	// handles the fillig of the MessageQueue for the /rank <nickname> command
 	void RequestRankingData(int requestingID, std::string ofNickname);
 
+	// handles the fillig of the MessageQueue for the /top command
 	void RequestTopRankingData(int requestingID, std::string key);
 
 };
