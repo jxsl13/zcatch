@@ -155,7 +155,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						GameServer()->SendServerMessage(ofID, "You can see your own statistics by typing the command /rank in the chat.");
 						GameServer()->SendServerMessage(ofID, "If you want to see somone else's statistics, write /rank <nickname> instead.");
 						GameServer()->SendServerMessage(ofID, "In order to see the top players on the server, use the /top command.");
-						
+
 					}
 					else
 					{
@@ -392,7 +392,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 			
 			// Inform everyone about the winner.
 			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "'%s' won the round and earned %d score points!", Server()->ClientName(pAlivePlayer->GetCID()), ScorePointsEarned);
+			str_format(aBuf, sizeof(aBuf), "'%s' won the round and earned %d score point%s!", Server()->ClientName(pAlivePlayer->GetCID()), ScorePointsEarned, (ScorePointsEarned == 1 ? "" : "s"));
 			GameServer()->SendServerMessage(-1, aBuf);
 			EndRound();
 		}
