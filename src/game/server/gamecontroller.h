@@ -176,7 +176,7 @@ public:
 	virtual bool OnCallvoteBan(int ClientID, int KickID, const char* pReason);
 	virtual bool OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason);
 
-	void OnReset();
+	virtual void OnReset();
 
 	// game
 	enum

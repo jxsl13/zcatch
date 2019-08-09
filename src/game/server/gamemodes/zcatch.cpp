@@ -52,6 +52,24 @@ CGameControllerZCATCH::~CGameControllerZCATCH()
 	delete m_pRankingServer;
 }
 
+void CGameControllerZCATCH::OnReset()
+{
+	for(int i : GameServer()->PlayerIDs())
+	{
+		if(GameServer()->m_apPlayers[i])
+		{
+			GameServer()->m_apPlayers[i]->m_RespawnDisabled = false;
+			GameServer()->m_apPlayers[i]->Respawn();
+			GameServer()->m_apPlayers[i]->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
+			if(m_RoundCount == 0)
+			{
+				GameServer()->m_apPlayers[i]->m_ScoreStartTick = Server()->Tick();
+			}
+			GameServer()->m_apPlayers[i]->m_IsReadyToPlay = true;
+		}
+	}
+}
+
 void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const char *pText)
 {
 	// message doesn't start with /, then it's no command message
