@@ -344,7 +344,6 @@ void CGameControllerZCATCH::EndRound()
 
 			// do cleanup
 			pPlayer->ReleaseAllCaughtPlayers(CPlayer::REASON_EVERYONE_RELEASED);
-			//pPlayer->ResetStatistics();
 			pPlayer = nullptr;
 		}
 	}
@@ -1031,8 +1030,6 @@ void CGameControllerZCATCH::RetrieveRankingData(int ofID)
 			pPlayer->m_TicksWarmup += stats["TicksWarmup"];
 			pPlayer->m_Shots += stats["Shots"];
 			pPlayer->m_Fails += stats["Fails"];
-
-			dbg_msg("DEBUG", "RETRIEVING DATA: tickscaught:%d", pPlayer->m_TicksCaught.load());
 		}
 
 	}, GetDatabasePrefix());
