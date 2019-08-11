@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/color.h>
 #include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/friends.h>
@@ -1489,11 +1490,25 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 		for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
 			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
-			// int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
-			int Col = CTeecompUtils::GetTeamColorInt(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
+			// old code: int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+
+			// teecomp colors
+			// GetTeamColorInt selects m_TcColoredTeesTeam1 or m_TcColoredTeesTeam2 (RGB)
+			dbg_msg("teecomp", "RGB m_TcColoredTeesTeam1=%d", g_Config.m_TcColoredTeesTeam1);
+			vec3 VecTeamColorRGB = CTeecompUtils::GetTeamColor(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
 				g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
-			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, Col); // teecomp
-			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+			dbg_msg("teecomp", "RGB VecTeamColorRGB=%f %f %f", VecTeamColorRGB.r, VecTeamColorRGB.g, VecTeamColorRGB.b);
+			// translate RGB vec to HSL vec
+			vec3 VecTeamColorHSL = HsvToHsl(RgbToHsv(VecTeamColorRGB));
+			dbg_msg("teecomp", "RGB VecTeamColorHSV=%f %f %f", RgbToHsv(VecTeamColorRGB).r, RgbToHsv(VecTeamColorRGB).g, RgbToHsv(VecTeamColorRGB).b);
+			dbg_msg("teecomp", "RGB VecTeamColorHSL=%f %f %f", VecTeamColorHSL.r, VecTeamColorHSL.g, VecTeamColorHSL.b);
+			// translate HSL vec to HSL int
+			int TeamColorHSL = (int(255*VecTeamColorHSL.h)<<16) + (int(255*VecTeamColorHSL.s)<<8) + int(255*VecTeamColorHSL.l);
+			// This takes HSL as last parameter and returns a HSL mix with the part color
+			int MixedColor = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, TeamColorHSL);
+			// This takes HSL + A and returns RGBA
+			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
+			dbg_msg("teecomp", "RGBA m_RenderInfo.m_aColors[p]=%f %f %f", m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b);
 		}
 	}
 	else if(g_Config.m_TcForceSkinTeam2 && ClientID != pGameClient->m_LocalClientID) // Force DM skin

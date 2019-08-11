@@ -149,4 +149,28 @@ inline vec3 RgbToHsv(vec3 rgb)
 	return vec3(hue, s, v);
 }
 
+inline vec3 HsvToHsl(vec3 hsv)
+{
+	const double h = hsv.h, s = hsv.s, v = hsv.v;
+	double hh, ss, ll;
+    hh = h;
+    ll = (2 - s) * v;
+    ss = s * v;
+    ss /= (ll <= 1) ? (ll) : 2 - (ll);
+    ll /= 2;
+	return vec3(hh, ss, ll);
+}
+
+inline vec3 HslToHsv(vec3 hsl)
+{
+	double hh = hsl.h, ss = hsl.s, ll = hsl.l;
+	double h, s, v;
+    h = hh;
+    ll *= 2;
+    ss *= (ll <= 1) ? ll : 2 - ll;
+    v = (ll + ss) / 2;
+    s = (2 * ss) / (ll + ss);
+	return vec3(h, s, v);
+}
+
 #endif

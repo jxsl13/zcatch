@@ -22,7 +22,8 @@ vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Col
 	return c2;
 }
 
-int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
+// using GetTeamColor instead in gameclient.cpp now
+/* int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
 	// Team based Colors or spectating
 	if(!Method || LocalTeam == -1)
@@ -36,7 +37,7 @@ int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int C
 	if(ForTeam == LocalTeam)
 		return Color1;
 	return Color2;
-}
+} */
 
 bool CTeecompUtils::GetForcedSkinName(int ForTeam, int LocalTeam, const char*& pSkinName)
 {

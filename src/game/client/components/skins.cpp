@@ -370,7 +370,7 @@ int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part,
 {
 	static const int s_aTeamColors[3] = {0xC4C34E, 0x00FF6B, 0x9BFF6B};
 
-	if(TeamColor == -1) // no color set, use default ones
+	if(TeamColor == -1) // no color set, use default ones (non teecomp)
 		TeamColor = s_aTeamColors[Team+1];		
 
 	int TeamHue = (TeamColor>>16)&0xff;
@@ -397,4 +397,18 @@ int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part,
 		ColorVal += PartColor&0xff000000;
 
 	return ColorVal;
+}
+
+vec3 CSkins::GetBasicTeamColor(vec3 hsl) const
+{
+	int TeamHue = hsl.h*255;
+	int TeamSat = hsl.s*255;
+	int TeamLgt = hsl.l*255;
+
+	int MinSat = 160, MaxSat = 255;
+	int h = TeamHue;
+	int s = clamp(TeamSat, MinSat, MaxSat);
+	int l = clamp(TeamLgt, (int)DARKEST_COLOR_LGT, 200);
+
+	return vec3(h,s,l);
 }
