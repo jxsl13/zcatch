@@ -1,7 +1,7 @@
 #include "playerstats.h"
 
 
-CPlayerStats::CPlayerStats(): CPlayerStats(0, 0, 0, 0, 0, 0, 0, 0)
+CPlayerStats::CPlayerStats(): CPlayerStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
 {
     
 }
@@ -21,7 +21,7 @@ void CPlayerStats::Invalidate() {
     
 }
 
-CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int fails, int shots) : m_IsValid{true}
+CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots) : m_IsValid{true}
 {
     m_Data = {
         {"Kills", kills},
@@ -30,6 +30,7 @@ CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksInga
         {"TicksIngame", ticksIngame},
         {"TicksWarmup", ticksWarmup},
         {"Score", score},
+        {"Wins", wins},
         {"Fails", fails},
         {"Shots", shots}
     };

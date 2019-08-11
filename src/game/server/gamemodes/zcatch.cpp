@@ -404,7 +404,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 			int ScorePointsEarned = CalculateScore(pAlivePlayer->GetNumTotalCaughtPlayers());
 
 			pAlivePlayer->m_Score += ScorePointsEarned;
-
+			pAlivePlayer->m_Wins++;
 
 			
 			// Inform everyone about the winner.
@@ -1022,6 +1022,7 @@ void CGameControllerZCATCH::RetrieveRankingData(int ofID)
 			// only if this is started before the player is being destroyed, this should finish, 
 			// before the player is destroyed 
 			std::lock_guard<std::mutex> lock(pPlayer->m_PreventDestruction);
+			pPlayer->m_Wins += stats["Wins"];
 			pPlayer->m_Score += stats["Score"];
 			pPlayer->m_Kills += stats["Kills"];
 			pPlayer->m_Deaths += stats["Deaths"];
@@ -1051,6 +1052,7 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 		pPlayer->m_TicksIngame,
 		pPlayer->m_TicksWarmup,
 		pPlayer->m_Score,
+		pPlayer->m_Wins,
 		pPlayer->m_Fails,
 		pPlayer->m_Shots,
 	}, GetDatabasePrefix());
@@ -1096,6 +1098,7 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 				{
 					"Showing statistics of " + ofNickname,
 					"  Score:  " + std::to_string(stats["Score"]),
+					"  Wins:   " + std::to_string(stats["Wins"]),
 					"  Kills:  " + std::to_string(stats["Kills"]),
 					"  Deaths: " + std::to_string(stats["Deaths"]),
 					"  Ingame: " + ssIngameTime.str(), 

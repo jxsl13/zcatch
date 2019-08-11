@@ -54,6 +54,7 @@ public:
 	std::mutex m_PreventDestruction;
 
 	// atomic-wrapper in order to change these values in a multithreaded context
+	std::atomic<int> m_Wins; // number of wins
 	std::atomic<int> m_Score; // specific value based on players killed
 	std::atomic<int> m_Kills; // players killed
 	std::atomic<int> m_Deaths; // died

@@ -130,10 +130,10 @@ private:
 	// try to send messages in the MessageQueue to the requesting players.
 	void ProcessMessageQueue();
 
-	// handles the fillig of the MessageQueue for the /rank <nickname> command
+	// handles the filling of the MessageQueue for the /rank <nickname> command
 	void RequestRankingData(int requestingID, std::string ofNickname);
 
-	// handles the fillig of the MessageQueue for the /top command
+	// handles the filling of the MessageQueue for the /top command
 	void RequestTopRankingData(int requestingID, std::string key);
 
 };

@@ -22,7 +22,7 @@ struct CPlayerStats
 
     void Reset();
     CPlayerStats();
-    CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int fails, int shots);
+    CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots);
 
     CPlayerStats& operator+=(const CPlayerStats& rhs);
 
