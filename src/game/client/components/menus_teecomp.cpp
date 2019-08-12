@@ -156,25 +156,52 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
 	int r1, g1, b1, r2, g2, b2;
+
+//#define USING_HSL_TO_RGB
+#ifdef USING_RGB_SLIDERS
 	r1 = g_Config.m_TcColoredTeesTeam1>>16;
 	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
 	b1 = g_Config.m_TcColoredTeesTeam1&0xff;
 	RenderRgbSliders(&LeftView, &Button, r1, g1, b1, !g_Config.m_TcDmColorsTeam1);
 	g_Config.m_TcColoredTeesTeam1 = (r1<<16) + (g1<<8) + b1;
-
+#else
+#ifdef USING_HSL_TO_RGB
+	r1 = g_Config.m_TcColoredTeesTeam1>>16;
+	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
+	b1 = g_Config.m_TcColoredTeesTeam1&0xff;
 	// teecomp modification: now using HSL picker to get realistic values
-	// {
-	// 	bool Modified;
-	// 	vec3 OriginalHSLvecColor = RgbToHsl(vec3(r1/255.f, g1/255.f, b1/255.f));
-	// 	int OriginalHSLColor = (int(OriginalHSLvecColor.h*255)<<16) + (int(OriginalHSLvecColor.s*255)<<8) + int(OriginalHSLvecColor.l*255);
-	// 	ivec4 HSLAColor = RenderHSLPicker(LeftView, OriginalHSLColor, false, Modified);
-	// 	if(Modified)
-	// 	{
-	// 		vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
-	// 		vec3 RGBColor = HslToRgb(HSLColor);
-	// 		g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
-	// 	}
-	// }
+	{
+		bool Modified;
+		vec3 OriginalHSLvecColor = RgbToHsl(vec3(r1/255.f, g1/255.f, b1/255.f));
+		int OriginalHSLColor = (int(OriginalHSLvecColor.h*255)<<16) + (int(OriginalHSLvecColor.s*255)<<8) + int(OriginalHSLvecColor.l*255);
+		LeftView.HSplitTop(99.0f, &Button, &LeftView);
+		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified);
+		if(Modified)
+		{
+			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+			vec3 RGBColor = HslToRgb(HSLColor);
+			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+		}
+	}
+#else
+	// teecomp modification: now using HSL picker to get realistic values
+	{
+		bool Modified;
+		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam1Hsl;
+		LeftView.HSplitTop(99.0f, &Button, &LeftView);
+		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified);
+		if(Modified)
+		{
+			int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
+			g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
+
+			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+			vec3 RGBColor = HslToRgb(HSLColor);
+			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+		}
+	}
+#endif
+#endif
 
 	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1, false)));
 	CTeeRenderInfo Info;
@@ -183,11 +210,26 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
+#ifdef USING_HSL_TO_RGB
 			vec3 RGBColor = vec3(r1/255.0f, g1/255.0f, b1/255.0f);
 			vec3 HSLColor = RgbToHsl(RGBColor);
-			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor);
+			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor); 
 			vec3 RGBColorFiltered = HslToRgb(HSLColorFiltered);
 			Info.m_aColors[i] = vec4(RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, 1.0f);
+#else
+			#ifdef V1_BASIC
+			int h1 = g_Config.m_TcColoredTeesTeam1Hsl>>16;
+			int s1 = (g_Config.m_TcColoredTeesTeam1Hsl>>8)&0xff;
+			int l1 = g_Config.m_TcColoredTeesTeam1Hsl&0xff;
+			dbg_msg("teecomp", "h1,s1,l1 = %d, %d, %d", h1, s1, l1);
+			vec3 HSLColor = vec3(h1/255.0f, s1/255.0f, l1/255.0f);
+			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor); 
+			#endif
+			int HSLColorFiltered = m_pClient->m_pSkins->GetTeamColor(s->m_aUseCustomColors[i], s->m_aPartColors[i], 0, i, g_Config.m_TcColoredTeesTeam1Hsl);
+			vec4 RGBColorFiltered = m_pClient->m_pSkins->GetColorV4(HSLColorFiltered, i==SKINPART_MARKING); // does HSL to RGB, with alpha
+			Info.m_aColors[i] = RGBColorFiltered;
+			dbg_msg("teecomp", "menus: RGBA Info.m_aColors[%d] = %f %f %f %f", i, RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, RGBColorFiltered.a);
+#endif
 		}
 		// Info.m_ColorBody = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
 		// Info.m_ColorFeet = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);

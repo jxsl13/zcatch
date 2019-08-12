@@ -4,6 +4,7 @@
 #include <engine/shared/config.h>
 #include "teecomp.h"
 
+
 vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
 	vec3 c1((Color1>>16)/255.0f, ((Color1>>8)&0xff)/255.0f, (Color1&0xff)/255.0f);
@@ -22,9 +23,7 @@ vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Col
 		return c1;
 	return c2;
 }
-
-// using GetTeamColor instead in gameclient.cpp now
-/* int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
+int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
 	// Team based Colors or spectating
 	if(!Method || LocalTeam == -1)
@@ -38,7 +37,7 @@ vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Col
 	if(ForTeam == LocalTeam)
 		return Color1;
 	return Color2;
-} */
+}
 
 bool CTeecompUtils::GetForcedSkinName(int ForTeam, int LocalTeam, const char*& pSkinName)
 {

@@ -1503,26 +1503,42 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 	{
 		for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
-			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+			// m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
 			// old code: int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+			if(m_Team != TEAM_SPECTATORS)
+			{
+				int LocalTeam = pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team;
+				const char* pForcedSkin;
 
-			// teecomp colors
-			// GetTeamColorInt selects m_TcColoredTeesTeam1 or m_TcColoredTeesTeam2 (RGB)
-			dbg_msg("teecomp", "RGB m_TcColoredTeesTeam1=%d", g_Config.m_TcColoredTeesTeam1);
-			vec3 VecTeamColorRGB = CTeecompUtils::GetTeamColor(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
-				g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
-			dbg_msg("teecomp", "RGB VecTeamColorRGB=%f %f %f", VecTeamColorRGB.r, VecTeamColorRGB.g, VecTeamColorRGB.b);
-			// translate RGB vec to HSL vec
-			vec3 VecTeamColorHSL = HsvToHsl(RgbToHsv(VecTeamColorRGB));
-			dbg_msg("teecomp", "RGB VecTeamColorHSV=%f %f %f", RgbToHsv(VecTeamColorRGB).r, RgbToHsv(VecTeamColorRGB).g, RgbToHsv(VecTeamColorRGB).b);
-			dbg_msg("teecomp", "RGB VecTeamColorHSL=%f %f %f", VecTeamColorHSL.r, VecTeamColorHSL.g, VecTeamColorHSL.b);
-			// translate HSL vec to HSL int
-			int TeamColorHSL = (int(255*VecTeamColorHSL.h)<<16) + (int(255*VecTeamColorHSL.s)<<8) + int(255*VecTeamColorHSL.l);
-			// This takes HSL as last parameter and returns a HSL mix with the part color
-			int MixedColor = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, TeamColorHSL);
-			// This takes HSL + A and returns RGBA
-			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
-			dbg_msg("teecomp", "RGBA m_RenderInfo.m_aColors[p]=%f %f %f", m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b);
+				if(CTeecompUtils::GetForceDmColors(m_Team, LocalTeam) && ClientID != pGameClient->m_LocalClientID && CTeecompUtils::GetForcedSkinName(m_Team, LocalTeam, pForcedSkin))
+				{
+					int Sid = max(0, pGameClient->m_pSkins->Find(pForcedSkin, false));
+					const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(Sid);
+					if(pSkin->m_aUseCustomColors[p])
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+					else
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
+				}
+				else
+				{
+					m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+					// teecomp colors
+					// This selects the right config
+					int TeamColorHSL = CTeecompUtils::GetTeamColorInt(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1Hsl,
+						g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
+					// This takes HSL as last parameter and returns a HSL mix with the part color
+					int MixedColor = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, TeamColorHSL);
+					// This takes HSL + A and returns RGBA
+					m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
+					dbg_msg("teecomp", "gameclient: RGBA m_RenderInfo.m_aColors[%d]=%.2f %.2f %.2f %.2f", p, m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a);
+				}
+			}
+			else
+			{
+				// classic specs
+				int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+				m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+			}
 		}
 	}
 	else if(g_Config.m_TcForceSkinTeam2 && ClientID != pGameClient->m_LocalClientID) // Force DM skin

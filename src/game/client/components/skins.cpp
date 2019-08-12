@@ -411,5 +411,5 @@ vec3 CSkins::GetBasicTeamColor(vec3 hsl) const
 	int s = clamp(TeamSat, MinSat, MaxSat);
 	int l = clamp(TeamLgt, (int)DARKEST_COLOR_LGT, 200);
 
-	return vec3(h,s,l);
+	return vec3(h/255.f,s/255.f,l/255.f);
 }
