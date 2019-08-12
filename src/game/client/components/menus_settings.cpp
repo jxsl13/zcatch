@@ -149,10 +149,9 @@ void CMenus::SaveSkinfile()
 	// add new skin to the skin list
 	m_pClient->m_pSkins->AddSkin(m_aSaveSkinName);
 }
-
-void CMenus::RenderHSLPicker(CUIRect MainView)
+void CMenus::RenderSkinHSLPicker(CUIRect MainView)
 {
-	CUIRect Label, Button, Picker;
+	CUIRect Label, Button;
 
 	// background
 	float Spacing = 2.0f;
@@ -170,29 +169,52 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 	MainView.HSplitTop(ButtonHeight, &Button, &MainView);
 	static int s_CustomColors = 0;
 	if(DoButton_CheckBox(&s_CustomColors, Localize("Custom colors"), *CSkins::ms_apUCCVariables[m_TeePartSelected], &Button))
+	{
 		*CSkins::ms_apUCCVariables[m_TeePartSelected] ^= 1;
+		m_SkinModified = true;
+	}
 
 	if(!(*CSkins::ms_apUCCVariables[m_TeePartSelected]))
 		return;
 
 	MainView.HSplitTop(Spacing, 0, &MainView);
 
-	bool Modified = false;
 	bool UseAlpha = m_TeePartSelected == SKINPART_MARKING;
 	int Color = *CSkins::ms_apColorVariables[m_TeePartSelected];
+	bool Modified;
 
+	ivec4 Hsl = RenderHSLPicker(MainView, Color, UseAlpha, Modified);
+
+	if(Modified)
+	{
+		int NewVal = (Hsl.x << 16) + (Hsl.y << 8) + Hsl.z;
+		for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			if(m_TeePartSelected == p)
+				*CSkins::ms_apColorVariables[p] = NewVal;
+		}
+		if(UseAlpha)
+			g_Config.m_PlayerColorMarking = (Hsl.w << 24) + NewVal;
+	}
+}
+
+ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified)
+{
+	CUIRect Picker, Label, Button;
 	int Hue, Sat, Lgt, Alp;
 	Hue = (Color>>16)&0xff;
 	Sat = (Color>>8)&0xff;
 	Lgt = Color&0xff;
 	if(UseAlpha)
 		Alp = (Color>>24)&0xff;
+	float Spacing = 2.0f;
 
 	MainView.HSplitTop(144.0f, &Picker, &MainView);
 	RenderTools()->DrawUIRect(&Picker, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 
 	float Dark = CSkins::DARKEST_COLOR_LGT/255.0f;
 	IGraphics::CColorVertex ColorArray[4];
+	Modified = false;
 
 	// Hue/Lgt picker :
 	{
@@ -237,7 +259,7 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 		Graphics()->QuadsEnd();
 
 		// marker
-		vec2 Marker = vec2(Sat/2.0f*UI()->Scale(), Lgt/2.0f*UI()->Scale());
+		vec2 Marker = vec2(Sat/2.0f, Lgt/2.0f);
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -281,7 +303,7 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 			RenderTools()->DrawUIRect(&Label, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
 			Label.VSplitLeft((Label.w-160.0f)/2.0f, &Label, &Button);
 			Label.y += 2.0f;
-			UI()->DoLabelScaled(&Label, apNames[i], SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+			UI()->DoLabel(&Label, apNames[i], SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 			// button <
 			Button.VSplitLeft(Button.h, &Button, &Bar);
@@ -366,7 +388,7 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 
 			// bar marker
 			Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
-			IGraphics::CQuadItem QuadItem(Bar.x + min(127.0f, *apVars[i]/2.0f)*UI()->Scale(), Bar.y, UI()->PixelSize(), Bar.h);
+			IGraphics::CQuadItem QuadItem(Bar.x + min(127.0f, *apVars[i]/2.0f), Bar.y, UI()->PixelSize(), Bar.h);
 			Graphics()->QuadsDrawTL(&QuadItem, 1);
 			Graphics()->QuadsEnd();
 
@@ -382,7 +404,7 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 			char aBuf[16];
 			str_format(aBuf, sizeof(aBuf), "%d", *apVars[i]);
 			Label.y += 2.0f;
-			UI()->DoLabelScaled(&Label, aBuf, SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+			UI()->DoLabel(&Label, aBuf, SliderHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
 			// logic
 			float X;
@@ -404,7 +426,10 @@ void CMenus::RenderHSLPicker(CUIRect MainView)
 		}
 		if(UseAlpha)
 			g_Config.m_PlayerColorMarking = (Alp << 24) + NewVal;
+		m_SkinModified = true;
 	}
+
+	return ivec4(Hue, Sat, Lgt, Alp);
 }
 
 void CMenus::RenderSkinSelection(CUIRect MainView)
@@ -1252,7 +1277,7 @@ void CMenus::RenderSettingsTeeCustom(CUIRect MainView)
 	RenderSkinPartSelection(Left);
 
 	// HSL picker
-	RenderHSLPicker(Right);
+	RenderSkinHSLPicker(Right);
 }
 
 void CMenus::RenderSettingsTee(CUIRect MainView)

@@ -1,3 +1,4 @@
+#include <base/color.h>
 #include <base/math.h>
 #include <base/system.h>
 #include <engine/shared/config.h>
@@ -84,52 +85,6 @@ void CTeecompUtils::ResetConfig()
 	#include "../teecomp_vars.h"
 	#undef MACRO_CONFIG_INT
 	#undef MACRO_CONFIG_STR
-}
-
-static vec3 RgbToHsl(vec3 rgb)
-{
-	float r = rgb.r;
-	float g = rgb.g;
-	float b = rgb.b;
-
-	float vMin = min(min(r, g), b);
-	float vMax = max(max(r, g), b);
-	float dMax = vMax - vMin;
-
-	float h = 0.0f;
-	float s = 0.0f;
-	float l = (vMax + vMin) / 2.0f;
-
-	if(dMax == 0.0f)
-	{
-		h = 0.0f;
-		s = 0.0f;
-	}
-	else
-	{
-		if(l < 0.5f)
-			s = dMax / (vMax + vMin);
-		else
-			s = dMax / (2 - vMax - vMin);
-
-		float dR = (((vMax - r) / 6.0f) + (dMax / 2.0f)) / dMax;
-		float dG = (((vMax - g) / 6.0f) + (dMax / 2.0f)) / dMax;
-		float dB = (((vMax - b) / 6.0f) + (dMax / 2.0f)) / dMax;
-
-		if(r == vMax)
-			h = dB - dG;
-		else if(g == vMax)
-			h = (1.0f/3.0f) + dR - dB;
-		else if(b == vMax)
-			h = (2.0f/3.0f) + dG - dR;
-
-		if(h < 0.0f)
-			h += 1.0f;
-		if(h > 1.0f)
-			h -= 1.0f;
-	}
-
-	return vec3(h*360, s, l);
 }
 
 const char* CTeecompUtils::RgbToName(int rgb)

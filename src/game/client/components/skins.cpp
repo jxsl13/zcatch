@@ -399,6 +399,7 @@ int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part,
 	return ColorVal;
 }
 
+// HSL to HSL (filtered)
 vec3 CSkins::GetBasicTeamColor(vec3 hsl) const
 {
 	int TeamHue = hsl.h*255;

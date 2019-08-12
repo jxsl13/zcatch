@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include <base/color.h>
+
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 #include <engine/graphics.h>
@@ -160,6 +162,20 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderRgbSliders(&LeftView, &Button, r1, g1, b1, !g_Config.m_TcDmColorsTeam1);
 	g_Config.m_TcColoredTeesTeam1 = (r1<<16) + (g1<<8) + b1;
 
+	// teecomp modification: now using HSL picker to get realistic values
+	// {
+	// 	bool Modified;
+	// 	vec3 OriginalHSLvecColor = RgbToHsl(vec3(r1/255.f, g1/255.f, b1/255.f));
+	// 	int OriginalHSLColor = (int(OriginalHSLvecColor.h*255)<<16) + (int(OriginalHSLvecColor.s*255)<<8) + int(OriginalHSLvecColor.l*255);
+	// 	ivec4 HSLAColor = RenderHSLPicker(LeftView, OriginalHSLColor, false, Modified);
+	// 	if(Modified)
+	// 	{
+	// 		vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+	// 		vec3 RGBColor = HslToRgb(HSLColor);
+	// 		g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+	// 	}
+	// }
+
 	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1, false)));
 	CTeeRenderInfo Info;
 	if(!g_Config.m_TcDmColorsTeam1)
@@ -167,7 +183,11 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
-			Info.m_aColors[i] = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
+			vec3 RGBColor = vec3(r1/255.0f, g1/255.0f, b1/255.0f);
+			vec3 HSLColor = RgbToHsl(RGBColor);
+			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor);
+			vec3 RGBColorFiltered = HslToRgb(HSLColorFiltered);
+			Info.m_aColors[i] = vec4(RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, 1.0f);
 		}
 		// Info.m_ColorBody = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
 		// Info.m_ColorFeet = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
@@ -187,6 +207,10 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	Button.HSplitTop(70.0f, 0, &Button);
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x, Button.y+Button.h/2));
 	LeftView.HSplitTop(50.0f, 0, &LeftView);
+
+///////////////////////////////////////////////////////
+// teecomp debug, remove!!!
+// return;
 
 	// Colors team 2
 
