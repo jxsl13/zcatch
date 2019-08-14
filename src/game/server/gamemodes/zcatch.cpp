@@ -1102,6 +1102,7 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 				requestingID,
 				{
 					"Showing statistics of " + ofNickname,
+					"  Rank:   " + std::to_string(stats.GetRank()),
 					"  Score:  " + std::to_string(stats["Score"]),
 					"  Wins:   " + std::to_string(stats["Wins"]),
 					"  Kills:  " + std::to_string(stats["Kills"]),
