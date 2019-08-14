@@ -233,22 +233,11 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 			{
 				if(size > 1)
 				{
-					// basically a nickname can caontain whitespaces, thus we concatenate all
-					// of the tokens that follow the first one
-
-					std::stringstream ss;
-					for (int i = 1; i < size; i++)
-					{
-						ss << tokens[i];
-
-						// previously we split the tokens removing single whitespace
-						// now we need to add possible in nickname whitespaces back between the tokens.
-						if(i < size - 1)
-							ss << " "; 
-					}
-
+					std::string cmd{pText + 1};
+        			auto pos = cmd.find_first_of(' ');
+					std::string nickname = cmd.substr(pos+1, std::string::npos);
 					// ofID requests the data of nickname(ss.str())
-					RequestRankingData(ofID, ss.str());
+					RequestRankingData(ofID, nickname);
 				}
 				else
 				{

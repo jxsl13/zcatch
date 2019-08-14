@@ -20,6 +20,27 @@ IRankingServer::~IRankingServer()
     AwaitFutures();
 }
 
+void IRankingServer::trim(std::string &s)
+{
+    if (s.empty())
+        return;
+    int l = 0, r = s.size() - 1;
+    while (l < static_cast<int>(s.size()) && std::isspace(s[l++])); // l points to first non-whitespace char.
+    while (r >= 0 && std::isspace(s[r--])); // r points to last non-whitespace char.
+    if (l > r)
+        s = "";
+    else
+    {
+        l--;
+        r++;
+        int wi = 0;
+        while (l <= r)
+            s[wi++] = s[l++];
+        s.erase(wi);
+    }
+    return;
+}
+
 bool IRankingServer::IsValidNickname(const std::string& nickname, const std::string& prefix) const
 {
     if (nickname.size() == 0)
@@ -56,6 +77,8 @@ bool IRankingServer::IsValidKey(const std::string& key) const
 bool IRankingServer::GetRanking(std::string nickname, IRankingServer::cb_stats_t callback, std::string prefix)
 {
     CleanupFutures();
+    
+    trim(nickname);
 
     if (m_DefaultConstructed || callback == nullptr || !IsValidNickname(nickname, prefix))
         return false;
@@ -91,6 +114,8 @@ bool IRankingServer::GetRanking(std::string nickname, IRankingServer::cb_stats_t
 bool IRankingServer::DeleteRanking(std::string nickname, std::string prefix)
 {
     CleanupFutures();
+
+    trim(nickname);
 
     if (m_DefaultConstructed || !IsValidNickname(nickname, prefix))
         return false;
@@ -156,6 +181,8 @@ bool IRankingServer::UpdateRanking(std::string nickname, CPlayerStats stats, std
 {
     CleanupFutures();
 
+    trim(nickname);
+
     if (m_DefaultConstructed || !IsValidNickname(nickname, prefix))
         return false;
 
@@ -186,6 +213,8 @@ bool IRankingServer::UpdateRanking(std::string nickname, CPlayerStats stats, std
 bool IRankingServer::SetRanking(std::string nickname, CPlayerStats stats, std::string prefix)
 {
     CleanupFutures();
+
+    trim(nickname);
 
     if (m_DefaultConstructed || !stats.IsValid() || !IsValidNickname(nickname, prefix))
         return false;

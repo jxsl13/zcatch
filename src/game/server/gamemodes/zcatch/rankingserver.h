@@ -52,6 +52,8 @@ class IRankingServer
     bool IsValidNickname(const std::string& nickname, const std::string& prefix = "") const;
     bool IsValidKey(const std::string& key) const;
 
+    // removes whitespace from string
+    void trim(std::string& s);
 
     // saving futures for later cleanup
     std::deque<std::future<void> > m_Futures;
