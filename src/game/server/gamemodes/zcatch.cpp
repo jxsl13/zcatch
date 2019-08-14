@@ -1071,7 +1071,20 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 		return;
 	}
 
-	m_pRankingServer->GetRanking(ofNickname, [this, requestingID, ofNickname](CPlayerStats& stats){
+	m_pRankingServer->GetRanking(ofNickname, [this, requestingID, ofNickname](CPlayerStats &stats) {
+		if (!stats.IsValid())
+		{
+			std::lock_guard<std::mutex> lock(m_MessageQueueMutex);
+			m_MessageQueue.push_back(
+				{
+					requestingID,
+				 	{
+						ofNickname + " is not ranked."
+					}
+				});
+			return;
+		}
+
 		std::stringstream ssIngameTime;
 		std::stringstream ssCaughtTime;
 		std::stringstream ssWarmupTime;
@@ -1115,8 +1128,8 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 				}
 			}
 		);
-	}, GetDatabasePrefix());
-	
+	},
+								 GetDatabasePrefix());
 }
 
 
@@ -1143,9 +1156,16 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	messages.push_back(ssHeadline.str());
 
 	// fill messages vector with retrieved ranks
-	for (auto& [nickname, stats] : data)
+	if (data.size() == 0)
 	{
-		messages.push_back("[" + std::to_string(stats[key]) + "] " + nickname);
+		messages.push_back("No ranks available!");
+	}
+	else
+	{
+		for (auto &[nickname, stats] : data)
+		{
+			messages.push_back("[" + std::to_string(stats[key]) + "] " + nickname);
+		}
 	}
 
 	// add messages to MessageQueue
