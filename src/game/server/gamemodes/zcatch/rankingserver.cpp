@@ -10,6 +10,8 @@ IRankingServer::IRankingServer()
     // all possible fields are invalid nicks
     CPlayerStats tmp;
     m_InvalidNicknames = tmp.keys();
+    m_InvalidNicknames.push_back("(connecting)");
+    m_InvalidNicknames.push_back("(invalid)");
 }
 
 IRankingServer::~IRankingServer()
@@ -18,7 +20,7 @@ IRankingServer::~IRankingServer()
     AwaitFutures();
 }
 
-bool IRankingServer::IsValidNickname(const std::string& nickname, const std::string& prefix)
+bool IRankingServer::IsValidNickname(const std::string& nickname, const std::string& prefix) const
 {
     if (nickname.size() == 0)
         return false; // empty string nick -> no rankings for you
@@ -33,6 +35,22 @@ bool IRankingServer::IsValidNickname(const std::string& nickname, const std::str
             return false;
     }
     return true;
+}
+
+bool IRankingServer::IsValidKey(const std::string& key) const
+{
+    CPlayerStats tmp;
+    bool IsValid = false;
+
+    for (auto &k : tmp.keys())
+    {
+        if (k == key)
+        {
+            IsValid = true;
+            break;
+        }
+    }
+    return IsValid;
 }
 
 bool IRankingServer::GetRanking(std::string nickname, IRankingServer::cb_stats_t callback, std::string prefix)
@@ -104,7 +122,7 @@ bool IRankingServer::GetTopRanking(int topNumber, std::string key, IRankingServe
 {
     CleanupFutures();
 
-    if (m_DefaultConstructed || callback == nullptr)
+    if (m_DefaultConstructed || callback == nullptr || !IsValidKey(key))
         return false;
     
 
@@ -1259,18 +1277,6 @@ IRankingServer::key_stats_vec_t CSQLiteRankingServer::GetTopRankingSync(int topN
     auto Columns = tmpStat.keys();
     size_t ColumnsSize = Columns.size();
 
-    bool validKey = false;
-    for (std::string& k: Columns)
-    {
-        if (k == key)
-        {
-            validKey = true;
-            break;
-        }  
-    }
-    
-    if (!validKey)
-        throw SQLite::Exception("Invalid key passed: " + key);
 
     std::string TableName = prefix + m_BaseTableName;
 

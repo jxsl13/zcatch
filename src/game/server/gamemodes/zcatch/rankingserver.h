@@ -49,7 +49,8 @@ class IRankingServer
 
 
     std::vector<std::string> m_InvalidNicknames;
-    bool IsValidNickname(const std::string& nickname, const std::string& prefix = "");
+    bool IsValidNickname(const std::string& nickname, const std::string& prefix = "") const;
+    bool IsValidKey(const std::string& key) const;
 
 
     // saving futures for later cleanup
