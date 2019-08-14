@@ -4,6 +4,7 @@
 #include "playerstats.h"
 
 #include <cpp_redis/cpp_redis>
+#include <SQLiteCpp/SQLiteCpp.h>
 #include <functional>
 #include <future>
 #include <mutex>
@@ -12,23 +13,44 @@
 #include <vector>
 #include <deque>
 
-class CRankingServer
+class IRankingServer
 {
-   private:
+   public:
+
+    // callback that is being called, when the 
+    // player statistics have been retrieved successfully
+    using cb_stats_t = std::function<void(CPlayerStats&)>;
+    using cb_key_stats_vec_t = std::function<void(std::vector<std::pair<std::string, CPlayerStats> >&)>;
+
+    // list of [key, stats] pairs
+    using key_stats_vec_t = std::vector<std::pair<std::string, CPlayerStats> >;
+
+    // initializes invalid nicknames
+    IRankingServer();
+
+    // cleans up futures and waits for them.
+    virtual ~IRankingServer();
+
+   protected:
 
     // if this class has been initialized with a default constructor, 
     // it is assumed that all methods called are ignored.
     bool m_DefaultConstructed;
 
-    // redis server host & port
-    std::string m_Host;
-    size_t m_Port;
+    // Synchronizing threads
+    std::mutex m_DatabaseMutex;
 
-    // redis client
-    cpp_redis::client m_Client;
+
+     // ranking order is based on this key.
+    const std::string m_RankingKey{"Score"};
+
+    // 
+    const bool m_BiggestFirst{true};
+
 
     std::vector<std::string> m_InvalidNicknames;
     bool IsValidNickname(const std::string& nickname, const std::string& prefix = "");
+
 
     // saving futures for later cleanup
     std::deque<std::future<void> > m_Futures;
@@ -36,12 +58,6 @@ class CRankingServer
     // remove finished futures from vector
     void CleanupFutures();
 
-    std::mutex m_ReconnectHandlerMutex;
-    bool m_IsReconnectHandlerRunning;
-    
-    int m_ReconnectIntervalMilliseconds;
-    void HandleReconnecting();
-    void StartReconnectHandler();
 
     // when we get a disconnect, we safe out db changing actions in a backlog.
     std::mutex m_BacklogMutex;
@@ -51,37 +67,26 @@ class CRankingServer
     // cleanup backlog, when the conection has been established again.
     void CleanupBacklog();
 
-    // retrieve player data syncronously
-    CPlayerStats GetRankingSync(std::string nickname, std::string prefix = "");
+    // ############################################################################################################
+    // Interface that needs to be implemented
 
-    // set specific values
-    void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+    // retrieve player data syncronously - throws exception on error, retuns invalid object if not found
+    virtual CPlayerStats GetRankingSync(std::string nickname, std::string prefix) = 0;
+
+    // set specific values synchronously
+    virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix) = 0;
 
     // synchronous execution of ranking update
-    void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix) = 0;
 
-    // delete player's ranking
-    void DeleteRankingSync(std::string nickname, std::string prefix = "");
+    // delete player's ranking synchronously
+    virtual void DeleteRankingSync(std::string nickname, std::string prefix) = 0;
 
-    // retrieve top x player ranks based on their key property(like score, kills etc.).
-    std::vector<std::pair<std::string, CPlayerStats> > GetTopRankingSync(int topNumber, std::string key, std::string prefix = "", bool biggestFirst = true);
+    // retrieve top x player ranks based on their key property(like score, wins, kills, deaths etc.) synchronously.
+    virtual key_stats_vec_t GetTopRankingSync(int topNumber, std::string key, std::string prefix, bool biggestFirst) = 0;
+    // ############################################################################################################
 
    public:
-
-    // default constructor - prevents the creation of a backlog(especially the allocation of RAM)
-    // an instance of this object does nothing, it's behaving like a dummy instance
-    CRankingServer();
-
-    // clean up internal stuff and wait for internal asyncronous tasks to finish.
-    // might take as much time as the reconnect_ms(see the constructor parameter) to finish its tasks.
-    ~CRankingServer();
-
-
-    // constructor
-    CRankingServer(std::string host, size_t port, uint32_t timeout = 10000, uint32_t reconnect_ms = 5000);
-
-
-
     // gets data and does stuff that's defined in callback with it.
     // if no callback is provided, nothing is done.
     // returns true, if async task has been started, false if nick is invalid or if no callback has been provided of if 
@@ -116,7 +121,99 @@ class CRankingServer
     // It can be used to synchronize execution.
     // wait for all futures to finish execution(used in destructor)
     void AwaitFutures();
+};
 
+class CRedisRankingServer : public IRankingServer
+{
+   private:
+
+    // redis server host & port
+    std::string m_Host;
+    size_t m_Port;
+
+    // redis client
+    cpp_redis::client m_Client;
+
+    
+    std::mutex m_ReconnectHandlerMutex;
+    bool m_IsReconnectHandlerRunning;
+    
+    int m_ReconnectIntervalMilliseconds;
+    void HandleReconnecting();
+    void StartReconnectHandler();
+
+   protected:    
+
+    // retrieve player data syncronously
+    virtual CPlayerStats GetRankingSync(std::string nickname, std::string prefix = "");
+
+    // set specific values
+    virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+
+    // synchronous execution of ranking update
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+
+    // delete player's ranking
+    virtual void DeleteRankingSync(std::string nickname, std::string prefix = "");
+
+    // retrieve top x player ranks based on their key property(like score, kills etc.).
+    virtual IRankingServer::key_stats_vec_t GetTopRankingSync(int topNumber, std::string key, std::string prefix = "", bool biggestFirst = true);
+
+   public:
+
+    // default constructor - prevents the creation of a backlog(especially the allocation of RAM)
+    // an instance of this object does nothing, it's behaving like a dummy instance
+    CRedisRankingServer();
+
+    // constructor
+    CRedisRankingServer(std::string host, size_t port, uint32_t timeout = 10000, uint32_t reconnect_ms = 5000);
+    
+    // clean up internal stuff and wait for internal asyncronous tasks to finish.
+    // might take as much time as the reconnect_ms(see the constructor parameter) to finish its tasks.
+    virtual ~CRedisRankingServer();
+};
+
+class CSQLiteRankingServer : public IRankingServer
+{
+   private:
+    std::string m_FilePath;
+
+    SQLite::Database *m_pDatabase;
+
+    std::mutex m_ValidPrefixListMutex;
+    std::vector<std::string> m_ValidPrefixList;
+
+    // table base name, that's added after the table prefix
+    const std::string m_BaseTableName{"Ranking"};
+
+   
+    bool IsValidPrefix(const std::string& prefix);
+    void FixPrefix(std::string& prefix);
+
+   protected:
+    // retrieve player data syncronously
+    virtual CPlayerStats GetRankingSync(std::string nickname, std::string prefix = "");
+
+    // set specific values
+    virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+
+    // synchronous execution of ranking update
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+
+    // delete player's ranking
+    virtual void DeleteRankingSync(std::string nickname, std::string prefix = "");
+
+    // retrieve top x player ranks based on their key property(like score, kills etc.).
+    virtual IRankingServer::key_stats_vec_t GetTopRankingSync(int topNumber, std::string key, std::string prefix = "", bool biggestFirst = true);
+
+   public:
+
+    // dummy
+    CSQLiteRankingServer();
+
+    // all prefixes need to be defined at construction time, in ordr to create the db tables.
+    CSQLiteRankingServer(std::string filePath, std::vector<std::string> validPrefixList = {{""}}, int busyTimeoutMs = 10000);
+    virtual ~CSQLiteRankingServer();
 };
 
 #endif // GAME_SERVER_RANKINGSERVER_H

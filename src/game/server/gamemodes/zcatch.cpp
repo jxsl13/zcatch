@@ -43,8 +43,13 @@ void CGameControllerZCATCH::InitRankingServer()
 
 	if(DatabaseType == "redis")
 	{
-		m_pRankingServer = new CRankingServer{g_Config.m_SvDatabaseHost, static_cast<size_t>(g_Config.m_SvDatabasePort)};
+		m_pRankingServer = new CRedisRankingServer{g_Config.m_SvDatabaseHost, static_cast<size_t>(g_Config.m_SvDatabasePort)};
 	}
+	else if (DatabaseType == "sqlite" || DatabaseType == "sqlite3")
+	{
+		m_pRankingServer = new CSQLiteRankingServer{g_Config.m_SvSQLiteFilename, {GetDatabasePrefix()}};
+	}
+	
 }
 
 CGameControllerZCATCH::~CGameControllerZCATCH()

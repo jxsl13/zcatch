@@ -98,7 +98,7 @@ private:
 
 
 	// an encapsulated class, that handles the database connection.
-	CRankingServer* m_pRankingServer;
+	IRankingServer* m_pRankingServer;
 
 	// initializes ranking server
 	void InitRankingServer();

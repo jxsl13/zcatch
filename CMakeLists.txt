@@ -474,12 +474,22 @@ endif()
 # LIBRARY SUBDIRECTORIES
 ########################################################################
 
+############ cpp_redis ############
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
 
 target_include_directories(cpp_redis PUBLIC 
     ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
     ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
 )
+############ cpp_redis ############
+
+
+############ SQLiteCpp ############
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp)
+
+include_directories(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp/include)
+############ SQLiteCpp ############
+
 
 ########################################################################
 # DEPENDENCY COMPILATION
@@ -1562,6 +1572,10 @@ endif()
 set(LIBS_SERVER 
   ${LIBS}
   cpp_redis
+  SQLiteCpp
+  sqlite3
+  pthread
+  dl
 )
 
 # Target

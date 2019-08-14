@@ -154,9 +154,11 @@ MACRO_CONFIG_INT(SvChatValue, sv_chat_value, 250, 100, 1000, CFGFLAG_SERVER, "A 
 MACRO_CONFIG_INT(SvChatThreshold, sv_chat_threshold, 1000, 250, 10000, CFGFLAG_SERVER, "If this threshold will exceed by too many messages the player will be muted")
 MACRO_CONFIG_INT(SvMuteDuration, sv_mute_duration, 60, 0, 3600, CFGFLAG_SERVER, "How long the player will be muted (in seconds)")
 
-MACRO_CONFIG_STR(SvDatabaseType, sv_db_type, 24, "", CFGFLAG_SERVER, "Can be either empty or 'redis'.")
+MACRO_CONFIG_STR(SvDatabaseType, sv_db_type, 24, "", CFGFLAG_SERVER, "Can be either empty, 'redis' or 'sqlite'")
 MACRO_CONFIG_STR(SvDatabaseHost, sv_db_host, 16, "127.0.0.1", CFGFLAG_SERVER, "Hostname of database(currently only dbs without a password)")
 MACRO_CONFIG_INT(SvDatabasePort, sv_db_port, 6379, 1024, 65535, CFGFLAG_SERVER, "Port of the database server")
+
+MACRO_CONFIG_STR(SvSQLiteFilename, sv_db_sqlite_file, 256, "ranking.db", CFGFLAG_SERVER, "Relative path to the sqlite3 database(default: ranking.db).")
 
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly

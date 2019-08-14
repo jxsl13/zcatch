@@ -13,16 +13,17 @@ void CPlayerStats::Reset()
     {
         value = 0;
     }
+    m_Rank = -1;
 }
 
 void CPlayerStats::Invalidate() {
     Reset();
     m_IsValid = false; 
-    
 }
 
 CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots) : m_IsValid{true}
 {
+    m_Rank = -1;
     m_Data = {
         {"Kills", kills},
         {"Deaths", deaths},

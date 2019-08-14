@@ -9,3 +9,6 @@
 [submodule "src/engine/external/cpp_redis"]
 	path = src/engine/external/cpp_redis
 	url = https://github.com/cpp-redis/cpp_redis.git
+[submodule "src/engine/external/SQLiteCpp"]
+	path = src/engine/external/SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp.git
