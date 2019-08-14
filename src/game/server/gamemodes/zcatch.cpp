@@ -1104,7 +1104,7 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 				requestingID,
 				{
 					"Showing statistics of " + ofNickname,
-					"  Rank:   " + std::to_string(stats.GetRank()),
+					"  Rank:   " + (stats["Score"] > 0 ? std::to_string(stats.GetRank()) : "Not ranked, yet."),
 					"  Score:  " + std::to_string(stats["Score"]),
 					"  Wins:   " + std::to_string(stats["Wins"]),
 					"  Kills:  " + std::to_string(stats["Kills"]),
@@ -1117,8 +1117,8 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 				}
 			}
 		);
-	},
-								 GetDatabasePrefix());
+	}, GetDatabasePrefix());
+	
 }
 
 
@@ -1147,14 +1147,24 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	// fill messages vector with retrieved ranks
 	if (data.size() == 0)
 	{
-		messages.push_back("No ranks available!");
+		messages.push_back("No ranks available, yet!");
 	}
 	else
 	{
+		int counter = 0;
 		for (auto &[nickname, stats] : data)
 		{
-			messages.push_back("[" + std::to_string(stats[key]) + "] " + nickname);
+			if (stats["Score"] > 0)
+			{
+				messages.push_back("[" + std::to_string(stats[key]) + "] " + nickname);
+				counter++;
+			}
 		}
+		if (counter == 0)
+		{
+			messages.push_back("No ranks available, yet!");
+		}
+		
 	}
 
 	// add messages to MessageQueue
