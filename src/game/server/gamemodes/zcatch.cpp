@@ -289,14 +289,33 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 		GameServer()->SendServerMessage(ClientID, aChatmsg);
 		return false;
 	}
-	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[KickID])
 	{
-		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
-		return false;
-	}
-	
+		CPlayer& votingPlayer = *(GameServer()->m_apPlayers[ClientID]);
+		CPlayer& votedPlayer = *(GameServer()->m_apPlayers[KickID]);
 
-	dbg_msg("DEBUG", "Player %d called to ban %d with reason '%s'", ClientID, KickID, pReason);
+		if(votingPlayer.GetTeam() == TEAM_SPECTATORS)
+		{
+			GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		}
+		else if(votedPlayer.IsAuthed())
+		{
+			GameServer()->SendServerMessage(ClientID, "An internal error occurred, please try again.");
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to ban you. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
+			GameServer()->SendServerMessage(KickID, aBuf);
+		}
+		else
+		{
+			// none of the conditions valid, 
+			// allow voting
+			return true;
+		}
+
+		// if any of the conditions is valid
+		// we want to prevent the voting.
+		return false;	
+	}
 	return true;
 }
 bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason)
@@ -310,11 +329,34 @@ bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, con
 		GameServer()->SendServerMessage(ClientID, aChatmsg);
 		return false;
 	}
-	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
+	else if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[SpectateID])
 	{
-		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
-		return false;
+		CPlayer& votingPlayer = *(GameServer()->m_apPlayers[ClientID]);
+		CPlayer& votedPlayer = *(GameServer()->m_apPlayers[SpectateID]);
+
+		if(votingPlayer.GetTeam() == TEAM_SPECTATORS)
+		{
+			GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		}
+		else if(votedPlayer.IsAuthed())
+		{
+			GameServer()->SendServerMessage(ClientID, "An internal error occurred, please try again.");
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to move you to the spectators. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
+			GameServer()->SendServerMessage(SpectateID, aBuf);
+		}
+		else
+		{
+			// none of the conditions valid, 
+			// allow voting
+			return true;
+		}
+
+		// if any of the conditions is valid
+		// we want to prevent the voting.
+		return false;	
 	}
+	
 
 	dbg_msg("DEBUG", "Player %d called to move %d to spectators with reason '%s'", ClientID, SpectateID, pReason);
 	return true;

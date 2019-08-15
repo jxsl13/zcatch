@@ -145,6 +145,10 @@ public:
 
 	void UpdateSkinColors();
 
+
+	// Administrative properties of this player.
+	inline bool IsAuthed(){ return Server()->IsAuthed(m_ClientID);};
+
 	// Anti chat spam
 	int m_ChatTicks;
 
