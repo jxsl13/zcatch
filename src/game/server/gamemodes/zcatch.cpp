@@ -543,6 +543,10 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 		}
 	}
 	
+
+	// less players to catch.
+	UpdateBroadcastOfEverybody();
+
 	// needed to do the disconnect handling.
 	IGameController::OnPlayerDisconnect(pPlayer);
 }
@@ -570,11 +574,10 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			{
 				// fell into death tiles
 				victim.m_Fails++;
-				return 0;	
 			}
 			else if (Weapon == WEAPON_GAME)
 			{
-				return 0;
+				// nothing todo here
 			}
 		}
 		else
@@ -584,14 +587,6 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
 		}
 
-
-		// update spectator modes for dead players in survival
-		if(m_GameFlags&GAMEFLAG_SURVIVAL)
-		{
-			for(int i : GameServer()->PlayerIDs())
-				if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
-					GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
-		}
 		return 0;
 	}
 	
