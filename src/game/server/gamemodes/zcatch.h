@@ -47,6 +47,10 @@ public:
 
 private:
 
+	// store initial weapon mode, in order 
+	//to prevent players from changing it mid game.
+	int m_WeaponMode;
+
 	/**
 	 * When a player enters the game, and the game is
 	 * currently running, the player has to be added 
