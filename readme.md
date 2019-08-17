@@ -1,4 +1,4 @@
- Teeworlds zCatch [![CircleCI](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x.svg?style=svg)](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x) [![Build status](https://ci.appveyor.com/api/projects/status/103160wvp3gs1tj8/branch/zCatch-0.7.x?svg=true)](https://ci.appveyor.com/project/jxsl13/zcatch/branch/zCatch-0.7.x)
+ Teeworlds zCatch [![CircleCI](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x.svg?style=svg)](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x) [![Build status](https://ci.appveyor.com/api/projects/status/103160wvp3gs1tj8/branch/zCatch-0.7.x?svg=true)](https://ci.appveyor.com/project/jxsl13/zcatch/branch/zCatch-0.7.x) [![Build Status](https://travis-ci.com/jxsl13/zcatch.svg?branch=zCatch-0.7.x)](https://travis-ci.com/jxsl13/zcatch)
 =========
 
 A retro multiplayer shooter
