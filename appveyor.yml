@@ -1,4 +1,4 @@
-image: Visual Studio 2015
+image: Visual Studio 2017
 
 before_build:
 - cmd: |
@@ -6,11 +6,11 @@ before_build:
     git submodule update --init --recursive
 
     md build32 & cd build32
-    cmake -Werror=dev -G "Visual Studio 14 2015" ..
+    cmake -Werror=dev -G "Visual Studio 15 2017" ..
     cd ..
 
     md build64 & cd build64
-    cmake -Werror=dev -G "Visual Studio 14 2015 Win64" ..
+    cmake -Werror=dev -G "Visual Studio 15 2017 Win64" ..
     cd ..
 
 build_script:
