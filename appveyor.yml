@@ -13,8 +13,8 @@ before_build:
     cd ..
 
 build_script:
-  - cmd: cmake --build build32 --config Release --target zcatch_srv
-  - cmd: cmake --build build64 --config Release --target zcatch_srv
+  - cmd: cmake --build build32 --config Release --target everything
+  - cmd: cmake --build build64 --config Release --target everything
 
 test_script:
   - cmd: cmake --build build32 --config Debug --target run_tests
