@@ -50,22 +50,15 @@ Installing dependencies
 Downloading repository
 ----------------------
 
-    git clone https://github.com/jxsl13/zcatch --recurse-submodules
+    git clone https://github.com/jxsl13/zcatch
     cd zcatch
 
     # Checkout the 0.7.x branch with:
     # git checkout zCatch-0.7.x
 
     # If you already cloned the repository before, use:
-    # git submodule update --init
+    # git submodule update --init --recursive
     # in order to download all external libraries
-
-    # Then go into:
-    # cd src/engine/external/cpp_redis
-
-    # And initialize that repository's submodules:
-    # git submodule update --init
-
 
 Building
 --------
@@ -74,6 +67,9 @@ Building
     cd build
     cmake ..
     make -j4 zcatch_srv
+
+    # depending on the number of CPU cores your computer has
+    # you can change the -j4 to -j<cpu cores> 
 
     If your latest GCC version has been installed in a non-default path, 
     you can set take that into account by using instead of "cmake .."
