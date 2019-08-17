@@ -1834,7 +1834,12 @@ int main(int argc, const char **argv) // ignore_convention
 	// register signal SIGINT and signal handler 
 	g_CServer = pServer;
    	std::signal(SIGINT, SignalHandler);
+
+#ifndef CONF_FAMILY_WINDOWS
+	// windows does not like this signal
 	std::signal(SIGSTOP, SignalHandler);
+#endif
+	
 
 	// create the components
 	int FlagMask = CFGFLAG_SERVER|CFGFLAG_ECON;
