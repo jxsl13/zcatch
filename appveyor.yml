@@ -2,20 +2,19 @@ image: Visual Studio 2017
 
 before_build:
 - cmd: |
-    git checkout zCatch-0.7.x
     git submodule update --init --recursive
 
     md build32 & cd build32
-    cmake -Werror=dev -G "Visual Studio 15 2017" ..
+    cmake -Wno-error=dev -G "Visual Studio 15 2017" ..
     cd ..
 
     md build64 & cd build64
-    cmake -Werror=dev -G "Visual Studio 15 2017 Win64" ..
+    cmake -Wno-error=dev -G "Visual Studio 15 2017 Win64" ..
     cd ..
 
 build_script:
-  - cmd: cmake --build build32 --config Release --target everything
-  - cmd: cmake --build build64 --config Release --target everything
+  - cmd: cmake --build build32 --config Release --target zcatch_srv
+  - cmd: cmake --build build64 --config Release --target zcatch_srv
 
 test_script:
   - cmd: cmake --build build32 --config Debug --target run_tests
