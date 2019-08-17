@@ -54,11 +54,11 @@ Downloading repository
     cd zcatch
 
     # Checkout the 0.7.x branch with:
-    # git checkout zCatch-0.7.x
+    git checkout zCatch-0.7.x
 
-    # If you already cloned the repository before, use:
-    # git submodule update --init --recursive
-    # in order to download all external libraries
+    # In order to download all external libraries, execute:
+    git submodule update --init --recursive
+    
 
 Building
 --------
