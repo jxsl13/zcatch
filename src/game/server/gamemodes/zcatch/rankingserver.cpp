@@ -1,5 +1,6 @@
 #include "rankingserver.h"
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <future>
 #include <base/system.h>

@@ -1042,7 +1042,7 @@ int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
 	PlayersCaught = std::min(PlayersCaught, MAX_PLAYERS - 1);
 
 	// should be calculated at compile time.
-	constexpr double normalizeFactor = std::exp((MAX_PLAYERS - 1) / 5.0f);
+	const double normalizeFactor = std::exp((MAX_PLAYERS - 1) / 5.0f);
 
 	return static_cast<int>(10 * std::exp(PlayersCaught / 5.0f) / normalizeFactor);
 }
@@ -1182,7 +1182,7 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	constexpr int topNumber = 5;
 	constexpr bool biggestFirst = true;
 
-	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
+	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key, topNumber](std::vector<std::pair<std::string, CPlayerStats> >& data){
 	
 	// messages that will be shown to the player
 	std::vector<std::string> messages;
