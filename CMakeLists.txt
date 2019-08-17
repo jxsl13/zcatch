@@ -89,6 +89,8 @@ option(DOWNLOAD_GTEST "Download and compile GTest if not found" ${AUTO_DEPENDENC
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
 
+set(OpenGL_GL_PREFERENCE LEGACY)
+
 # Set the default build type to Release
 if(NOT(CMAKE_BUILD_TYPE))
   if(DEV)
@@ -314,7 +316,7 @@ if(NOT CMAKE_CROSSCOMPILING)
 endif()
 find_package(ZLIB)
 find_package(Crypto)
-find_package(Freetype)
+find_package(OwnFreetype)
 find_package(Git)
 find_package(GTest)
 find_package(Pnglite)
@@ -2062,6 +2064,7 @@ foreach(target ${TARGETS_OWN})
   target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
   if(CRYPTO_FOUND)
     target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
+    target_include_directories(${target} PRIVATE ${CRYPTO_INCLUDE_DIRS})
   endif()
 endforeach()
 
