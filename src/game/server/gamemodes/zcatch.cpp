@@ -1039,7 +1039,7 @@ int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
 {	
 
 	// clip
-	int MaxPlayersCaught = std::min(PlayersCaught, MAX_PLAYERS - 1);
+	int MaxPlayersCaught = PlayersCaught < MAX_PLAYERS - 1 ? PlayersCaught : MAX_PLAYERS - 1;
 
 	// should be calculated at compile time.
 	const double normalizeFactor = std::exp((MAX_PLAYERS - 1) / 5.0f);
