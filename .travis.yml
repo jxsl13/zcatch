@@ -11,8 +11,7 @@ script:
 - cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
 - make run_tests
 - cd ..
-- cd build && ls && cd ..
-- build/zcatch_srv shutdown
+- build/zcatch_srv-Launcher shutdown
 env:
   global:
   - CFLAGS="-Wdeclaration-after-statement -Wno-error"
