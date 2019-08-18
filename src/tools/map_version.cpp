@@ -20,7 +20,7 @@ int MaplistCallback(const char *pName, int IsDir, int DirType, void *pUser)
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "maps/%s", pName);
-	if(!s_pEngineMap->Load(aBuf))
+	if(!s_pEngineMap->Load(aBuf, nullptr))
 		return 0;
 
 	unsigned MapCrc = s_pEngineMap->Crc();
