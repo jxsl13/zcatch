@@ -94,7 +94,7 @@ bool IRankingServer::GetRanking(std::string nickname, IRankingServer::cb_stats_t
 
                 stats = this->GetRankingSync(nick, pref); // get data from server
             }
-            catch (const std::exception& e)
+            catch (const std::exception&)
             {
                 // if some unexpected error happened in GetRankingSync
                 dbg_msg("IRankingServer", "Failed to retrieve ranking.");
@@ -132,7 +132,7 @@ bool IRankingServer::DeleteRanking(std::string nickname, std::string prefix)
 
                     this->DeleteRankingSync(nick, pref);
                 }
-                catch (std::exception& e)
+                catch (std::exception&)
                 {
                     // failed to delete ranking
                     // adding to backlog
@@ -357,7 +357,7 @@ CRedisRankingServer::CRedisRankingServer(std::string host, size_t port, uint32_t
             dbg_msg("REDIS", "successfully connected to %s:%lu", m_Host.c_str(), m_Port);
         }
     }
-    catch (const cpp_redis::redis_error& e)
+    catch (const cpp_redis::redis_error&)
     {
         dbg_msg("REDIS", "initial connection to %s:%lu failed.", m_Host.c_str(), m_Port);
         StartReconnectHandler();
@@ -391,7 +391,7 @@ void CRedisRankingServer::HandleReconnecting()
         {
             m_Client.connect(m_Host, m_Port);
         }
-        catch (const cpp_redis::redis_error& e)
+        catch (const cpp_redis::redis_error&)
         {
             dbg_msg("REDIS", "Reconnect failed...");
         }
@@ -527,7 +527,7 @@ CPlayerStats CRedisRankingServer::GetRankingSync(std::string nickname, std::stri
         
         return stats;
     }
-    catch (const cpp_redis::redis_error& e)
+    catch (const cpp_redis::redis_error&)
     {
         if (!m_Client.is_connected())
         {
@@ -608,7 +608,7 @@ IRankingServer::key_stats_vec_t CRedisRankingServer::GetTopRankingSync(int topNu
             throw cpp_redis::redis_error("exists: expected integer reply");
         }
     }
-    catch (const cpp_redis::redis_error& e)
+    catch (const cpp_redis::redis_error&)
     {
         // error is propagated to calling function.
         throw;
@@ -1069,7 +1069,7 @@ CPlayerStats CSQLiteRankingServer::GetRankingSync(std::string nickname, std::str
             return stats;
         }
     }
-    catch (const SQLite::Exception& e)
+    catch (const SQLite::Exception&)
     {
         throw;
     }
@@ -1138,7 +1138,7 @@ void CSQLiteRankingServer::SetRankingSync(std::string nickname, CPlayerStats sta
         // execute statement.
         stmt.exec();
     }
-    catch (const SQLite::Exception& e)
+    catch (const SQLite::Exception&)
     {
         // throw and add to backlog.
         throw;
@@ -1259,7 +1259,7 @@ void CSQLiteRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats 
         // update player data.
         stmt2.exec();
     }
-    catch (const SQLite::Exception& e)
+    catch (const SQLite::Exception&)
     {
         throw;
     }
@@ -1290,7 +1290,7 @@ void CSQLiteRankingServer::DeleteRankingSync(std::string nickname, std::string p
         // delete player data
         stmt.exec();
     }
-    catch(const SQLite::Exception& e)
+    catch(const SQLite::Exception&)
     {
         throw;
     }
@@ -1356,7 +1356,7 @@ IRankingServer::key_stats_vec_t CSQLiteRankingServer::GetTopRankingSync(int topN
         }
         return result;
     }
-    catch(const SQLite::Exception& e)
+    catch(const SQLite::Exception&)
     {
         throw;
     }

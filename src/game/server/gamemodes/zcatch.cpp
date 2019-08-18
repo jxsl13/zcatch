@@ -256,7 +256,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				throw std::invalid_argument("");
 			}
 		}
-		catch (std::invalid_argument &e)
+		catch (const std::invalid_argument&)
 		{
 			GameServer()->SendServerMessage(ofID, "No such command, please try /cmdlist or /help");
 		}
@@ -1039,12 +1039,12 @@ int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
 {	
 
 	// clip
-	PlayersCaught = std::min(PlayersCaught, MAX_PLAYERS - 1);
+	int MaxPlayersCaught = std::min(PlayersCaught, MAX_PLAYERS - 1);
 
 	// should be calculated at compile time.
 	const double normalizeFactor = std::exp((MAX_PLAYERS - 1) / 5.0f);
 
-	return static_cast<int>(10 * std::exp(PlayersCaught / 5.0f) / normalizeFactor);
+	return static_cast<int>(10 * std::exp(MaxPlayersCaught / 5.0f) / normalizeFactor);
 }
 
 void CGameControllerZCATCH::RetrieveRankingData(int ofID)
