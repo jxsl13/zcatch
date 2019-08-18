@@ -271,7 +271,7 @@ public:
 	void PumpNetwork();
 
 	const char *GetMapName() const;
-	int LoadMap(const char *pMapName);
+	int LoadMap(const char *pMapName, class IStorage *pStorage = nullptr);
 
 	void InitRegister(CNetServer *pNetServer, IEngineMasterServer *pMasterServer, IConsole *pConsole);
 	int Run();

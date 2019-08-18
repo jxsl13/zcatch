@@ -1245,7 +1245,7 @@ const char *CServer::GetMapName() const
 	return pMapShortName;
 }
 
-int CServer::LoadMap(const char *pMapName)
+int CServer::LoadMap(const char *pMapName, class IStorage *pStorage)
 {
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
@@ -1257,7 +1257,7 @@ int CServer::LoadMap(const char *pMapName)
 		return 0;
 	}
 
-	if(!m_pMap->Load(aBuf))
+	if(!m_pMap->Load(aBuf, pStorage))
 		return 0;
 
 	// stop recording when we change map
