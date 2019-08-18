@@ -782,7 +782,7 @@ const char *CClient::LoadMap(const char *pName, const char *pFilename, const SHA
 
 	SetState(IClient::STATE_LOADING);
 
-	if(!m_pMap->Load(pFilename))
+	if(!m_pMap->Load(pFilename, nullptr))
 	{
 		str_format(aErrorMsg, sizeof(aErrorMsg), "map '%s' not found", pFilename);
 		return aErrorMsg;

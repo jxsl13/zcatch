@@ -10,8 +10,8 @@ script:
 - mkdir build_debug; cd build_debug
 - cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
 - make run_tests
-- cd ..
-- build/zcatch_srv shutdown
+- cd ../build
+- ./zcatch_srv shutdown
 env:
   global:
   - CFLAGS="-Wdeclaration-after-statement -Wno-error"
