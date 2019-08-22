@@ -27,8 +27,22 @@ map_version*
 mastersrv*
 packetgen*
 teeworlds*
+!teeworlds.manifest
+!teeworlds.rc
 teeworlds_srv*
+testrunner
 versionsrv*
+
+# IDE project files
+.cproject
+.idea
+.project
+.settings
+.vs
+.vscode
+out
+cscope.files
+cscope.out
 
 # CMake
 data
@@ -47,6 +61,9 @@ Release
 _CPack_Packages/
 build.ninja
 cmake_install.cmake
+googletest-build
+googletest-download
+googletest-src
 install_manifest.txt
 pack_*/
 rules.ninja

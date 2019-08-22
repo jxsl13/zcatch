@@ -16,18 +16,9 @@ class CScoreboard : public CComponent
 	const char *GetClanName(int Team);
 
 	bool m_Active;
+	bool m_Activate;
 	int m_PlayerLines;
  	class CUIRect m_TotalRect;
- 	class CPlayerStats
-	{
-	public:
-		int m_Kills;
-		int m_Deaths;
- 		CPlayerStats();
-		void Reset();
-	};
-	CPlayerStats m_aPlayerStats[MAX_CLIENTS];
-	bool m_SkipPlayerStatsReset;
 
 public:
 	CScoreboard();
@@ -35,7 +26,6 @@ public:
 	virtual void OnConsoleInit();
 	virtual void OnRender();
 	virtual void OnRelease();
-	virtual void OnMessage(int MsgType, void *pRawMsg);
 	
  	bool Active();
 	void ResetPlayerStats(int ClientID);

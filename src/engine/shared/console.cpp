@@ -194,13 +194,16 @@ void CConsole::SetPrintOutputLevel(int Index, int OutputLevel)
 
 void CConsole::Print(int Level, const char *pFrom, const char *pStr, bool Highlighted)
 {
+	char aTimeBuf[80];
+	str_timestamp_format(aTimeBuf, sizeof(aTimeBuf), FORMAT_TIME);
+
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf), "[%s][%s]: %s", aTimeBuf, pFrom, pStr);
 	dbg_msg(pFrom ,"%s", pStr);
 	for(int i = 0; i < m_NumPrintCB; ++i)
 	{
 		if(Level <= m_aPrintCB[i].m_OutputLevel && m_aPrintCB[i].m_pfnPrintCallback)
 		{
-			char aBuf[1024];
-			str_format(aBuf, sizeof(aBuf), "[%s]: %s", pFrom, pStr);
 			m_aPrintCB[i].m_pfnPrintCallback(aBuf, m_aPrintCB[i].m_pPrintCallbackUserdata, Highlighted);
 		}
 	}
@@ -723,7 +726,7 @@ void CConsole::ParseArguments(int NumArgs, const char **ppArguments)
 	for(int i = 0; i < NumArgs; i++)
 	{
 		// check for scripts to execute
-		if(ppArguments[i][0] == '-' && ppArguments[i][1] == 'f' && ppArguments[i][2] == 0)
+		if(str_comp("-f", ppArguments[i]) == 0)
 		{
 			if(NumArgs - i > 1)
 				ExecuteFile(ppArguments[i+1]);

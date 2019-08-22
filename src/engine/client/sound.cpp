@@ -51,9 +51,9 @@ struct CVoice
 	int m_X, m_Y;
 };
 
-static CSample m_aSamples[NUM_SAMPLES] = { {0} };
-static CVoice m_aVoices[NUM_VOICES] = { {0} };
-static CChannel m_aChannels[NUM_CHANNELS] = { {255} };
+static CSample m_aSamples[NUM_SAMPLES] = {{0}};
+static CVoice m_aVoices[NUM_VOICES] = {{0}};
+static CChannel m_aChannels[NUM_CHANNELS];
 
 static LOCK m_SoundLock = 0;
 
@@ -203,6 +203,9 @@ static void SdlCallback(void *pUnused, Uint8 *pStream, int Len)
 
 int CSound::Init()
 {
+	for(int i = 0; i < NUM_CHANNELS; ++i)
+		m_aChannels[i].m_Vol = 255;
+
 	m_SoundEnabled = 0;
 	m_pGraphics = Kernel()->RequestInterface<IEngineGraphics>();
 	m_pStorage = Kernel()->RequestInterface<IStorage>();

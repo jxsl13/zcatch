@@ -279,6 +279,18 @@ void CGameContext::SendSettings(int ClientID)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
+void CGameContext::SendSkinChange(int ClientID, int TargetID)
+{
+	CNetMsg_Sv_SkinChange Msg;
+	Msg.m_ClientID = ClientID;
+	for(int p = 0; p < NUM_SKINPARTS; p++)
+	{
+		Msg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
+		Msg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
+		Msg.m_aSkinPartColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aSkinPartColors[p];
+	}
+	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, TargetID);
+}
 
 void CGameContext::SendGameMsg(int GameMsgID, int ClientID)
 {
@@ -446,6 +458,8 @@ void CGameContext::SwapTeams()
 		if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 			m_pController->DoTeamChange(m_apPlayers[i], m_apPlayers[i]->GetTeam()^1, false);
 	}
+
+	m_pController->SwapTeamscore();
 }
 
 void CGameContext::OnTick()
@@ -605,7 +619,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	if(g_Config.m_SvSilentSpectatorMode && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 		NewClientInfoMsg.m_Silent = true;
 
-	for(int p = 0; p < 6; p++)
+	for(int p = 0; p < NUM_SKINPARTS; p++)
 	{
 		NewClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aaSkinPartNames[p];
 		NewClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[ClientID]->m_TeeInfos.m_aUseCustomColors[p];
@@ -631,7 +645,7 @@ void CGameContext::OnClientEnter(int ClientID)
 		ClientInfoMsg.m_pClan = Server()->ClientClan(i);
 		ClientInfoMsg.m_Country = Server()->ClientCountry(i);
 		ClientInfoMsg.m_Silent = false;
-		for(int p = 0; p < 6; p++)
+		for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
 			ClientInfoMsg.m_apSkinPartNames[p] = m_apPlayers[i]->m_TeeInfos.m_aaSkinPartNames[p];
 			ClientInfoMsg.m_aUseCustomColors[p] = m_apPlayers[i]->m_TeeInfos.m_aUseCustomColors[p];
@@ -654,9 +668,15 @@ void CGameContext::OnClientEnter(int ClientID)
 	}
 }
 
-void CGameContext::OnClientConnected(int ClientID, bool Dummy)
+void CGameContext::OnClientConnected(int ClientID, bool Dummy, bool AsSpec)
 {
-	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, Dummy);
+	if(m_apPlayers[ClientID])
+	{
+		dbg_assert(m_apPlayers[ClientID]->IsDummy(), "invalid clientID");
+		OnClientDrop(ClientID, "removing dummy");
+	}
+
+	m_apPlayers[ClientID] = new(ClientID) CPlayer(this, ClientID, Dummy, AsSpec);
 
 	if(Dummy)
 		return;
@@ -744,9 +764,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 				int Code = str_utf8_decode(&p);
 
 				// check if unicode is not empty
-				if(Code > 0x20 && Code != 0xA0 && Code != 0x034F && (Code < 0x2000 || Code > 0x200F) && (Code < 0x2028 || Code > 0x202F) &&
-					(Code < 0x205F || Code > 0x2064) && (Code < 0x206A || Code > 0x206F) && (Code < 0xFE00 || Code > 0xFE0F) &&
-					Code != 0xFEFF && (Code < 0xFFF9 || Code > 0xFFFC))
+				if(!str_utf8_is_whitespace(Code))
 				{
 					pEnd = 0;
 				}
@@ -978,6 +996,32 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			pPlayer->m_LastReadyChange = Server()->Tick();
 			m_pController->OnPlayerReadyChange(pPlayer);
 		}
+		else if(MsgID == NETMSGTYPE_CL_SKINCHANGE)
+		{
+			if(pPlayer->m_LastChangeInfo && pPlayer->m_LastChangeInfo+Server()->TickSpeed()*5 > Server()->Tick())
+				return;
+
+			pPlayer->m_LastChangeInfo = Server()->Tick();
+			CNetMsg_Cl_SkinChange *pMsg = (CNetMsg_Cl_SkinChange *)pRawMsg;
+
+			for(int p = 0; p < NUM_SKINPARTS; p++)
+			{
+				str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p], 24);
+				pPlayer->m_TeeInfos.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
+				pPlayer->m_TeeInfos.m_aSkinPartColors[p] = pMsg->m_aSkinPartColors[p];
+			}
+
+			// update all clients
+			for(int i = 0; i < MAX_CLIENTS; ++i)
+			{
+				if(!m_apPlayers[i] || (!Server()->ClientIngame(i) && !m_apPlayers[i]->IsDummy()) || Server()->GetClientVersion(i) < MIN_SKINCHANGE_CLIENTVERSION)
+					continue;
+
+				SendSkinChange(pPlayer->GetCID(), i);
+			}
+
+			m_pController->OnPlayerInfoChange(pPlayer);
+		}
 	}
 	else
 	{
@@ -994,7 +1038,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
-			for(int p = 0; p < 6; p++)
+			for(int p = 0; p < NUM_SKINPARTS; p++)
 			{
 				str_copy(pPlayer->m_TeeInfos.m_aaSkinPartNames[p], pMsg->m_apSkinPartNames[p], 24);
 				pPlayer->m_TeeInfos.m_aUseCustomColors[p] = pMsg->m_aUseCustomColors[p];
@@ -1211,7 +1255,7 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		return;
 	}
-	while(*pDescription && *pDescription == ' ')
+	while(*pDescription == ' ')
 		pDescription++;
 	if(str_length(pDescription) >= VOTE_DESC_LENGTH || *pDescription == 0)
 	{
@@ -1477,10 +1521,13 @@ void CGameContext::OnInit()
 		g_Config.m_SvPlayerSlots = Server()->MaxClients();
 
 #ifdef CONF_DEBUG
+	// clamp dbg_dummies to 0..MaxClients-1
+	if(Server()->MaxClients() <= g_Config.m_DbgDummies)
+		g_Config.m_DbgDummies = Server()->MaxClients();
 	if(g_Config.m_DbgDummies)
 	{
 		for(int i = 0; i < g_Config.m_DbgDummies ; i++)
-			OnClientConnected(Server()->MaxClients() -i-1, true);
+			OnClientConnected(Server()->MaxClients() -i-1, true, false);
 	}
 #endif
 }
@@ -1529,11 +1576,18 @@ bool CGameContext::IsClientReady(int ClientID) const
 
 bool CGameContext::IsClientPlayer(int ClientID) const
 {
-	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS ? false : true;
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() != TEAM_SPECTATORS;
+}
+
+bool CGameContext::IsClientSpectator(int ClientID) const
+{
+	return m_apPlayers[ClientID] && m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS;
 }
 
 const char *CGameContext::GameType() const { return m_pController && m_pController->GetGameType() ? m_pController->GetGameType() : ""; }
 const char *CGameContext::Version() const { return GAME_VERSION; }
 const char *CGameContext::NetVersion() const { return GAME_NETVERSION; }
+const char *CGameContext::NetVersionHashUsed() const { return GAME_NETVERSION_HASH_FORCED; }
+const char *CGameContext::NetVersionHashReal() const { return GAME_NETVERSION_HASH; }
 
 IGameServer *CreateGameServer() { return new CGameContext; }

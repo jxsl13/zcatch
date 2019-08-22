@@ -245,30 +245,12 @@ int IGameController::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int
 
 void IGameController::OnCharacterSpawn(CCharacter *pChr)
 {
-	if(m_GameFlags&GAMEFLAG_SURVIVAL)
-	{
-		// give start equipment
-		pChr->IncreaseHealth(10);
-		pChr->IncreaseArmor(5);
+	// default health
+	pChr->IncreaseHealth(10);
 
-		pChr->GiveWeapon(WEAPON_HAMMER, -1);
-		pChr->GiveWeapon(WEAPON_GUN, 10);
-		pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
-		pChr->GiveWeapon(WEAPON_GRENADE, 10);
-		pChr->GiveWeapon(WEAPON_LASER, 5);
-
-		// prevent respawn
-		pChr->GetPlayer()->m_RespawnDisabled = GetStartRespawnState();
-	}
-	else
-	{
-		// default health
-		pChr->IncreaseHealth(10);
-
-		// give default weapons
-		pChr->GiveWeapon(WEAPON_HAMMER, -1);
-		pChr->GiveWeapon(WEAPON_GUN, 10);
-	}
+	// give default weapons
+	pChr->GiveWeapon(WEAPON_HAMMER, -1);
+	pChr->GiveWeapon(WEAPON_GUN, 10);
 }
 
 void IGameController::OnFlagReturn(CFlag *pFlag)
@@ -372,7 +354,10 @@ void IGameController::OnPlayerReadyChange(CPlayer *pPlayer)
 		pPlayer->m_IsReadyToPlay ^= 1;
 
 		if(m_GameState == IGS_GAME_RUNNING && !pPlayer->m_IsReadyToPlay)
+		{
 			SetGameState(IGS_GAME_PAUSED, TIMER_INFINITE); // one player isn't ready -> pause the game
+			GameServer()->SendGameMsg(GAMEMSG_GAME_PAUSED, pPlayer->GetCID(), -1);
+		}
 
 		CheckReadyStates();
 	}
@@ -566,9 +551,24 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 		// only possible when game, pause or start countdown is running
 		if(m_GameState == IGS_GAME_RUNNING || m_GameState == IGS_GAME_PAUSED || m_GameState == IGS_START_COUNTDOWN)
 		{
-			m_GameState = GameState;
-			m_GameStateTimer = 3*Server()->TickSpeed();
-			GameServer()->m_World.m_Paused = true;
+			if(g_Config.m_SvCountdown == 0 && m_GameFlags&GAMEFLAG_SURVIVAL)
+			{
+				m_GameState = GameState;
+				m_GameStateTimer = 3*Server()->TickSpeed();
+				GameServer()->m_World.m_Paused = true;
+
+			}
+			else if(g_Config.m_SvCountdown > 0)
+			{
+				m_GameState = GameState;
+				m_GameStateTimer = g_Config.m_SvCountdown*Server()->TickSpeed();
+				GameServer()->m_World.m_Paused = true;
+			}
+			else
+			{
+				// no countdown, start new match right away
+				SetGameState(IGS_GAME_RUNNING);
+			}
 		}
 		break;
 	case IGS_GAME_RUNNING:
@@ -610,9 +610,9 @@ void IGameController::SetGameState(EGameState GameState, int Timer)
 		}
 		break;
 	case IGS_END_ROUND:
-		if(DoWincheckMatch())
-			break;
 	case IGS_END_MATCH:
+		if(GameState == IGS_END_ROUND && DoWincheckMatch())
+			break;
 		// only possible when game is running or over
 		if(m_GameState == IGS_GAME_RUNNING || m_GameState == IGS_END_MATCH || m_GameState == IGS_END_ROUND || m_GameState == IGS_GAME_PAUSED)
 		{
@@ -655,6 +655,16 @@ void IGameController::StartRound()
 		SetGameState(IGS_START_COUNTDOWN);
 	else
 		SetGameState(IGS_WARMUP_GAME, TIMER_INFINITE);
+}
+
+void IGameController::SwapTeamscore()
+{
+	if(!IsTeamplay())
+		return;
+
+	int Score = m_aTeamscore[TEAM_RED];
+	m_aTeamscore[TEAM_RED] = m_aTeamscore[TEAM_BLUE];
+	m_aTeamscore[TEAM_BLUE] = Score;
 }
 
 // general
@@ -987,6 +997,7 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos) const
 		return false;
 
 	CSpawnEval Eval;
+	Eval.m_RandomSpawn = IsSurvival();
 
 	if(IsTeamplay())
 	{
@@ -1055,7 +1066,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type) const
 			continue;	// try next spawn point
 
 		vec2 P = m_aaSpawnPoints[Type][i]+Positions[Result];
-		float S = EvaluateSpawnPos(pEval, P);
+		float S = pEval->m_RandomSpawn ? random_int() : EvaluateSpawnPos(pEval, P);
 		if(!pEval->m_Got || pEval->m_Score > S)
 		{
 			pEval->m_Got = true;

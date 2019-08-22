@@ -9,6 +9,7 @@ config = NewConfig()
 config:Add(OptCCompiler("compiler"))
 config:Add(OptTestCompileC("stackprotector", "int main(){return 0;}", "-fstack-protector -fstack-protector-all"))
 config:Add(OptTestCompileC("minmacosxsdk", "int main(){return 0;}", "-mmacosx-version-min=10.7 -isysroot /Developer/SDKs/MacOSX10.7.sdk"))
+config:Add(OptTestCompileC("buildwithoutsseflag", "#include <immintrin.h>\nint main(){_mm_pause();return 0;}", ""))
 config:Add(OptLibrary("zlib", "zlib.h", false))
 config:Add(SDL.OptFind("sdl", true))
 config:Add(FreeType.OptFind("freetype", true))
@@ -169,7 +170,9 @@ end
 
 function GenerateLinuxSettings(settings, conf, arch, compiler)
 	if arch == "x86" then
-		settings.cc.flags:Add("-msse2") -- for the _mm_pause call
+		if config.buildwithoutsseflag.value == false then
+			settings.cc.flags:Add("-msse2") -- for the _mm_pause call
+		end
 		settings.cc.flags:Add("-m32")
 		settings.link.flags:Add("-m32")
 	elseif arch == "x86_64" then
@@ -234,6 +237,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 	end
 
 	local icons = SharedIcons(compiler)
+	local manifests = SharedManifests(compiler)
 
 	-- Required libs
 	settings.link.libs:Add("gdi32")
@@ -261,6 +265,7 @@ function GenerateWindowsSettings(settings, conf, target_arch, compiler)
 
 	-- Client
 	settings.link.extrafiles:Add(icons.client)
+	settings.link.extrafiles:Add(manifests.client)
 	settings.link.libs:Add("opengl32")
 	settings.link.libs:Add("glu32")
 	settings.link.libs:Add("winmm")
@@ -321,6 +326,14 @@ function SharedIcons(compiler)
 	return shared_icons[compiler]
 end
 
+function SharedManifests(compiler)
+	if not shared_manifests then
+		local client_manifest = ResCompile("other/manifest/teeworlds.rc", compiler)
+		shared_manifests = {client=client_manifest}
+	end
+	return shared_manifests
+end
+
 function BuildEngineCommon(settings)
 	settings.link.extrafiles:Merge(Compile(settings, Collect("src/engine/shared/*.cpp", "src/base/*.c")))
 end
@@ -378,7 +391,6 @@ function BuildContent(settings, arch, conf)
 		end
 		-- dependencies
 		dl = Python("scripts/download.py")
-		dl = dl .. " --arch " .. arch .. " --conf " .. conf
 		AddJob("other/sdl/include/SDL.h", "Downloading SDL2", dl .. " sdl")
 		AddJob("other/freetype/include/ft2build.h", "Downloading freetype", dl .. " freetype")
 		table.insert(content, CopyFile(settings.link.Output(settings, "") .. "/SDL2.dll", "other/sdl/windows/lib" .. _arch .. "/SDL2.dll"))

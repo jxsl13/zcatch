@@ -5,7 +5,7 @@ file(STRINGS src/game/version.h VERSION_LINE
   REGEX GAME_RELEASE_VERSION
 )
 
-if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
+if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+|[0-9]+\\.[0-9]+)\"")
   set(VERSION_MAJOR ${CMAKE_MATCH_1})
   set(VERSION_MINOR ${CMAKE_MATCH_2})
   set(VERSION_PATCH ${CMAKE_MATCH_3})
@@ -65,8 +65,12 @@ if(TARGET_OS STREQUAL "windows")
 endif()
 
 option(CLIENT "Compile client" ON)
+option(DOWNLOAD_DEPENDENCIES "Download dependencies (only available on Windows)" ${AUTO_DEPENDENCIES_DEFAULT})
+option(DOWNLOAD_GTEST "Download and compile GTest if not found" ${AUTO_DEPENDENCIES_DEFAULT})
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
+
+set(OpenGL_GL_PREFERENCE LEGACY)
 
 # Set the default build type to Release
 if(NOT(CMAKE_BUILD_TYPE))
@@ -85,6 +89,28 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 
 set(SERVER_EXECUTABLE teeworlds_srv CACHE STRING "Name of the built server executable")
 set(CLIENT_EXECUTABLE teeworlds CACHE STRING "Name of the build client executable")
+
+########################################################################
+# Download dependencies
+########################################################################
+
+find_package(PythonInterp)
+if(DOWNLOAD_DEPENDENCIES)
+  if(PYTHON_EXECUTABLE AND TARGET_OS STREQUAL "windows" AND TARGET_BITS)
+    set(DOWNLOADS)
+    foreach(d freetype sdl)
+      if(NOT EXISTS "${PROJECT_SOURCE_DIR}/other/${d}/${TARGET_OS}/lib${TARGET_BITS}")
+        list(APPEND DOWNLOADS ${d})
+      endif()
+    endforeach()
+    if(DOWNLOADS)
+      message(STATUS "Downloading Freetype and SDL 2")
+      execute_process(COMMAND ${PYTHON_EXECUTABLE} scripts/download.py ${DOWNLOADS}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+      )
+    endif()
+  endif()
+endif()
 
 ########################################################################
 # Compiler flags
@@ -110,14 +136,27 @@ endfunction()
 if(NOT MSVC)
   # Protect the stack pointer.
   # -fstack-protector-all doesn't work on MinGW.
-  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-all)
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-protector-strong)
+
+  # Protect the stack from clashing.
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fstack-clash-protection)
+
+  # Control-flow protection. Should protect against ROP.
+  add_c_compiler_flag_if_supported(OUR_FLAGS -fcf-protection)
 
   # Inaccurate floating point numbers cause problems on mingw-w64-gcc when
   # compiling for x86, might cause problems elsewhere. So don't store floats
   # in registers but keep them at higher accuracy.
-
   if(TARGET_ARCH STREQUAL "x86")
     add_c_compiler_flag_if_supported(OUR_FLAGS -ffloat-store)
+  endif()
+
+  # gcc < 4.10 chokes on _mm_pause on x86 without SSE support.
+  if(TARGET_ARCH STREQUAL "x86")
+    check_c_source_compiles("#include <immintrin.h>\nint main() { _mm_pause(); return 0; }" MM_PAUSE_WORKS_WITHOUT_MSSE2)
+    if(NOT MM_PAUSE_WORKS_WITHOUT_MSSE2)
+      add_c_compiler_flag_if_supported(OUR_FLAGS -msse2)
+    endif()
   endif()
 
   if(TARGET_OS STREQUAL "mac")
@@ -180,6 +219,9 @@ function(set_glob VAR GLOBBING EXTS DIRECTORY) # ...
       endforeach()
       if(GLOB_BUT_NOT_LIST)
         message(AUTHOR_WARNING "Entries only present in ${DIRECTORY}: ${GLOB_BUT_NOT_LIST}")
+      endif()
+      if(NOT LIST_BUT_NOT_GLOB AND NOT GLOB_BUT_NOT_LIST)
+        message(AUTHOR_WARNING "${VAR} is not alphabetically sorted")
       endif()
     endif()
   endif()
@@ -254,10 +296,11 @@ if(NOT CMAKE_CROSSCOMPILING)
   find_package(PkgConfig)
 endif()
 find_package(ZLIB)
-find_package(Freetype)
+find_package(Crypto)
+find_package(OwnFreetype)
 find_package(Git)
+find_package(GTest)
 find_package(Pnglite)
-find_package(PythonInterp)
 find_package(SDL2)
 find_package(Threads)
 find_package(Wavpack)
@@ -302,6 +345,7 @@ show_dependency_status("Freetype" FREETYPE)
 if(TARGET_OS AND TARGET_OS STREQUAL "mac")
   show_dependency_status("Hdiutil" HDIUTIL)
 endif()
+show_dependency_status("OpenSSL Crypto" CRYPTO)
 show_dependency_status("Pnglite" PNGLITE)
 show_dependency_status("PythonInterp" PYTHONINTERP)
 show_dependency_status("SDL2" SDL2)
@@ -317,6 +361,18 @@ if(CLIENT AND NOT(FREETYPE_FOUND))
 endif()
 if(CLIENT AND NOT(SDL2_FOUND))
   message(SEND_ERROR "You must install SDL2 to compile the Teeworlds client")
+endif()
+if(NOT(GTEST_FOUND))
+  if(DOWNLOAD_GTEST)
+    if(GIT_FOUND)
+      message(STATUS "Automatically downloading GTest to be able to run tests")
+    else()
+      set(DOWNLOAD_GTEST OFF)
+      message(WARNING "To automatically download GTest, you have to install Git")
+    endif()
+  else()
+    message(STATUS "To run the tests, you have to install GTest")
+  endif()
 endif()
 
 if(TARGET_OS STREQUAL "windows")
@@ -335,11 +391,65 @@ elseif(TARGET_OS STREQUAL "mac")
   set(PLATFORM_LIBS ${CARBON})
 else()
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS GL GLU X11)
+  find_package(OpenGL)
+  find_package(X11)
+  set(PLATFORM_CLIENT_LIBS ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${X11_X11_LIB})
+  set(PLATFORM_CLIENT_INCLUDE_DIRS ${OPENGL_INCLUDE_DIR} ${X11_X11_INCLUDE_PATH})
   if(TARGET_OS STREQUAL "linux")
     set(PLATFORM_LIBS rt) # clock_gettime for glibc < 2.17
   else()
     set(PLATFORM_LIBS)
+  endif()
+endif()
+
+########################################################################
+# DOWNLOAD GTEST
+########################################################################
+
+if(NOT(GTEST_FOUND) AND DOWNLOAD_GTEST)
+  set(TEEWORLDS_GTEST_VERSION release-1.8.1)
+  configure_file(cmake/Download_GTest_CMakeLists.txt.in googletest-download/CMakeLists.txt)
+  execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/googletest-download
+  )
+  if(result)
+    message(WARNING "CMake step for googletest failed: ${result}")
+    set(DOWNLOAD_GTEST OFF)
+  else()
+    execute_process(COMMAND ${CMAKE_COMMAND} --build .
+      RESULT_VARIABLE result
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/googletest-download
+    )
+    if(result)
+      message(WARNING "Build step for googletest failed: ${result}")
+      set(DOWNLOAD_GTEST OFF)
+    else()
+      # Prevent overriding the parent project's compiler/linker settings on Windows
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+      # Add googletest directly to our build. This defines the gtest target.
+      add_subdirectory(
+        ${PROJECT_BINARY_DIR}/googletest-src
+        ${PROJECT_BINARY_DIR}/googletest-build
+        EXCLUDE_FROM_ALL
+      )
+
+      if(MSVC)
+        foreach(target gtest)
+          # `/w` disables all warnings. This is needed because `gtest` enables
+          # `/WX` (equivalent of `-Werror`) for some reason, breaking builds
+          # when MSVS adds new warnings.
+          target_compile_options(${target} PRIVATE $<$<NOT:${DBG}>:/MT> $<${DBG}:/MTd> /w)
+        endforeach()
+      endif()
+
+      set(GTEST_LIBRARIES gtest)
+      set(GTEST_INCLUDE_DIRS)
+      if(CMAKE_VERSION VERSION_LESS 2.8.11)
+        set(GTEST_INCLUDE_DIRS "${gtest_SOURCE_DIR}/include")
+      endif()
+    endif()
   endif()
 endif()
 
@@ -360,7 +470,7 @@ set(DEP_MD5 $<TARGET_OBJECTS:json> $<TARGET_OBJECTS:md5>)
 # DATA
 ########################################################################
 
-set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
+set(EXPECTED_DATA
   audio/foley_body_impact-01.wv
   audio/foley_body_impact-02.wv
   audio/foley_body_impact-03.wv
@@ -745,16 +855,15 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   countryflags/default.png
   countryflags/index.json
   deadtee.png
+  editor/automap/desert_main.json
   editor/automap/grass_doodads.json
   editor/automap/grass_main.json
+  editor/automap/jungle_main.json
+  editor/automap/winter_main.json
   editor/background.png
   editor/checker.png
   editor/cursor.png
-  editor/desert_main.rules
   editor/entities.png
-  editor/grass_main.rules
-  editor/jungle_main.rules
-  editor/winter_main.rules
   emoticons.png
   fonts/DejaVuSans.ttf
   game.png
@@ -764,7 +873,6 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/breton.json
   languages/bulgarian.json
   languages/catalan.json
-  languages/chinese.json
   languages/chuvash.json
   languages/czech.json
   languages/danish.json
@@ -798,6 +906,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   languages/slovenian.json
   languages/spanish.json
   languages/swedish.json
+  languages/traditional_chinese.json
   languages/turkish.json
   languages/ukrainian.json
   mapres/bg_cloud1.png
@@ -808,6 +917,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   mapres/desert_mountains.png
   mapres/desert_mountains2.png
   mapres/desert_sun.png
+  mapres/easter.png
   mapres/generic_deathtiles.png
   mapres/generic_lamps.png
   mapres/generic_shadows.png
@@ -856,6 +966,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   skins/body/kitty.png
   skins/body/standard.png
   skins/body/x_ninja.png
+  skins/bot.png
   skins/brownbear.json
   skins/cammo.json
   skins/cammostripes.json
@@ -924,6 +1035,7 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   ui/menuimages/play_game.png
   ui/menuimages/settings.png
   ui/no_skinpart.png
+  ui/sound_icons.png
   ui/themes/heavens.png
   ui/themes/heavens_day.map
   ui/themes/heavens_night.map
@@ -932,6 +1044,26 @@ set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc
   ui/themes/jungle_night.map
   ui/themes/none.png
 )
+
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/languages/index.json)
+  message(WARNING "Missing datasrc/languages submodule. Please download a source release or update your git submodules with `git submodule update --init`")
+  foreach(item ${EXPECTED_DATA})
+    if(item MATCHES "^languages/")
+      list(REMOVE_ITEM EXPECTED_DATA ${item})
+    endif()
+  endforeach()
+endif()
+
+if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/maps/dm1.map)
+  message(WARNING "Missing datasrc/maps submodule. Please download a source release or update your git submodules with `git submodule update --init`")
+  foreach(item ${EXPECTED_DATA})
+    if(item MATCHES "^maps/")
+      list(REMOVE_ITEM EXPECTED_DATA ${item})
+    endif()
+  endforeach()
+endif()
+
+set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
 
 ########################################################################
 # COPY DATA AND DLLS
@@ -1021,6 +1153,11 @@ generate_source("src/generated/server_data.h" "server_content_header")
 set_src(BASE GLOB_RECURSE src/base
   color.h
   detect.h
+  hash.c
+  hash.h
+  hash_ctxt.h
+  hash_libtomcrypt.c
+  hash_openssl.c
   math.h
   system.c
   system.h
@@ -1128,7 +1265,7 @@ set(GAME_GENERATED_SHARED
 set(DEPS ${DEP_MD5} ${ZLIB_DEP})
 
 # Libraries
-set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${PLATFORM_LIBS})
+set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${CRYPTO_LIBRARIES} ${PLATFORM_LIBS})
 
 # Targets
 add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_GENERATED_SHARED} ${BASE})
@@ -1216,6 +1353,8 @@ if(CLIENT)
     components/motd.h
     components/nameplates.cpp
     components/nameplates.h
+    components/notifications.cpp
+    components/notifications.h
     components/particles.cpp
     components/particles.h
     components/players.cpp
@@ -1228,6 +1367,8 @@ if(CLIENT)
     components/sounds.h
     components/spectator.cpp
     components/spectator.h
+    components/stats.cpp
+    components/stats.h
     components/voting.cpp
     components/voting.h
     gameclient.cpp
@@ -1273,6 +1414,11 @@ if(CLIENT)
 
   if(TARGET_OS STREQUAL "windows")
     set(CLIENT_ICON "other/icons/${CLIENT_EXECUTABLE}.rc")
+    if(NOT MINGW)
+      set(CLIENT_MANIFEST "other/manifest/teeworlds.manifest")
+    else()
+      set(CLIENT_MANIFEST "other/manifest/teeworlds.rc")
+    endif()
   else()
     set(CLIENT_ICON)
   endif()
@@ -1407,6 +1553,7 @@ endif()
 
 set_src(MASTERSRV_SRC GLOB src/mastersrv mastersrv.cpp mastersrv.h)
 set_src(VERSIONSRV_SRC GLOB src/versionsrv mapversions.h versionsrv.cpp versionsrv.h)
+list(APPEND VERSIONSRV_SRC ${PROJECT_BINARY_DIR}/src/generated/nethash.cpp)
 
 set(TARGET_MASTERSRV mastersrv)
 set(TARGET_VERSIONSRV versionsrv)
@@ -1448,6 +1595,42 @@ list(APPEND TARGETS_LINK ${TARGETS_TOOLS})
 
 add_custom_target(tools DEPENDS ${TARGETS_TOOLS})
 add_custom_target(everything DEPENDS ${TARGETS_OWN})
+
+########################################################################
+# TESTS
+########################################################################
+
+if(GTEST_FOUND OR DOWNLOAD_GTEST)
+  set_src(TESTS GLOB src/test
+    fs.cpp
+    git_revision.cpp
+    hash.cpp
+    storage.cpp
+    str.cpp
+    test.cpp
+    test.h
+    thread.cpp
+  )
+  set(TARGET_TESTRUNNER testrunner)
+  add_executable(${TARGET_TESTRUNNER} EXCLUDE_FROM_ALL
+    ${TESTS}
+    $<TARGET_OBJECTS:engine-shared>
+    $<TARGET_OBJECTS:game-shared>
+    ${DEPS}
+  )
+  target_link_libraries(${TARGET_TESTRUNNER} ${LIBS} ${GTEST_LIBRARIES})
+  target_include_directories(${TARGET_TESTRUNNER} PRIVATE ${GTEST_INCLUDE_DIRS})
+
+  list(APPEND TARGETS_OWN ${TARGET_TESTRUNNER})
+  list(APPEND TARGETS_LINK ${TARGET_TESTRUNNER})
+
+  add_custom_target(run_tests
+    COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> ${TESTRUNNER_ARGS}
+    COMMENT Running tests
+    DEPENDS ${TARGET_TESTRUNER}
+    USES_TERMINAL
+  )
+endif()
 
 ########################################################################
 # INSTALLATION
@@ -1774,6 +1957,7 @@ foreach(target ${TARGETS})
   if(DEFINE_FORTIFY_SOURCE)
     target_compile_definitions(${target} PRIVATE $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>) # Detect some buffer overflows.
   endif()
+  target_compile_definitions(${target} PRIVATE _GLIBCXX_ASSERTIONS) # Enable run-time bounds-checking for the STL
 endforeach()
 
 foreach(target ${TARGETS_LINK})
@@ -1811,6 +1995,10 @@ foreach(target ${TARGETS_OWN})
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
   target_include_directories(${target} PRIVATE ${CURL_INCLUDE_DIRS})
   target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
+  if(CRYPTO_FOUND)
+    target_compile_definitions(${target} PRIVATE CONF_OPENSSL)
+    target_include_directories(${target} PRIVATE ${CRYPTO_INCLUDE_DIRS})
+  endif()
 endforeach()
 
 foreach(target ${TARGETS_DEP})

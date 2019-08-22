@@ -3,6 +3,7 @@
 #include <engine/graphics.h>
 #include <engine/serverbrowser.h>
 #include <game/client/components/sounds.h>
+#include <game/client/components/stats.h>
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
 #include <game/client/teecomp.h>
@@ -210,7 +211,7 @@ void CTeecompStats::RenderGlobalStats()
 		{
 			if(1<<i == TC_STATS_BESTSPREE)
 				px += 40.0f;
-			tw = TextRender()->TextWidth(0, 24.0f, apHeaders[i], -1);
+			tw = TextRender()->TextWidth(0, 24.0f, apHeaders[i], -1, -1.0f);
 			TextRender()->Text(0, x+px-tw, y-5, 24.0f, apHeaders[i], -1);
 			px += 100;
 		}
@@ -283,7 +284,7 @@ void CTeecompStats::RenderGlobalStats()
 		}
 
 		CTextCursor Cursor;
-		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
+		tw = TextRender()->TextWidth(0, FontSize, m_pClient->m_aClients[apPlayers[j]].m_aName, -1, -1.0f);
 		TextRender()->SetCursor(&Cursor, x+64, y, FontSize, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 220;
 		TextRender()->TextEx(&Cursor, m_pClient->m_aClients[apPlayers[j]].m_aName, -1);
@@ -292,21 +293,21 @@ void CTeecompStats::RenderGlobalStats()
 		if(g_Config.m_TcStatboardInfos & TC_STATS_FRAGS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Frags);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
 		if(g_Config.m_TcStatboardInfos & TC_STATS_DEATHS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
 		if(g_Config.m_TcStatboardInfos & TC_STATS_SUICIDES)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_Suicides);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
@@ -316,14 +317,14 @@ void CTeecompStats::RenderGlobalStats()
 				str_format(aBuf, sizeof(aBuf), "--");
 			else
 				str_format(aBuf, sizeof(aBuf), "%.2f", (float)(Stats.m_Frags)/Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
 		if(g_Config.m_TcStatboardInfos & TC_STATS_NET)
 		{
 			str_format(aBuf, sizeof(aBuf), "%+d", Stats.m_Frags-Stats.m_Deaths);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
@@ -331,14 +332,14 @@ void CTeecompStats::RenderGlobalStats()
 		{
 			float Fpm = (float)(Stats.m_Frags*60)/((float)(Client()->GameTick()-Stats.m_JoinDate)/Client()->GameTickSpeed());
 			str_format(aBuf, sizeof(aBuf), "%.1f", Fpm);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
 		if(g_Config.m_TcStatboardInfos & TC_STATS_SPREE)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_CurrentSpree);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
@@ -346,14 +347,14 @@ void CTeecompStats::RenderGlobalStats()
 		{
 			px += 40;
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_BestSpree);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
 		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGGRABS)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagGrabs);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}
@@ -363,14 +364,14 @@ void CTeecompStats::RenderGlobalStats()
 				continue;
 
 			str_format(aBuf, sizeof(aBuf), "%d/%d", Stats.m_aFragsWith[i], Stats.m_aDeathsFrom[i]);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x+px-tw/2, y, FontSize, aBuf, -1);
 			px += 80;
 		}
 		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_TcStatboardInfos&TC_STATS_FLAGCAPTURES)
 		{
 			str_format(aBuf, sizeof(aBuf), "%d", Stats.m_FlagCaptures);
-			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1);
+			tw = TextRender()->TextWidth(0, FontSize, aBuf, -1, -1.0f);
 			TextRender()->Text(0, x-tw+px, y, FontSize, aBuf, -1);
 			px += 100;
 		}

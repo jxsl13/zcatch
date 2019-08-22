@@ -66,6 +66,7 @@ CServerBrowser::CServerBrowser()
 	m_NumRequests = 0;
 
 	m_NeedRefresh = 0;
+	m_RefreshFlags = 0;
 
 	// the token is to keep server refresh separated from each other
 	m_CurrentLanToken = 1;
@@ -517,10 +518,10 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry)
 	Data.m_pfnCallback = CBFTrackPacket;
 	Data.m_pCallbackUser = this;
 	m_pNetClient->Send(&Packet, NET_TOKEN_NONE, &Data);
-	pEntry->m_TrackID = Data.m_TrackID;
 
 	if(pEntry)
 	{
+		pEntry->m_TrackID = Data.m_TrackID;
 		pEntry->m_RequestTime = time_get();
 		pEntry->m_InfoState = CServerEntry::STATE_PENDING;
 	}

@@ -3,7 +3,7 @@
 
 #include <base/vmath.h>
 
-enum {
+/* enum {
 	TC_STATS_FRAGS=1,
 	TC_STATS_DEATHS=2,
 	TC_STATS_SUICIDES=4,
@@ -15,7 +15,7 @@ enum {
 	TC_STATS_FLAGGRABS=256,
 	TC_STATS_WEAPS=512,
 	TC_STATS_FLAGCAPTURES=1024,
-};
+}; */
 
 class CTeecompUtils
 {

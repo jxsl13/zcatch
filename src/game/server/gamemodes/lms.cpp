@@ -14,17 +14,17 @@ CGameControllerLMS::CGameControllerLMS(CGameContext *pGameServer) : IGameControl
 }
 
 // event
-int CGameControllerLMS::OnCharacterDeath(CCharacter *pVictim, CPlayer *pKiller, int Weapon)
+void CGameControllerLMS::OnCharacterSpawn(CCharacter *pChr)
 {
-	// update spectator modes for dead players in survival
-	if(m_GameFlags&GAMEFLAG_SURVIVAL)
-	{
-		for(int i = 0; i < MAX_CLIENTS; ++i)
-			if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->m_DeadSpecMode)
-				GameServer()->m_apPlayers[i]->UpdateDeadSpecMode();
-	}
+	IGameController::OnCharacterSpawn(pChr);
 
-	return 0;
+	// give start equipment
+	pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
+	pChr->GiveWeapon(WEAPON_GRENADE, 10);
+	pChr->GiveWeapon(WEAPON_LASER, 5);
+
+	// prevent respawn
+	pChr->GetPlayer()->m_RespawnDisabled = GetStartRespawnState();
 }
 
 // game

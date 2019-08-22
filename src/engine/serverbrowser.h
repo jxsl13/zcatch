@@ -33,6 +33,14 @@ public:
 			PLAYERFLAG_BOT=2,
 			PLAYERFLAG_MASK=3,
 		};
+
+		bool operator<(const CClient &Other) const
+		{
+			if(!(m_PlayerType&CServerInfo::CClient::PLAYERFLAG_SPEC) && ((Other.m_PlayerType&CServerInfo::CClient::PLAYERFLAG_SPEC) ||
+				(!(Other.m_PlayerType&CServerInfo::CClient::PLAYERFLAG_SPEC) && m_Score > Other.m_Score)))
+				return true;
+			return false;
+		}
 	};
 
 	//int m_SortedIndex;
@@ -122,7 +130,6 @@ public:
 		FILTER_PURE=4096,
 		FILTER_PURE_MAP=8192,
 		FILTER_COUNTRY= 16384,
-		FILTER_PING= 32768,
 	};
 
 	virtual void SetType(int Type) = 0;

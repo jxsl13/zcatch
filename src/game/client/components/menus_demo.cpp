@@ -8,6 +8,7 @@
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/storage.h>
+#include <engine/shared/config.h>
 
 #include <game/client/render.h>
 #include <game/client/gameclient.h>
@@ -49,7 +50,7 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 	MainView.VSplitRight(450.0f, &MainView, 0);
 
 	if (m_SeekBarActive || m_MenuActive) // only draw the background if SeekBar or Menu is active
-		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_T, 10.0f);
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_T, 10.0f);
 
 	MainView.Margin(5.0f, &MainView);
 
@@ -330,7 +331,7 @@ void CMenus::RenderDemoList(CUIRect MainView)
 
 	// cut view
 	MainView.HSplitBottom(80.0f, &MainView, &BottomView);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, ms_BackgroundAlpha), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
 	BottomView.HSplitTop(20.f, 0, &BottomView);
 
 	static int s_Inited = 0;
@@ -365,8 +366,15 @@ void CMenus::RenderDemoList(CUIRect MainView)
 		}
 	}
 
-	CUIRect ListBox, Button, Label, FileIcon;
-	MainView.HSplitTop(230.0f, &ListBox, &MainView);
+	static bool s_DemoDetailsActive = true;
+	const int NumOptions = 8;
+	const float ButtonHeight = 20.0f;
+	const float ButtonSpacing = 2.0f;
+	const float HMargin = 5.0f;
+	const float BackgroundHeight = s_DemoDetailsActive ? (float)(NumOptions+1)*ButtonHeight+(float)NumOptions*ButtonSpacing : ButtonHeight;
+
+	CUIRect ListBox, Button, FileIcon;
+	MainView.HSplitTop(MainView.h - BackgroundHeight - 2 * HMargin, &ListBox, &MainView);
 
 	static CListBoxState s_ListBoxState;
 	UiDoListboxHeader(&s_ListBoxState, &ListBox, Localize("Recorded"), 20.0f, 2.0f);
@@ -390,7 +398,7 @@ void CMenus::RenderDemoList(CUIRect MainView)
 			vec4 IconColor = vec4(1, 1, 1, 1);
 			if(!DemoItem.m_IsDir)
 			{
-				IconColor = vec4(0.6, 0.6, 0.6, 1); // not loaded
+				IconColor = vec4(0.6f, 0.6f, 0.6f, 1.0f); // not loaded
 				if(DemoItem.m_Valid && DemoItem.m_InfosLoaded)
 					IconColor = DemoMarkerCount > 0 ? vec4(0.5, 1, 0.5, 1) : vec4(1,1,1,1);
 			}
@@ -416,84 +424,27 @@ void CMenus::RenderDemoList(CUIRect MainView)
 	m_DemolistSelectedIndex = UiDoListboxEnd(&s_ListBoxState, &Activated);
 	DemolistOnUpdate(false);
 
-	// render demo info
-	int NumOptions = (!m_DemolistSelectedIsDir && m_DemolistSelectedIndex >= 0 && m_lDemos[m_DemolistSelectedIndex].m_Valid) ? 8 : 0;
-	float ButtonHeight = 20.0f;
-	float Spacing = 2.0f;
-	float BackgroundHeight = (float)(NumOptions+1)*ButtonHeight+(float)NumOptions*Spacing;
-
-	MainView.HSplitTop(10.0f, 0, &MainView);
-	MainView.HSplitTop(BackgroundHeight, &MainView, 0);
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
-
-	MainView.HSplitTop(ButtonHeight, &Label, &MainView);
-	Label.y += 2.0f;
-	UI()->DoLabel(&Label, aFooterLabel, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
+	MainView.HSplitTop(HMargin, 0, &MainView);
+	static int s_DemoDetailsDropdown = 0;
 	if(!m_DemolistSelectedIsDir && m_DemolistSelectedIndex >= 0 && m_lDemos[m_DemolistSelectedIndex].m_Valid)
+		DoIndependentDropdownMenu(&s_DemoDetailsDropdown, &MainView, aFooterLabel, ButtonHeight, RenderDemoDetails, &s_DemoDetailsActive);
+	else
 	{
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		DoInfoBox(&Button, Localize("Created"), m_lDemos[m_DemolistSelectedIndex].m_Info.m_aTimestamp);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		DoInfoBox(&Button, Localize("Type"), m_lDemos[m_DemolistSelectedIndex].m_Info.m_aType);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		int Length = ((m_lDemos[m_DemolistSelectedIndex].m_Info.m_aLength[0]<<24)&0xFF000000) | ((m_lDemos[m_DemolistSelectedIndex].m_Info.m_aLength[1]<<16)&0xFF0000) |
-					((m_lDemos[m_DemolistSelectedIndex].m_Info.m_aLength[2]<<8)&0xFF00) | (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aLength[3]&0xFF);
-		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%d:%02d", Length/60, Length%60);
-		DoInfoBox(&Button, Localize("Length"), aBuf);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		str_format(aBuf, sizeof(aBuf), "%d", m_lDemos[m_DemolistSelectedIndex].m_Info.m_Version);
-		DoInfoBox(&Button, Localize("Version"), aBuf);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		DoInfoBox(&Button, Localize("Netversion"), m_lDemos[m_DemolistSelectedIndex].m_Info.m_aNetversion);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		const int MarkerCount = DemoGetMarkerCount(m_lDemos[m_DemolistSelectedIndex].m_Info);
-		str_format(aBuf, sizeof(aBuf), "%d", MarkerCount);
-		if(MarkerCount > 0)
-			TextRender()->TextColor(0.5, 1, 0.5, 1);
-		DoInfoBox(&Button, Localize("Markers"), aBuf);
-		TextRender()->TextColor(1, 1, 1, 1);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		DoInfoBox(&Button, Localize("Map"), m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapName);
-
-		MainView.HSplitTop(Spacing, 0, &MainView);
-		MainView.HSplitTop(ButtonHeight, &Button, &MainView);
-		Button.VSplitLeft(ButtonHeight, 0, &Button);
-
-		CUIRect ButtonRight;
-		Button.VSplitMid(&Button, &ButtonRight);
-		float Size = float((m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapSize[0]<<24) | (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapSize[1]<<16) |
-							(m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapSize[2]<<8) | (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapSize[3]))/1024.0f;
-		str_format(aBuf, sizeof(aBuf), Localize("%.3f KiB"), Size);
-		DoInfoBox(&Button, Localize("Size"), aBuf);
-
-		unsigned Crc = (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapCrc[0]<<24) | (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapCrc[1]<<16) |
-					(m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapCrc[2]<<8) | (m_lDemos[m_DemolistSelectedIndex].m_Info.m_aMapCrc[3]);
-		str_format(aBuf, sizeof(aBuf), "%08x", Crc);
-		DoInfoBox(&ButtonRight, Localize("Crc"), aBuf);
+		CUIRect Header;
+		MainView.HSplitTop(ButtonHeight, &Header, &MainView);
+		RenderTools()->DrawUIRect(&Header, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
+		Header.y += 2.0f;
+		UI()->DoLabel(&Header, aFooterLabel, ButtonHeight*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 	}
 
 	// demo buttons
 	int NumButtons = m_DemolistSelectedIsDir ? 2 : 4;
-	Spacing = 3.0f;
+	float Spacing = 3.0f;
 	float ButtonWidth = (BottomView.w/6.0f)-(Spacing*5.0)/6.0f;
 	float BackgroundWidth = ButtonWidth*(float)NumButtons+(float)(NumButtons-1)*Spacing;
 
 	BottomView.VSplitRight(BackgroundWidth, 0, &BottomView);
-	RenderTools()->DrawUIRect4(&BottomView, vec4(0.0f, 0.0f, 0.0f, 0.25f), vec4(0.0f, 0.0f, 0.0f, 0.25f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
+	RenderTools()->DrawUIRect4(&BottomView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
 
 	BottomView.HSplitTop(25.0f, &BottomView, 0);
 	BottomView.VSplitLeft(ButtonWidth, &Button, &BottomView);
@@ -570,4 +521,75 @@ void CMenus::RenderDemoList(CUIRect MainView)
 			}
 		}
 	}
+}
+
+float CMenus::RenderDemoDetails(CUIRect View, void *pUser)
+{
+	CMenus *pSelf = (CMenus*)pUser;
+
+	// render demo info
+	if(!pSelf->m_DemolistSelectedIsDir && pSelf->m_DemolistSelectedIndex >= 0 && pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Valid)
+	{
+		CUIRect Button;
+		
+		const float ButtonHeight = 20.0f;
+		const float Spacing = 2.0f;
+		
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		pSelf->DoInfoBox(&Button, Localize("Created"), pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aTimestamp);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		pSelf->DoInfoBox(&Button, Localize("Type"), pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aType);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		int Length = ((pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aLength[0]<<24)&0xFF000000) | ((pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aLength[1]<<16)&0xFF0000) |
+					((pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aLength[2]<<8)&0xFF00) | (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aLength[3]&0xFF);
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "%d:%02d", Length/60, Length%60);
+		pSelf->DoInfoBox(&Button, Localize("Length"), aBuf);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_Version);
+		pSelf->DoInfoBox(&Button, Localize("Version"), aBuf);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		pSelf->DoInfoBox(&Button, Localize("Netversion"), pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aNetversion);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		const int MarkerCount = DemoGetMarkerCount(pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info);
+		str_format(aBuf, sizeof(aBuf), "%d", MarkerCount);
+		if(MarkerCount > 0)
+			pSelf->TextRender()->TextColor(0.5, 1, 0.5, 1);
+		pSelf->DoInfoBox(&Button, Localize("Markers"), aBuf);
+		pSelf->TextRender()->TextColor(1, 1, 1, 1);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		pSelf->DoInfoBox(&Button, Localize("Map"), pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapName);
+
+		View.HSplitTop(Spacing, 0, &View);
+		View.HSplitTop(ButtonHeight, &Button, &View);
+		Button.VMargin(ButtonHeight, &Button);
+
+		CUIRect ButtonRight;
+		Button.VSplitMid(&Button, &ButtonRight);
+		float Size = float((pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapSize[0]<<24) | (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapSize[1]<<16) |
+							(pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapSize[2]<<8) | (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapSize[3]))/1024.0f;
+		str_format(aBuf, sizeof(aBuf), Localize("%.3f KiB"), Size);
+		pSelf->DoInfoBox(&Button, Localize("Size"), aBuf);
+
+		unsigned Crc = (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapCrc[0]<<24) | (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapCrc[1]<<16) |
+					(pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapCrc[2]<<8) | (pSelf->m_lDemos[pSelf->m_DemolistSelectedIndex].m_Info.m_aMapCrc[3]);
+		str_format(aBuf, sizeof(aBuf), "%08x", Crc);
+		pSelf->DoInfoBox(&ButtonRight, Localize("Crc"), aBuf);
+	}
+
+	//unused
+	return 0.0f;
 }

@@ -40,7 +40,7 @@ void CNamePlates::RenderNameplate(
 				pPlayerInfo->m_Score);
 
 		CTextCursor Cursor;
-		float tw = TextRender()->TextWidth(0, FontSize, aName, -1) + RenderTools()->GetClientIdRectSize(FontSize);
+		float tw = TextRender()->TextWidth(0, FontSize, aName, -1, -1.0f) + RenderTools()->GetClientIdRectSize(FontSize);
 		TextRender()->SetCursor(&Cursor, Position.x-tw/2.0f, Position.y-FontSize-38.0f, FontSize, TEXTFLAG_RENDER);
 
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.5f*a);

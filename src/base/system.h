@@ -9,9 +9,16 @@
 #define BASE_SYSTEM_H
 
 #include "detect.h"
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef __GNUC__
+#define GNUC_ATTRIBUTE(x) __attribute__(x)
+#else
+#define GNUC_ATTRIBUTE(x)
 #endif
 
 /* Group: Debug */
@@ -68,7 +75,8 @@ void dbg_break();
 	See Also:
 		<dbg_assert>
 */
-void dbg_msg(const char *sys, const char *fmt, ...);
+void dbg_msg(const char *sys, const char *fmt, ...)
+GNUC_ATTRIBUTE((format(printf, 2, 3)));
 
 /* Group: Memory */
 
@@ -498,6 +506,16 @@ int time_houroftheday();
 */
 int time_isxmasday();
 
+/*
+	Function: time_iseasterday
+		Checks if today is in between Good Friday and Easter Monday (Gregorian calendar)
+
+	Returns:
+		1 - if it's egg time
+		0 - if not
+*/
+int time_iseasterday();
+
 /* Group: Network General */
 typedef struct
 {
@@ -825,7 +843,8 @@ int str_length(const char *str);
 		- The strings are treated as zero-terminated strings.
 		- Garantees that dst string will contain zero-termination.
 */
-void str_format(char *buffer, int buffer_size, const char *format, ...);
+void str_format(char *buffer, int buffer_size, const char *format, ...)
+GNUC_ATTRIBUTE((format(printf, 3, 4)));
 
 /*
 	Function: str_sanitize_strong
@@ -905,6 +924,18 @@ int str_check_pathname(const char* str);
 void str_clean_whitespaces(char *str);
 
 /*
+	Function: str_clean_whitespaces_simple
+		Removes leading and trailing spaces
+
+	Parameters:
+		str - String to clean up
+
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+*/
+void str_clean_whitespaces_simple(char *str);
+
+/*
 	Function: str_skip_to_whitespace
 		Skips leading non-whitespace characters(all but ' ', '\t', '\n', '\r').
 
@@ -919,6 +950,12 @@ void str_clean_whitespaces(char *str);
 		- The strings are treated as zero-terminated strings.
 */
 char *str_skip_to_whitespace(char *str);
+
+/*
+	Function: str_skip_to_whitespace_const
+		See str_skip_to_whitespace.
+*/
+const char *str_skip_to_whitespace_const(const char *str);
 
 /*
 	Function: str_skip_whitespaces
@@ -1126,6 +1163,14 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size);
 		- Guarantees that buffer string will contain zero-termination.
 */
 void str_timestamp(char *buffer, int buffer_size);
+void str_timestamp_format(char *buffer, int buffer_size, const char *format)
+GNUC_ATTRIBUTE((format(strftime, 3, 0)));
+void str_timestamp_ex(time_t time, char *buffer, int buffer_size, const char *format)
+GNUC_ATTRIBUTE((format(strftime, 4, 0)));
+
+#define FORMAT_TIME "%H:%M:%S"
+#define FORMAT_SPACE "%Y-%m-%d %H:%M:%S"
+#define FORMAT_NOSPACE "%Y-%m-%d_%H-%M-%S"
 
 /* Group: Filesystem */
 
@@ -1157,6 +1202,19 @@ void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user);
 		in a failure if b or a does not exist.
 */
 int fs_makedir(const char *path);
+
+/*
+	Function: fs_makedir_recursive
+		Recursively create directories
+
+	Parameters:
+		path - Path to create
+
+	Returns:
+		Returns 0 on success. Negative value on failure.
+*/
+int fs_makedir_recursive(const char *path);
+
 
 /*
 	Function: fs_storage_path
@@ -1319,7 +1377,33 @@ int str_isspace(char c);
 char str_uppercase(char c);
 unsigned str_quickhash(const char *str);
 
-char *str_utf8_skip_whitespaces(char *str);
+/*
+	Function: str_utf8_is_whitespace
+		Check if the unicode is an utf8 whitespace.
+
+	Parameters:
+		code - unicode.
+
+	Returns:
+		Returns 1 on success, 0 on failure.
+*/
+int str_utf8_is_whitespace(int code);
+
+/*
+	Function: str_utf8_skip_whitespaces
+		Skips leading utf8 whitespace characters.
+
+	Parameters:
+		str - Pointer to the string.
+
+	Returns:
+		Pointer to the first non-whitespace character found
+		within the string.
+
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+*/
+const char *str_utf8_skip_whitespaces(const char *str);
 
 /*
 	Function: str_utf8_rewind
@@ -1419,6 +1503,15 @@ int secure_random_init();
 		length - Length of the buffer.
 */
 void secure_random_fill(void *bytes, unsigned length);
+
+/*
+	Function: pid
+		Gets the process ID of the current process
+
+	Returns:
+		The process ID of the current process.
+*/
+int pid();
 
 #ifdef __cplusplus
 }

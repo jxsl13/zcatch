@@ -13,6 +13,7 @@
 #include <game/client/render.h>
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
+#include <game/client/components/stats.h>
 
 #include "binds.h"
 #include "menus.h"
@@ -155,10 +156,11 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
-	int r1, g1, b1, r2, g2, b2;
+	int r2, g2, b2;
 
 //#define USING_HSL_TO_RGB
 #ifdef USING_RGB_SLIDERS
+	int r1, g1, b1;
 	r1 = g_Config.m_TcColoredTeesTeam1>>16;
 	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
 	b1 = g_Config.m_TcColoredTeesTeam1&0xff;
