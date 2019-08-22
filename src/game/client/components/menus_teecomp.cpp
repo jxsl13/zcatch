@@ -233,8 +233,6 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			dbg_msg("teecomp", "menus: RGBA Info.m_aColors[%d] = %f %f %f %f", i, RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, RGBColorFiltered.a);
 #endif
 		}
-		// Info.m_ColorBody = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
-		// Info.m_ColorFeet = vec4(r1/255.0f, g1/255.0f, b1/255.0f, 1.0f);
 	}
 	else
 	{
@@ -243,18 +241,12 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			Info.m_aTextures[i] = s->m_apParts[i]->m_OrgTexture;
 			Info.m_aColors[i] = vec4(1.0f, 1.0f, 1.0f, 1.0f);;
 		}
-		// Info.m_ColorBody = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		// Info.m_ColorFeet = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-	Info.m_Size = UI()->Scale()*50.0f;
+	Info.m_Size = /* UI()->Scale()* */50.0f;
 
 	Button.HSplitTop(70.0f, 0, &Button);
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x, Button.y+Button.h/2));
 	LeftView.HSplitTop(50.0f, 0, &LeftView);
-
-///////////////////////////////////////////////////////
-// teecomp debug, remove!!!
-// return;
 
 	// Colors team 2
 
@@ -305,31 +297,25 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcForceSkinTeam1, aBuf, g_Config.m_TcForceSkinTeam1, &Button))
 		g_Config.m_TcForceSkinTeam1 ^= 1;
 
-	CUIRect SkinSelection, Scroll;
+	CUIRect SkinSelection, List;
 	LeftView.Margin(10.0f, &SkinSelection);
 
 	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
 	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
-
-	RenderTools()->DrawUIRect(&SkinSelection, vec4(0,0,0,0.15f), 0, 0);
-	SkinSelection.VSplitRight(15, &SkinSelection, &Scroll);
-
-	CUIRect List = SkinSelection;
-	List.HSplitTop(20, &Button, &List);
 	
-	int Num = (int)(SkinSelection.h/Button.h);
-	static float Scrollvalue = 0;
-	static int Scrollbar = 0;
-	Scroll.HMargin(5.0f, &Scroll);
-	Scrollvalue = DoScrollbarV(&Scrollbar, &Scroll, Scrollvalue);
+	List = SkinSelection;
+	// scroll
+	static CScrollRegion s_ScrollRegion;
+	vec2 ScrollOffset(0, 0);
+	BeginScrollRegion(&s_ScrollRegion, &List, &ScrollOffset);
+	List.y += ScrollOffset.y;
 
-	int Start = (int)((m_pClient->m_pSkins->Num()-Num)*Scrollvalue);
-	if(Start < 0)
-		Start = 0;
-
-	for(int i=Start; i<Start+Num && i<m_pClient->m_pSkins->Num(); i++)
+	for(int i=0; i<m_pClient->m_pSkins->Num(); i++)
 	{
+		List.HSplitTop(20.0f, &Button, &List);
+		ScrollRegionAddRect(&s_ScrollRegion, Button);
+
 		const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);
 
 		str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
@@ -343,9 +329,8 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		Button.VMargin(5.0f, &Button);
 		Button.HSplitTop(1.0f, 0, &Button);
 		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
-
-		List.HSplitTop(20.0f, &Button, &List);
 	}
+	EndScrollRegion(&s_ScrollRegion);
 
 	// Forced skin team 2
 
@@ -361,24 +346,18 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
 	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
 
-	RenderTools()->DrawUIRect(&SkinSelection, vec4(0,0,0,0.15f), 0, 0);
-	SkinSelection.VSplitRight(15, &SkinSelection, &Scroll);
-
 	List = SkinSelection;
-	List.HSplitTop(20, &Button, &List);
+	// scroll
+	static CScrollRegion s_ScrollRegion2;
+	vec2 ScrollOffset2(0, 0);
+	BeginScrollRegion(&s_ScrollRegion2, &List, &ScrollOffset2);
+	List.y += ScrollOffset2.y;
 	
-	Num = (int)(SkinSelection.h/Button.h);
-	static float Scrollvalue2 = 0;
-	static int Scrollbar2 = 0;
-	Scroll.HMargin(5.0f, &Scroll);
-	Scrollvalue2 = DoScrollbarV(&Scrollbar2, &Scroll, Scrollvalue2);
-
-	Start = (int)((m_pClient->m_pSkins->Num()-Num)*Scrollvalue2);
-	if(Start < 0)
-		Start = 0;
-
-	for(int i=Start; i<Start+Num && i<m_pClient->m_pSkins->Num(); i++)
+	for(int i=0; i<m_pClient->m_pSkins->Num(); i++)
 	{
+		List.HSplitTop(20.0f, &Button, &List);
+		ScrollRegionAddRect(&s_ScrollRegion2, Button);
+		
 		const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);
 
 		str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
@@ -392,9 +371,8 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		Button.VMargin(5.0f, &Button);
 		Button.HSplitTop(1.0f, 0, &Button);
 		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
-
-		List.HSplitTop(20.0f, &Button, &List);
 	}
+	EndScrollRegion(&s_ScrollRegion2);
 }
 
 void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
