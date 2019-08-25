@@ -668,12 +668,20 @@ private:
 	void SetOverlay(int Type, float x, float y, const void *pData);
 	void UpdateFriendCounter(const CServerInfo *pEntry);
 	void UpdateFriends();
+	
+	// teecomp utils
+	struct HSLPickerState
+	{
+		int m_HLPicker;
+		CMenus::CButtonContainer m_aButtons[12];
+	};
+	void RenderFlag(int Team, vec2 Pos);
+	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified, HSLPickerState& State); // intermediary, used by teecomp
 
 	// found in menus_settings.cpp
 	void RenderLanguageSelection(CUIRect MainView, bool Header=true);
 	void RenderThemeSelection(CUIRect MainView, bool Header=true);
 	void RenderSkinHSLPicker(CUIRect Picker);
-	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified); // intermediary, used by teecomp
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
 	void RenderSettingsGeneral(CUIRect MainView);

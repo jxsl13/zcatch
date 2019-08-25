@@ -136,6 +136,32 @@ void CMenus::UiDoKeybinder(CKeyInfo& pKey, CUIRect* r)
 	r->HSplitTop(5.0f, 0, r);
 }
 
+void CMenus::RenderFlag(int Team, vec2 Pos)
+{
+	float Size = 32.0f;
+	Graphics()->BlendNormal();
+	if(g_Config.m_TcColoredFlags)
+		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+	else
+		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+	Graphics()->QuadsBegin();
+
+	if(g_Config.m_TcColoredFlags)
+	{
+		vec3 Col = CTeecompUtils::GetTeamColor(Team, Team, g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+		Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+	}
+
+	if(Team == TEAM_RED)
+		RenderTools()->SelectSprite(SPRITE_FLAG_RED);
+	else
+		RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
+
+	Graphics()->QuadsSetRotation(0);
+	IGraphics::CQuadItem QuadItem(Pos.x + 60.0f, Pos.y-Size*0.75f, Size, Size*2);
+	Graphics()->QuadsDraw(&QuadItem, 1);
+	Graphics()->QuadsEnd();
+}
 
 void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 {
@@ -155,56 +181,10 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		g_Config.m_TcDmColorsTeam1 ^= 1;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
+	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
-	int r2, g2, b2;
 
-//#define USING_HSL_TO_RGB
-#ifdef USING_RGB_SLIDERS
-	int r1, g1, b1;
-	r1 = g_Config.m_TcColoredTeesTeam1>>16;
-	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
-	b1 = g_Config.m_TcColoredTeesTeam1&0xff;
-	RenderRgbSliders(&LeftView, &Button, r1, g1, b1, !g_Config.m_TcDmColorsTeam1);
-	g_Config.m_TcColoredTeesTeam1 = (r1<<16) + (g1<<8) + b1;
-#else
-#ifdef USING_HSL_TO_RGB
-	r1 = g_Config.m_TcColoredTeesTeam1>>16;
-	g1 = (g_Config.m_TcColoredTeesTeam1>>8)&0xff;
-	b1 = g_Config.m_TcColoredTeesTeam1&0xff;
-	// teecomp modification: now using HSL picker to get realistic values
-	{
-		bool Modified;
-		vec3 OriginalHSLvecColor = RgbToHsl(vec3(r1/255.f, g1/255.f, b1/255.f));
-		int OriginalHSLColor = (int(OriginalHSLvecColor.h*255)<<16) + (int(OriginalHSLvecColor.s*255)<<8) + int(OriginalHSLvecColor.l*255);
-		LeftView.HSplitTop(99.0f, &Button, &LeftView);
-		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified);
-		if(Modified)
-		{
-			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
-			vec3 RGBColor = HslToRgb(HSLColor);
-			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
-		}
-	}
-#else
-	// teecomp modification: now using HSL picker to get realistic values
-	{
-		bool Modified;
-		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam1Hsl;
-		LeftView.HSplitTop(99.0f, &Button, &LeftView);
-		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified);
-		if(Modified)
-		{
-			int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
-			g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
-
-			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
-			vec3 RGBColor = HslToRgb(HSLColor);
-			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
-		}
-	}
-#endif
-#endif
-
+	// render skin
 	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1, false)));
 	CTeeRenderInfo Info;
 	if(!g_Config.m_TcDmColorsTeam1)
@@ -212,26 +192,9 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
-#ifdef USING_HSL_TO_RGB
-			vec3 RGBColor = vec3(r1/255.0f, g1/255.0f, b1/255.0f);
-			vec3 HSLColor = RgbToHsl(RGBColor);
-			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor); 
-			vec3 RGBColorFiltered = HslToRgb(HSLColorFiltered);
-			Info.m_aColors[i] = vec4(RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, 1.0f);
-#else
-			#ifdef V1_BASIC
-			int h1 = g_Config.m_TcColoredTeesTeam1Hsl>>16;
-			int s1 = (g_Config.m_TcColoredTeesTeam1Hsl>>8)&0xff;
-			int l1 = g_Config.m_TcColoredTeesTeam1Hsl&0xff;
-			dbg_msg("teecomp", "h1,s1,l1 = %d, %d, %d", h1, s1, l1);
-			vec3 HSLColor = vec3(h1/255.0f, s1/255.0f, l1/255.0f);
-			vec3 HSLColorFiltered = m_pClient->m_pSkins->GetBasicTeamColor(HSLColor); 
-			#endif
 			int HSLColorFiltered = m_pClient->m_pSkins->GetTeamColor(s->m_aUseCustomColors[i], s->m_aPartColors[i], 0, i, g_Config.m_TcColoredTeesTeam1Hsl);
 			vec4 RGBColorFiltered = m_pClient->m_pSkins->GetColorV4(HSLColorFiltered, i==SKINPART_MARKING); // does HSL to RGB, with alpha
 			Info.m_aColors[i] = RGBColorFiltered;
-			dbg_msg("teecomp", "menus: RGBA Info.m_aColors[%d] = %f %f %f %f", i, RGBColorFiltered.r, RGBColorFiltered.g, RGBColorFiltered.b, RGBColorFiltered.a);
-#endif
 		}
 	}
 	else
@@ -245,32 +208,32 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	Info.m_Size = /* UI()->Scale()* */50.0f;
 
 	Button.HSplitTop(70.0f, 0, &Button);
-	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x, Button.y+Button.h/2));
+	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x+20.0f, Button.y+Button.h/2)); // 20 is magic
 	LeftView.HSplitTop(50.0f, 0, &LeftView);
 
 	// Colors team 2
+	RightView.HSplitTop(20.0f, &Button, &RightView);
+	if(DoButton_CheckBox(&g_Config.m_TcForcedSkinsMethod, Localize("Enemy based skins"), g_Config.m_TcForcedSkinsMethod, &Button))
+		g_Config.m_TcForcedSkinsMethod ^= 1;
 
-	RightView.HSplitTop(20.0f, 0, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	str_format(aBuf, sizeof(aBuf), Localize("Use DM colors for %s"), (g_Config.m_TcColoredTeesMethod)?Localize("enemies"):Localize("team 2"));
 	if(DoButton_CheckBox(&g_Config.m_TcDmColorsTeam2, aBuf, g_Config.m_TcDmColorsTeam2, &Button))
 		g_Config.m_TcDmColorsTeam2 ^= 1;
 
 	RightView.HSplitTop(20.0f, &Button, &RightView);
+	RightView.HSplitTop(20.0f, &Button, &RightView);
 	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Enemies"):Localize("Team 2"), 14.0f, CUI::ALIGN_LEFT);
-	r2 = g_Config.m_TcColoredTeesTeam2>>16;
-	g2 = (g_Config.m_TcColoredTeesTeam2>>8)&0xff;
-	b2 = g_Config.m_TcColoredTeesTeam2&0xff;
-	RenderRgbSliders(&RightView, &Button, r2, g2, b2, !g_Config.m_TcDmColorsTeam2);
-	g_Config.m_TcColoredTeesTeam2 = (r2<<16) + (g2<<8) + b2;
-
+	
 	s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin2, false)));
 	if(!g_Config.m_TcDmColorsTeam2)
 	{
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
-			Info.m_aColors[i] = vec4(r2/255.0f, g2/255.0f, b2/255.0f, 1.0f);
+			int HSLColorFiltered = m_pClient->m_pSkins->GetTeamColor(s->m_aUseCustomColors[i], s->m_aPartColors[i], 0, i, g_Config.m_TcColoredTeesTeam2Hsl);
+			vec4 RGBColorFiltered = m_pClient->m_pSkins->GetColorV4(HSLColorFiltered, i==SKINPART_MARKING); // does HSL to RGB, with alpha
+			Info.m_aColors[i] = RGBColorFiltered;
 		}
 	}
 	else
@@ -282,22 +245,41 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		}
 	}
 
+	// render tees
 	Button.HSplitTop(70.0f, 0, &Button);
-	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x, Button.y+Button.h/2));
+	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x+20.0f, Button.y+Button.h/2));
 	RightView.HSplitTop(50.0f, 0, &RightView);
 
+	RenderFlag(TEAM_BLUE, vec2(Button.x+60.0f, Button.y-8.0f));
+
+	CUIRect SkinSelection, List;
+
 	// Force skins team 1
-
-	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcForcedSkinsMethod, Localize("Enemy based skins"), g_Config.m_TcForcedSkinsMethod, &Button))
-		g_Config.m_TcForcedSkinsMethod ^= 1;
-
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	str_format(aBuf, sizeof(aBuf), Localize("Force team %s/FFA skins"), (g_Config.m_TcForcedSkinsMethod)?Localize("mates"):"1");
 	if(DoButton_CheckBox(&g_Config.m_TcForceSkinTeam1, aBuf, g_Config.m_TcForceSkinTeam1, &Button))
 		g_Config.m_TcForceSkinTeam1 ^= 1;
 
-	CUIRect SkinSelection, List;
+	// teecomp modification: now using HSL picker to get realistic values
+	{
+		CUIRect LeftColorView;
+		LeftView.VSplitLeft(LeftView.w*0.4f, &LeftView, &LeftColorView);
+		bool Modified;
+		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam1Hsl;
+		LeftColorView.HSplitBottom(144.0f+8.0f+16.0f*3+8.0f, &LeftColorView, &Button); // the last 8 is a magic value
+		static HSLPickerState s_State;
+		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified, s_State);
+		if(Modified)
+		{
+			int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
+			g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
+
+			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+			vec3 RGBColor = HslToRgb(HSLColor);
+			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+		}
+	}
+
 	LeftView.Margin(10.0f, &SkinSelection);
 
 	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
@@ -333,12 +315,30 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	EndScrollRegion(&s_ScrollRegion);
 
 	// Forced skin team 2
-
-	RightView.HSplitTop(20.0f, 0, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	str_format(aBuf, sizeof(aBuf), Localize("Force %s skins"), (g_Config.m_TcForcedSkinsMethod)?Localize("enemies"):Localize("team 2"));
 	if(DoButton_CheckBox(&g_Config.m_TcForceSkinTeam2, aBuf, g_Config.m_TcForceSkinTeam2, &Button))
 		g_Config.m_TcForceSkinTeam2 ^= 1;
+		
+	// teecomp modification: now using HSL picker to get realistic values
+	{
+		CUIRect RightColorView;
+		RightView.VSplitLeft(RightView.w*0.4f, &RightView, &RightColorView);
+		bool Modified;
+		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam2Hsl;
+		RightColorView.HSplitBottom(144.0f+8.0f+16.0f*3+8.0f, &RightColorView, &Button); // the last 8 is a magic value
+		static HSLPickerState s_State;
+		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified, s_State);
+		if(Modified)
+		{
+			int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
+			g_Config.m_TcColoredTeesTeam2Hsl = NewHSLVal;
+
+			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+			vec3 RGBColor = HslToRgb(HSLColor);
+			g_Config.m_TcColoredTeesTeam2 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+		}
+	}
 
 	RightView.Margin(10.0f, &SkinSelection);
 
@@ -346,16 +346,16 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
 	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
 
-	List = SkinSelection;
+	CUIRect List2 = SkinSelection;
 	// scroll
 	static CScrollRegion s_ScrollRegion2;
 	vec2 ScrollOffset2(0, 0);
-	BeginScrollRegion(&s_ScrollRegion2, &List, &ScrollOffset2);
-	List.y += ScrollOffset2.y;
+	BeginScrollRegion(&s_ScrollRegion2, &List2, &ScrollOffset2);
+	List2.y += ScrollOffset2.y;
 	
 	for(int i=0; i<m_pClient->m_pSkins->Num(); i++)
 	{
-		List.HSplitTop(20.0f, &Button, &List);
+		List2.HSplitTop(20.0f, &Button, &List2);
 		ScrollRegionAddRect(&s_ScrollRegion2, Button);
 		
 		const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);

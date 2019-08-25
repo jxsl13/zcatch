@@ -185,7 +185,8 @@ void CMenus::RenderSkinHSLPicker(CUIRect MainView)
 	int Color = *CSkins::ms_apColorVariables[m_TeePartSelected];
 	bool Modified;
 
-	ivec4 Hsl = RenderHSLPicker(MainView, Color, UseAlpha, Modified);
+	static HSLPickerState HSLState;
+	ivec4 Hsl = RenderHSLPicker(MainView, Color, UseAlpha, Modified, HSLState);
 
 	if(Modified)
 	{
@@ -200,7 +201,7 @@ void CMenus::RenderSkinHSLPicker(CUIRect MainView)
 	}
 }
 
-ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified)
+ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified, HSLPickerState& State)
 {
 	CUIRect Picker, Label, Button;
 	int Hue, Sat, Lgt, Alp;
@@ -273,8 +274,8 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 		// logic
 		float X, Y;
-		static int s_HLPicker;
-		if(UI()->DoPickerLogic(&s_HLPicker, &Picker, &X, &Y))
+		// static int State.s_HLPicker;
+		if(UI()->DoPickerLogic(&State.m_HLPicker, &Picker, &X, &Y))
 		{
 			Sat = (int)(255.0f*X/Picker.w);
 			Lgt = (int)(255.0f*Y/Picker.h);
@@ -289,7 +290,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 		int NumBars = UseAlpha ? 4 : 3;
 		const char *const apNames[4] = {Localize("Hue:"), Localize("Sat:"), Localize("Lgt:"), Localize("Alp:")};
 		int *const apVars[4] = {&Hue, &Sat, &Lgt, &Alp};
-		static CButtonContainer s_aButtons[12];
+		// static CButtonContainer s_aButtons[12];
 		float SliderHeight = 16.0f;
 		static const float s_aColorIndices[7][3] = {{1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f},
 													{0.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}};
@@ -309,7 +310,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 			// button <
 			Button.VSplitLeft(Button.h, &Button, &Bar);
-			if(DoButton_Menu(&s_aButtons[i*3], "<", 0, &Button, 0, CUI::CORNER_TL|CUI::CORNER_BL))
+			if(DoButton_Menu(&State.m_aButtons[i*3], "<", 0, &Button, 0, CUI::CORNER_TL|CUI::CORNER_BL))
 			{
 				*apVars[i] = max(0, *apVars[i]-1);
 				Modified = true;
@@ -396,7 +397,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 			// button >
 			Button.VSplitLeft(Button.h, &Button, &Label);
-			if(DoButton_Menu(&s_aButtons[i*3+1], ">", 0, &Button, 0, CUI::CORNER_TR|CUI::CORNER_BR))
+			if(DoButton_Menu(&State.m_aButtons[i*3+1], ">", 0, &Button, 0, CUI::CORNER_TR|CUI::CORNER_BR))
 			{
 				*apVars[i] = min(255, *apVars[i]+1);
 				Modified = true;
@@ -410,7 +411,7 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 			// logic
 			float X;
-			if(UI()->DoPickerLogic(&s_aButtons[i*3+2], &Bar, &X, 0))
+			if(UI()->DoPickerLogic(&State.m_aButtons[i*3+2], &Bar, &X, 0))
 			{
 				*apVars[i] = X*255.0f/Bar.w;
 				Modified = true;
