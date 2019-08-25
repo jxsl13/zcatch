@@ -355,6 +355,79 @@ void CGameClient::OnInit()
 
 	m_ServerMode = SERVERMODE_PURE;
 
+	// obscure teecomp stuff
+	{
+		// Teecomp grayscale flags
+		// TODO!!!
+		Graphics()->UnloadTexture(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id); // Already loaded with full color, unload
+		//g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id = -1;
+
+		CImageInfo Info;
+		if(!Graphics()->LoadPNG(&Info, g_pData->m_aImages[IMAGE_GAME_GRAY].m_pFilename, IStorage::TYPE_ALL))
+			return;
+
+		unsigned char *d = (unsigned char *)Info.m_pData;
+		int Step = Info.m_Format == CImageInfo::FORMAT_RGBA ? 4 : 3;
+
+		for(int i=0; i < Info.m_Width*Info.m_Height; i++)
+		{
+			int v = (d[i*Step]+d[i*Step+1]+d[i*Step+2])/3;
+			d[i*Step] = v;
+			d[i*Step+1] = v;
+			d[i*Step+2] = v;
+		}
+
+		int aFreq[256];
+		int OrgWeight;
+		int NewWeight;
+		int FlagX = 384;
+		int FlagY = 256;
+		int FlagW = 128;
+		int FlagH = 256;
+		int Pitch = Info.m_Width*4;
+
+		for(int f=0; f<2; f++)
+		{
+			OrgWeight = 0;
+			NewWeight = 192;
+			for(int i=0; i<256; i++)
+				aFreq[i] = 0;
+
+			// find most common frequence
+			for(int y=FlagY; y<FlagY+FlagH; y++)
+				for(int x=FlagX+FlagW*f; x<FlagX+FlagW*(1+f); x++)
+				{
+					if(d[y*Pitch+x*4+3] > 128)
+						aFreq[d[y*Pitch+x*4]]++;
+				}
+			
+			for(int i = 1; i < 256; i++)
+			{
+				if(aFreq[OrgWeight] < aFreq[i])
+					OrgWeight = i;
+			}
+
+			// reorder
+			int InvOrgWeight = 255-OrgWeight;
+			int InvNewWeight = 255-NewWeight;
+			for(int y=FlagY; y<FlagY+FlagH; y++)
+				for(int x=FlagX+FlagW*f; x<FlagX+FlagW*(1+f); x++)
+				{
+					int v = d[y*Pitch+x*4];
+					if(v <= OrgWeight*1.25f) // modified for contrast
+						v = (int)(((v/(float)OrgWeight) * NewWeight));
+					else
+						v = (int)(((v-OrgWeight)/(float)InvOrgWeight)*InvNewWeight + NewWeight);
+					d[y*Pitch+x*4] = v;
+					d[y*Pitch+x*4+1] = v;
+					d[y*Pitch+x*4+2] = v;
+				}
+		}
+
+		g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id = Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
+		mem_free(Info.m_pData);
+	}
+
 	m_IsXmasDay = time_isxmasday();
 	m_IsEasterDay = time_iseasterday();
 }
