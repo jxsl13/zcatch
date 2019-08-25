@@ -211,6 +211,8 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x+20.0f, Button.y+Button.h/2)); // 20 is magic
 	LeftView.HSplitTop(50.0f, 0, &LeftView);
 
+	RenderFlag(TEAM_RED, vec2(Button.x+60.0f, Button.y-8.0f));
+
 	// Colors team 2
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	if(DoButton_CheckBox(&g_Config.m_TcForcedSkinsMethod, Localize("Enemy based skins"), g_Config.m_TcForcedSkinsMethod, &Button))
