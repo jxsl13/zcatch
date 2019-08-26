@@ -331,8 +331,8 @@ public:
 	class CMapImages *m_pMapimages;
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;
-	class CTeecompStats *m_pTeecompStats; // teecomp todo remove
 	class CStats *m_pStats;
+	class CTeecompUtils *m_pTeecomp;
 	class CItems *m_pItems;
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;

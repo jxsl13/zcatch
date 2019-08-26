@@ -7,6 +7,15 @@
 #include "teecomp.h"
 
 
+// returns RGB for flags, HUD elements
+vec3 CTeecompUtils::GetTeamColorSaturatedRGB(int ForTeam, int LocalTeam, const CConfiguration& Config)
+{
+	vec3 c = GetTeamColor(ForTeam, LocalTeam, g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+	c.s = c.s + (1.0f-c.s)/2.0f;
+	c.l = c.l + (1.0f-c.l)/2.0f;
+	return HslToRgb(c);
+}
+
 vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
 	vec3 c1((Color1>>16)/255.0f, ((Color1>>8)&0xff)/255.0f, (Color1&0xff)/255.0f);
@@ -25,6 +34,7 @@ vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Col
 		return c1;
 	return c2;
 }
+
 int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
 	// Team based Colors or spectating

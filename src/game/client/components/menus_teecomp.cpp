@@ -148,7 +148,8 @@ void CMenus::RenderFlag(int Team, vec2 Pos)
 
 	if(g_Config.m_TcColoredFlags)
 	{
-		vec3 Col = CTeecompUtils::GetTeamColor(Team, Team, g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+		// vec3 Col = CTeecompUtils::GetTeamColor(Team, Team, g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+		vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(Team, Team, g_Config);
 		Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 	}
 
