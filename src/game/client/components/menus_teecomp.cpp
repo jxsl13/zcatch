@@ -555,14 +555,14 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcColoredFlags, Localize("Make flags match tees colors"), g_Config.m_TcColoredFlags, &Button))
 		g_Config.m_TcColoredFlags ^= 1;
 
-	int FakeSpeedMeter = 0;
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	DoButton_CheckBox(&FakeSpeedMeter, Localize("Display speed meter (TODO)"), FakeSpeedMeter, &Button);
+	if(DoButton_CheckBox(&g_Config.m_TcSpeedmeter, Localize("Display speed meter"), g_Config.m_TcSpeedmeter, &Button))
+		g_Config.m_TcSpeedmeter ^= 1;
 
-	int FakeAccelMeter = 0;
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	Button.VSplitLeft(15.0f, 0, &Button);
-	DoButton_CheckBox(&FakeAccelMeter, Localize("Speed meter show acceleration (TODO)"), FakeAccelMeter, &Button);
+	if(DoButton_CheckBox(&g_Config.m_TcSpeedmeterAccel, Localize("Speed meter show acceleration"), g_Config.m_TcSpeedmeterAccel, &Button))
+		g_Config.m_TcSpeedmeterAccel ^= 1;
 
 	// Right
 	RightView.HSplitTop(20.0f, &Button, &RightView);

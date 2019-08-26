@@ -728,7 +728,7 @@ void CHud::RenderSpeedmeter()
 	// walking in front of a wall or when using the ninja sword
 	static float Speed;
 	static vec2 OldPos;
-	static const int SMOOTH_TABLE_SIZE = 16; // 16
+	static const int SMOOTH_TABLE_SIZE = 32; // 16
 	static const int ACCEL_THRESHOLD = 400; // 24
 	static float SmoothTable[SMOOTH_TABLE_SIZE];
 	static int SmoothIndex = 0;
