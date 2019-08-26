@@ -719,6 +719,75 @@ void CHud::RenderSpectatorNotification()
 	}
 }
 
+void CHud::RenderSpeedmeter()
+{
+	if(!g_Config.m_TcSpeedmeter)
+		return;
+
+	// We calculate the speed instead of getting it from character.velocity cause it's buggy when
+	// walking in front of a wall or when using the ninja sword
+	static float Speed;
+	static vec2 OldPos;
+	static const int SMOOTH_TABLE_SIZE = 16; // 16
+	static const int ACCEL_THRESHOLD = 400; // 24
+	static float SmoothTable[SMOOTH_TABLE_SIZE];
+	static int SmoothIndex = 0;
+	static int CarryOverAccel = 0;
+
+	SmoothTable[SmoothIndex] = distance(m_pClient->m_LocalCharacterPos, OldPos)/Client()->RenderFrameTime();
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		float Mult = DemoPlayer()->BaseInfo()->m_Speed;
+		SmoothTable[SmoothIndex] /= Mult;
+	}
+	SmoothIndex = (SmoothIndex + 1) % SMOOTH_TABLE_SIZE;
+	OldPos = m_pClient->m_LocalCharacterPos;
+	Speed = 0;
+	for(int i = 0; i < SMOOTH_TABLE_SIZE; i++)
+		Speed += SmoothTable[i];
+	Speed /= SMOOTH_TABLE_SIZE;
+
+	int GameFlags = m_pClient->m_GameInfo.m_GameFlags;
+	const int t = -1;
+	int LastIndex = SmoothIndex - 1;
+	if(LastIndex < 0)
+		LastIndex = SMOOTH_TABLE_SIZE - 1;
+
+	vec4 Color;
+	if(g_Config.m_TcSpeedmeterAccel && Speed - SmoothTable[LastIndex] > ACCEL_THRESHOLD)
+	{
+		CarryOverAccel = 50;
+	}
+	else if(g_Config.m_TcSpeedmeterAccel && Speed - SmoothTable[LastIndex] < -ACCEL_THRESHOLD)
+	{
+		CarryOverAccel = -50;
+	}
+	if(CarryOverAccel > 0)
+	{
+		CarryOverAccel--;
+		Color = vec4(0.6f, 0.1f, 0.1f, 0.25f);
+	}
+	else if(CarryOverAccel < 0)
+	{
+		CarryOverAccel++;
+		Color = vec4(0.1f, 0.6f, 0.1f, 0.25f);
+	}
+	else
+		Color = vec4(0.1, 0.1, 0.1, 0.25);
+	
+	{
+		float ScoreWidthMax = TextRender()->TextWidth(0, 14.0f, "100", -1, -1.0f);
+		float Split = 3.0f;
+		float ImageSize = GameFlags&GAMEFLAG_FLAGS ? 16.0f : Split;
+		CUIRect Rect = {m_Width-ScoreWidthMax-ImageSize-2*Split, 220.0f+t*20, ScoreWidthMax+ImageSize+2*Split, 18.0f};
+		RenderTools()->DrawRoundRect(&Rect, Color,/* 5.0f, */ CUI::CORNER_L);
+	}
+
+	char aBuf[16];
+	str_format(aBuf, sizeof(aBuf), Speed/100 ? "%.0f0" : "%.0f", Speed/100);
+	TextRender()->Text(0, m_Width-5-TextRender()->TextWidth(0,12,aBuf,-1, -1.0f), 221+t*20, 12, aBuf, -1);
+}
+
 void CHud::RenderReadyUpNotification()
 {
 	if(!(m_pClient->m_Snap.m_paPlayerInfos[m_pClient->m_LocalClientID]->m_PlayerFlags&PLAYERFLAG_READY))
@@ -748,7 +817,10 @@ void CHud::OnRender()
 	if(g_Config.m_ClShowhud)
 	{
 		if(m_pClient->m_Snap.m_pLocalCharacter && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&(GAMESTATEFLAG_ROUNDOVER|GAMESTATEFLAG_GAMEOVER)))
+		{
+			RenderSpeedmeter();
 			RenderHealthAndAmmo(m_pClient->m_Snap.m_pLocalCharacter);
+		}
 		else if(m_pClient->m_Snap.m_SpecInfo.m_Active)
 		{
 			if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorID != -1)

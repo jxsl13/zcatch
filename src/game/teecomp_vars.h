@@ -31,6 +31,6 @@ MACRO_CONFIG_INT(TcHideCarrying, tc_hide_carrying, 0, 0, 1, CFGFLAG_CLIENT|CFGFL
 //MACRO_CONFIG_INT(TcStatboardInfos, tc_statboard_infos, 1259, 1, 2047, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Mask of infos to display on the global statboard")
 //MACRO_CONFIG_INT(TcStatId, tc_stat_id, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show player id in statboards")
 
-// Not implemented to port from 0.5
-// MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
-// MACRO_CONFIG_INT(TcSpeedmeterAccel, tc_speedmeter_accel, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Speed meter shows acceleration")
+// porting from 0.5
+MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
+MACRO_CONFIG_INT(TcSpeedmeterAccel, tc_speedmeter_accel, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Speed meter shows acceleration")
