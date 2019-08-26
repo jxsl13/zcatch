@@ -51,6 +51,9 @@ private:
 	//to prevent players from changing it mid game.
 	int m_WeaponMode;
 
+	// not changable mid game.
+	int m_SkillLevel;
+
 	/**
 	 * When a player enters the game, and the game is
 	 * currently running, the player has to be added 

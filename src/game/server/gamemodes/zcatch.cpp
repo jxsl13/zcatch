@@ -18,6 +18,7 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 {
 	m_pGameType = "zCatch";
 	m_WeaponMode = g_Config.m_SvWeaponMode;
+	m_SkillLevel = g_Config.m_SvSkillLevel;
 	m_GameFlags = GAMEFLAG_SURVIVAL;
 
 	m_PreviousIngamePlayerCount = 0;
@@ -740,6 +741,12 @@ void CGameControllerZCATCH::Tick()
 		// reset weapon mode if somone tries to change it while the server is sunning
 		g_Config.m_SvWeaponMode = m_WeaponMode;
 		GameServer()->SendServerMessage(-1, "If you want to change the weapon mode, please update your configuration file and restart the server.");
+	}
+	
+	if(m_SkillLevel != g_Config.m_SvSkillLevel)
+	{
+		g_Config.m_SvSkillLevel = m_SkillLevel;
+		GameServer()->SendServerMessage(-1, "If you want to change the skill level, please update your configuration file and restart the server.");
 	}
 	
 	
