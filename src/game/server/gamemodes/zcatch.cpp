@@ -1039,7 +1039,7 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 }
 
 std::string CGameControllerZCATCH::GetDatabasePrefix(){
-	return std::to_string(g_Config.m_SvWeaponMode) + "_";
+	return std::to_string(g_Config.m_SvWeaponMode) + "_" + std::to_string(g_Config.m_SvSkillLevel) + "_";
 }
 
 int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
