@@ -1209,6 +1209,8 @@ set_src(BASE GLOB_RECURSE src/base
   tl/sorted_array.h
   tl/string.h
   tl/threading.h
+  unicode/confusables.c
+  unicode/confusables_data.h
   vmath.h
 )
 set_src(ENGINE_INTERFACE GLOB src/engine

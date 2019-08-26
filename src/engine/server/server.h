@@ -216,6 +216,7 @@ public:
 	CServer();
 	~CServer();
 
+	int TrySetClientName(int ClientID, const char *pName);
 	virtual void SetClientName(int ClientID, const char *pName);
 	virtual void SetClientClan(int ClientID, char const *pClan);
 	virtual void SetClientCountry(int ClientID, int Country);

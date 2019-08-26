@@ -1378,6 +1378,18 @@ char str_uppercase(char c);
 unsigned str_quickhash(const char *str);
 
 /*
+	Function: str_utf8_comp_confusable
+		Compares two strings for visual appearance.
+	Parameters:
+		a - String to compare.
+		b - String to compare.
+	Returns:
+		0 if the strings are confusable.
+		!=0 otherwise.
+*/
+int str_utf8_comp_confusable(const char *a, const char *b);
+
+/*
 	Function: str_utf8_is_whitespace
 		Check if the unicode is an utf8 whitespace.
 
@@ -1403,7 +1415,19 @@ int str_utf8_is_whitespace(int code);
 	Remarks:
 		- The strings are treated as zero-terminated strings.
 */
-char *str_utf8_skip_whitespaces(char *str);
+const char *str_utf8_skip_whitespaces(const char *str);
+
+/*
+	Function: str_utf8_trim_right
+		Removes trailing characters that render as spaces by modifying
+		the string in-place.
+	Parameters:
+		str - Pointer to the string.
+	Remarks:
+		- The strings are treated as zero-terminated strings.
+		- The string is modified in-place.
+*/
+void str_utf8_trim_right(char *str);
 
 /*
 	Function: str_utf8_rewind
