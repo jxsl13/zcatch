@@ -12,7 +12,7 @@ vec3 CTeecompUtils::GetTeamColorSaturatedRGB(int ForTeam, int LocalTeam, const C
 {
 	vec3 c = GetTeamColor(ForTeam, LocalTeam, g_Config.m_TcColoredTeesTeam1Hsl, g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
 	c.s = c.s + (1.0f-c.s)/2.0f;
-	c.l = c.l + (1.0f-c.l)/2.0f;
+	c.l = c.l + (1.0f-c.l)/3.0f;
 	return HslToRgb(c);
 }
 
