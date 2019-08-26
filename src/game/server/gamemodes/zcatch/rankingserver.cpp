@@ -4,6 +4,7 @@
 #include <chrono>
 #include <future>
 #include <base/system.h>
+#include <engine/shared/protocol.h>
 
 
 IRankingServer::IRankingServer()
@@ -13,6 +14,15 @@ IRankingServer::IRankingServer()
     m_InvalidNicknames = tmp.keys();
     m_InvalidNicknames.push_back("(connecting)");
     m_InvalidNicknames.push_back("(invalid)");
+    m_InvalidNicknames.push_back("nameless tee");
+
+    // empty nickname
+    for (size_t i = 1; i <= MAX_CLIENTS; i++)
+    {
+        m_InvalidNicknames.push_back("(" + std::to_string(i) + ")");
+    }
+
+    
 }
 
 IRankingServer::~IRankingServer()
@@ -303,7 +313,7 @@ void IRankingServer::CleanupFutures()
             }
             catch (const std::exception& e)
             {
-                std::cerr << e.what() << '\n';
+                dbg_msg("ERROR", "Cleaning up features: %s", e.what());
             }
 
             return true;
@@ -326,7 +336,7 @@ void IRankingServer::AwaitFutures()
             }
             catch (const std::exception& e)
             {
-                std::cerr << e.what() << '\n';
+                dbg_msg("ERROR", "Awaiting features: %s", e.what());
             }
         }
     }
@@ -379,7 +389,6 @@ CRedisRankingServer::~CRedisRankingServer()
     {
         m_Client.disconnect(true);
         dbg_msg("REDIS", "disconnected from database.");
-        std::cout << "[redis]: disconnected from database" << std::endl;
     }
 }
 

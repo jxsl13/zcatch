@@ -49,7 +49,6 @@ class IRankingServer
 
 
     std::vector<std::string> m_InvalidNicknames;
-    bool IsValidNickname(const std::string& nickname, const std::string& prefix = "") const;
     bool IsValidKey(const std::string& key) const;
 
     // removes whitespace from string
@@ -90,6 +89,9 @@ class IRankingServer
     // ############################################################################################################
 
    public:
+    
+    bool IsValidNickname(const std::string& nickname, const std::string& prefix = "") const;
+
     // gets data and does stuff that's defined in callback with it.
     // if no callback is provided, nothing is done.
     // returns true, if async task has been started, false if nick is invalid or if no callback has been provided of if 

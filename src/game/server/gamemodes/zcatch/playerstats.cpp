@@ -10,7 +10,8 @@ void CPlayerStats::Reset()
 {
     m_IsValid = true;
     for (auto& [key, value] : m_Data)
-    {
+    {   
+        (void)key; // silence compiler warning.
         value = 0;
     }
     m_Rank = -1;

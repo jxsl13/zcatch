@@ -1107,6 +1107,11 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 		GameServer()->SendServerMessage(requestingID, "This server does not track any player statistics.");
 		return;
 	}
+	else if(!m_pRankingServer->IsValidNickname(ofNickname, GetDatabasePrefix()))
+	{
+		GameServer()->SendServerMessage(requestingID, "The requested nickname is not valid.");
+		return;
+	}
 
 	m_pRankingServer->GetRanking(ofNickname, [this, requestingID, ofNickname](CPlayerStats &stats) {
 		if (!stats.IsValid())
