@@ -729,7 +729,7 @@ void CHud::RenderSpeedmeter()
 	static float Speed;
 	static vec2 OldPos;
 	static const int SMOOTH_TABLE_SIZE = 32; // 16
-	static const int ACCEL_THRESHOLD = 100; // 24
+	static const int ACCEL_THRESHOLD = 500; // 24
 	static float SmoothTable[SMOOTH_TABLE_SIZE];
 	static int SmoothIndex = 0;
 	static int CarryOverAccel = 0;
