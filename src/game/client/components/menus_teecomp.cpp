@@ -310,16 +310,15 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		if(str_comp(s->m_aName, g_Config.m_TcForcedSkin1) == 0)
 			Selected = 1;
 
-		CUIRect Button2 = Button;
-		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button2))
+		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button))
 		{
 			TeesNeedUpdate = true;
 			str_copy(g_Config.m_TcForcedSkin1, s->m_aName, sizeof(g_Config.m_TcForcedSkin1));
 		}
 
-		Button2.VMargin(5.0f, &Button2);
-		Button2.HSplitTop(1.0f, 0, &Button2);
-		UI()->DoLabel(&Button2, aBuf, 14.0f, CUI::ALIGN_LEFT);
+		Button.VMargin(5.0f, &Button);
+		Button.HSplitTop(1.0f, 0, &Button);
+		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 	EndScrollRegion(&s_ScrollRegion);
 
@@ -386,6 +385,15 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 	EndScrollRegion(&s_ScrollRegion2);
+
+	if(TeesNeedUpdate)
+	{
+		for(int i = 0; i < MAX_CLIENTS; ++i)
+		{
+			if(m_pClient->m_aClients[i].m_Active)
+				m_pClient->m_aClients[i].UpdateRenderInfo(m_pClient, i, true);
+		}
+	}
 }
 
 void CMenus::RenderSettingsTeecompStats(CUIRect MainView)

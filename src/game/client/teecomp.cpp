@@ -102,6 +102,10 @@ const char* CTeecompUtils::RgbToName(int rgb)
 {
 	vec3 rgb_v((rgb>>16)/255.0f, ((rgb>>8)&0xff)/255.0f, (rgb&0xff)/255.0f);
 	vec3 hsl = RgbToHsl(rgb_v);
+	
+	// 2019: hack like this for now, no black anymore
+	hsl.s = hsl.s + (1.0f-hsl.s)/2.0f;
+	hsl.l = hsl.l + (1.0f-hsl.l)/3.0f;
 
 	if(hsl.l < 0.2f)
 		return "Black";
