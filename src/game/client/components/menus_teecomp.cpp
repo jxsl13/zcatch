@@ -78,7 +78,7 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	CUIRect Tabbar;
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
 
-	const char *pTabs[] = { Localize("Skins"), Localize("Stats"), Localize("Misc")/*, Localize("About")*/ };
+	const char *pTabs[] = { Localize("Skins"), Localize("Entities"), Localize("Stats")/*, Localize("About")*/ };
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
@@ -96,9 +96,9 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	if(s_SettingsPage == 0)
 		RenderSettingsTeecompSkins(MainView);
 	else if(s_SettingsPage == 1)
-		RenderSettingsTeecompStats(MainView);
-	else if(s_SettingsPage == 2)
 		RenderSettingsTeecompMisc(MainView);
+	else if(s_SettingsPage == 2)
+		RenderSettingsTeecompStats(MainView);
 	// else if(s_SettingsPage == 3)
 	// 	RenderSettingsTeecompAbout(MainView);
 }
@@ -212,7 +212,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x+20.0f, Button.y+Button.h/2)); // 20 is magic
 	LeftView.HSplitTop(50.0f, 0, &LeftView);
 
-	RenderFlag(TEAM_RED, vec2(Button.x+60.0f, Button.y-8.0f));
+	RenderFlag(TEAM_RED, vec2(Button.x+40.0f, Button.y-8.0f));
 
 	// Colors team 2
 	RightView.HSplitTop(20.0f, &Button, &RightView);
@@ -253,7 +253,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1, 0), vec2(Button.x+20.0f, Button.y+Button.h/2));
 	RightView.HSplitTop(50.0f, 0, &RightView);
 
-	RenderFlag(TEAM_BLUE, vec2(Button.x+60.0f, Button.y-8.0f));
+	RenderFlag(TEAM_BLUE, vec2(Button.x+40.0f, Button.y-8.0f));
 
 	CUIRect SkinSelection, List;
 
@@ -391,58 +391,58 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 	UI()->DoLabel(&Button, aBuf, 16.0f, CUI::ALIGN_LEFT);
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos, Localize("Frags"), g_Config.m_TcStatboardInfos & TC_STATS_FRAGS, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_FRAGS;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos, Localize("Frags"), g_Config.m_ClStatboardInfos & TC_STATS_FRAGS, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_FRAGS;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+1, Localize("Deaths"), g_Config.m_TcStatboardInfos & TC_STATS_DEATHS, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_DEATHS;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+1, Localize("Deaths"), g_Config.m_ClStatboardInfos & TC_STATS_DEATHS, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_DEATHS;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+2, Localize("Suicides"), g_Config.m_TcStatboardInfos & TC_STATS_SUICIDES, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_SUICIDES;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+2, Localize("Suicides"), g_Config.m_ClStatboardInfos & TC_STATS_SUICIDES, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_SUICIDES;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+3, Localize("Ratio"), g_Config.m_TcStatboardInfos & TC_STATS_RATIO, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_RATIO;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+3, Localize("Ratio"), g_Config.m_ClStatboardInfos & TC_STATS_RATIO, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_RATIO;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+4, Localize("Net score"), g_Config.m_TcStatboardInfos & TC_STATS_NET, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_NET;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+4, Localize("Net score"), g_Config.m_ClStatboardInfos & TC_STATS_NET, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_NET;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+5, Localize("Frags per minute"), g_Config.m_TcStatboardInfos & TC_STATS_FPM, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_FPM;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+5, Localize("Frags per minute"), g_Config.m_ClStatboardInfos & TC_STATS_FPM, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_FPM;
 		
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+6, Localize("Current spree"), g_Config.m_TcStatboardInfos & TC_STATS_SPREE, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_SPREE;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+6, Localize("Current spree"), g_Config.m_ClStatboardInfos & TC_STATS_SPREE, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_SPREE;
 		
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+7, Localize("Best spree"), g_Config.m_TcStatboardInfos & TC_STATS_BESTSPREE, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_BESTSPREE;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+7, Localize("Best spree"), g_Config.m_ClStatboardInfos & TC_STATS_BESTSPREE, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_BESTSPREE;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+9, Localize("Weapons stats"), g_Config.m_TcStatboardInfos & TC_STATS_WEAPS, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_WEAPS;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+9, Localize("Weapons stats"), g_Config.m_ClStatboardInfos & TC_STATS_WEAPS, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_WEAPS;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+8, Localize("Flag grabs"), g_Config.m_TcStatboardInfos & TC_STATS_FLAGGRABS, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_FLAGGRABS;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+8, Localize("Flag grabs"), g_Config.m_ClStatboardInfos & TC_STATS_FLAGGRABS, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_FLAGGRABS;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	if(DoButton_CheckBox(&g_Config.m_TcStatboardInfos+10, Localize("Flag captures"), g_Config.m_TcStatboardInfos & TC_STATS_FLAGCAPTURES, &Button))
-		g_Config.m_TcStatboardInfos ^= TC_STATS_FLAGCAPTURES;
+	if(DoButton_CheckBox(&g_Config.m_ClStatboardInfos+10, Localize("Flag captures"), g_Config.m_ClStatboardInfos & TC_STATS_FLAGCAPTURES, &Button))
+		g_Config.m_ClStatboardInfos ^= TC_STATS_FLAGCAPTURES;
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	UI()->DoLabel(&Button, Localize("Key bindings"), 16.0f, CUI::ALIGN_LEFT);
 	char aaBuf[3][32];
 	str_format(aaBuf[0], sizeof(aaBuf[0]), "%s:", Localize("Global statboard"));
-	str_format(aaBuf[1], sizeof(aaBuf[1]), "%s:", Localize("Player board"));
-	str_format(aaBuf[2], sizeof(aaBuf[2]), "%s:", Localize("Next player"));
-	CKeyInfo pKeys[] = {{ aaBuf[0], "+stats 1", 0},
-		{ aaBuf[1], "+stats 2", 0},
-		{ aaBuf[2], "+next_stats", 0}};
+	// str_format(aaBuf[1], sizeof(aaBuf[1]), "%s:", Localize("Player board"));
+	// str_format(aaBuf[2], sizeof(aaBuf[2]), "%s:", Localize("Next player"));
+	CKeyInfo pKeys[] = {{ aaBuf[0], "+stats", 0},};
+		// { aaBuf[1], "+stats 2", 0},
+		// { aaBuf[2], "+next_stats", 0}};
 
 	for(int pKeyid=0; pKeyid < KEY_LAST; pKeyid++)
 	{
@@ -459,7 +459,7 @@ void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
 	}
 
 	for(unsigned int i=0; i<sizeof(pKeys)/sizeof(CKeyInfo); i++)
-		UiDoKeybinder(pKeys[i], &MainView);
+		UiDoKeybinder(pKeys[i], &MainView); 
 }
 
 void CMenus::RenderLaser(const struct CNetObj_Laser *pCurrent)

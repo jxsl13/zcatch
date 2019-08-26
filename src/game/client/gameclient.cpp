@@ -1671,18 +1671,20 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 					int MixedColor = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, TeamColorHSL);
 					// This takes HSL + A and returns RGBA
 					m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
-// dbg_msg("teecomp", "gameclient: RGBA m_RenderInfo.m_aColors[%d]=%.2f %.2f %.2f %.2f", p, m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a);
-static vec4 OldRGB[NUM_SKINPARTS];
-if(m_RenderInfo.m_aColors[p] != OldRGB[p])
-{
-	vec4 PartColors = vec4(
-		(m_aSkinPartColors[p]>>16)/255.0f,
-		((m_aSkinPartColors[p]>>8)&0xff)/255.0f,
-		(m_aSkinPartColors[p]&0xff)/255.0f, 1.0f);
-	OldRGB[p] = m_RenderInfo.m_aColors[p];
-	if(p == 0) dbg_msg("teecomp", "-------------------gameclient: RGBA m_RenderInfo.m_aColors = ");
-	dbg_msg("teecomp", "\t\t%.3f %.3f %.3f %.3f /// %d /// %.3f %.3f %.3f", m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a, MixedColor,  PartColors.r, PartColors.g, PartColors.b);	
-}
+#ifdef TC_COLOR_DEBUGGING
+					// dbg_msg("teecomp", "gameclient: RGBA m_RenderInfo.m_aColors[%d]=%.2f %.2f %.2f %.2f", p, m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a);
+					static vec4 OldRGB[NUM_SKINPARTS];
+					if(m_RenderInfo.m_aColors[p] != OldRGB[p])
+					{
+						vec4 PartColors = vec4(
+							(m_aSkinPartColors[p]>>16)/255.0f,
+							((m_aSkinPartColors[p]>>8)&0xff)/255.0f,
+							(m_aSkinPartColors[p]&0xff)/255.0f, 1.0f);
+						OldRGB[p] = m_RenderInfo.m_aColors[p];
+						if(p == 0) dbg_msg("teecomp", "-------------------gameclient: RGBA m_RenderInfo.m_aColors = ");
+						dbg_msg("teecomp", "\t\t%.3f %.3f %.3f %.3f /// %d /// %.3f %.3f %.3f", m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a, MixedColor,  PartColors.r, PartColors.g, PartColors.b);	
+					}
+#endif
 				}
 			}
 			else

@@ -21,15 +21,15 @@ MACRO_CONFIG_INT(TcLaserColorInner, tc_laser_color_inner, 8355839, 0, 16777215, 
 MACRO_CONFIG_INT(TcLaserColorOuter, tc_laser_color_outer, 1250112, 0, 16777215, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Outer color of laser")
 
 // deprecated
-MACRO_CONFIG_INT(TcStatScreenshot, tc_stat_screenshot, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Automatically take game over statboard screenshot")
+//MACRO_CONFIG_INT(TcStatScreenshot, tc_stat_screenshot, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Automatically take game over statboard screenshot")
 // MACRO_CONFIG_INT(TcStatScreenshotMax, tc_stat_screenshot_max, 10, 0, 1000, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Maximum number of automatically created statboard screenshots (0 = no limit)")
 
 // not implemented
 MACRO_CONFIG_INT(TcColoredFlags, tc_colored_flags, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Make flags colors match tees colors")
 MACRO_CONFIG_INT(TcHideCarrying, tc_hide_carrying, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Hide the flag if you're carrying it")
 
-MACRO_CONFIG_INT(TcStatboardInfos, tc_statboard_infos, 1259, 1, 2047, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Mask of infos to display on the global statboard")
-MACRO_CONFIG_INT(TcStatId, tc_stat_id, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show player id in statboards")
+//MACRO_CONFIG_INT(TcStatboardInfos, tc_statboard_infos, 1259, 1, 2047, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Mask of infos to display on the global statboard")
+//MACRO_CONFIG_INT(TcStatId, tc_stat_id, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show player id in statboards")
 
 // Not implemented to port from 0.5
 // MACRO_CONFIG_INT(TcSpeedmeter, tc_speedmeter, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display speed meter")
