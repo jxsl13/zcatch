@@ -51,12 +51,12 @@ void CNamePlates::RenderNameplate(
 				TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
 			else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
 				TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
-			vec3 Col = CTeecompUtils::GetTeamColor(
+			vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(
 				m_pClient->m_aClients[ClientID].m_Team,
 				m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-				g_Config.m_TcColoredTeesTeam1,
+				g_Config/* .m_TcColoredTeesTeam1,
 				g_Config.m_TcColoredTeesTeam2,
-				g_Config.m_TcColoredTeesMethod);
+				g_Config.m_TcColoredTeesMethod */);
 			TextRender()->TextColor(Col.r, Col.g, Col.b, a);
 		}
 

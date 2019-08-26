@@ -506,8 +506,8 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			
 				if(g_Config.m_TcColoredFlags)
 				{
-					vec3 Col = CTeecompUtils::GetTeamColor(1-m_pClient->m_aClients[pInfo->m_ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-						g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(1-m_pClient->m_aClients[pInfo->m_ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
+						g_Config/* .m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod */);
 					Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 				}
 

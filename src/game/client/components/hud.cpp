@@ -179,8 +179,8 @@ void CHud::RenderScoreHud()
 				}
 				else
 				{
-					vec3 Col = CTeecompUtils::GetTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-														   g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
+					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
+														   g_Config/* .m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod */);
 					Color = vec4(Col.r, Col.g, Col.b, 0.50f); // doubled alpha for teecomp
 				}
 				RenderTools()->DrawUIRect(&Rect, Color, CUI::CORNER_L, 5.0f);
@@ -222,11 +222,11 @@ void CHud::RenderScoreHud()
 						
 						if(g_Config.m_TcColoredFlags)
 						{
-							vec3 Col = CTeecompUtils::GetTeamColor(t,
+							vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t,
 																   m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-																   g_Config.m_TcColoredTeesTeam1,
+																   g_Config/* .m_TcColoredTeesTeam1,
 																   g_Config.m_TcColoredTeesTeam2,
-																   g_Config.m_TcColoredTeesMethod);
+																   g_Config.m_TcColoredTeesMethod */);
 							Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 						}
 
@@ -729,7 +729,7 @@ void CHud::RenderSpeedmeter()
 	static float Speed;
 	static vec2 OldPos;
 	static const int SMOOTH_TABLE_SIZE = 32; // 16
-	static const int ACCEL_THRESHOLD = 400; // 24
+	static const int ACCEL_THRESHOLD = 100; // 24
 	static float SmoothTable[SMOOTH_TABLE_SIZE];
 	static int SmoothIndex = 0;
 	static int CarryOverAccel = 0;
