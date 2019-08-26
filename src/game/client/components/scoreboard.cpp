@@ -16,7 +16,6 @@
 #include <game/client/ui.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/components/motd.h>
-#include <game/client/components/teecomp_stats.h>
 #include <game/client/components/stats.h>
 
 #include "menus.h"

@@ -2,20 +2,7 @@
 #define __TEECOMP_HPP_
 
 #include <base/vmath.h>
-
-/* enum {
-	TC_STATS_FRAGS=1,
-	TC_STATS_DEATHS=2,
-	TC_STATS_SUICIDES=4,
-	TC_STATS_RATIO=8,
-	TC_STATS_NET=16,
-	TC_STATS_FPM=32,
-	TC_STATS_SPREE=64,
-	TC_STATS_BESTSPREE=128,
-	TC_STATS_FLAGGRABS=256,
-	TC_STATS_WEAPS=512,
-	TC_STATS_FLAGCAPTURES=1024,
-}; */
+#include <engine/graphics.h>
 
 class CTeecompUtils
 {
@@ -27,6 +14,7 @@ public:
 	static void ResetConfig();
 	static const char* RgbToName(int rgb);
 	static const char* TeamColorToName(int rgb);
+	static void TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics);
 };
 
 #endif
