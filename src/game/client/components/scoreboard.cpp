@@ -217,10 +217,19 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 	// background
 	Graphics()->BlendNormal();
 	vec4 Color;
-	if(Team == TEAM_RED && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	if(g_Config.m_TcHudMatch && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	{
+		vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+		Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
+	}
+	else if(Team == TEAM_RED && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	{
 		Color = vec4(0.975f, 0.17f, 0.17f, 0.75f);
+	}
 	else if(Team == TEAM_BLUE)
+	{
 		Color = vec4(0.17f, 0.46f, 0.975f, 0.75f);
+	}
 	else
 		Color = vec4(0.0f, 0.0f, 0.0f, 0.5f);
 	CUIRect Rect = {x, y, w, HeadlineHeight};
