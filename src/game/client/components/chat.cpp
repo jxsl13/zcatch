@@ -1167,8 +1167,6 @@ void CChat::OnRender()
 			// 	TextColor = ColorRed;
 			// else
 			{
-				// vec3 TColor = CTeecompUtils::GetTeamColor(0, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
-					// g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
 				vec3 TColor = CTeecompUtils::GetTeamColorSaturatedRGB(0, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);
 			}
@@ -1179,8 +1177,6 @@ void CChat::OnRender()
 			// 	TextColor = ColorBlue;
 			// else
 			{
-				// vec3 TColor = CTeecompUtils::GetTeamColor(1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1,
-					// g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
 				vec3 TColor = CTeecompUtils::GetTeamColorSaturatedRGB(1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);
 			}	
