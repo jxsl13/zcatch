@@ -748,9 +748,9 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 	{
 		int playerToReleaseID = m_CaughtPlayers.back();
 		
-		dbg_assert(GameServer()->m_apPlayers[playerToReleaseID] != nullptr, "player, that's to be released, does not exist.");
 
 		// look at last still existing player.
+
 		if(GameServer()->m_apPlayers[playerToReleaseID] && GameServer()->m_apPlayers[playerToReleaseID]->BeReleased(reason))
 		{
 			// player can be released
