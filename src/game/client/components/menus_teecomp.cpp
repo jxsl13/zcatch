@@ -166,6 +166,7 @@ void CMenus::RenderFlag(int Team, vec2 Pos)
 
 void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 {
+	bool TeesNeedUpdate = false;
 	CUIRect Button, LeftView, RightView;
 	MainView.VSplitLeft(MainView.w/2, &LeftView, &RightView);
 
@@ -280,6 +281,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
 			vec3 RGBColor = HslToRgb(HSLColor);
 			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+			TeesNeedUpdate = true;
 		}
 	}
 
@@ -308,12 +310,16 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		if(str_comp(s->m_aName, g_Config.m_TcForcedSkin1) == 0)
 			Selected = 1;
 
-		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button))
+		CUIRect Button2 = Button;
+		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button2))
+		{
+			TeesNeedUpdate = true;
 			str_copy(g_Config.m_TcForcedSkin1, s->m_aName, sizeof(g_Config.m_TcForcedSkin1));
+		}
 
-		Button.VMargin(5.0f, &Button);
-		Button.HSplitTop(1.0f, 0, &Button);
-		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
+		Button2.VMargin(5.0f, &Button2);
+		Button2.HSplitTop(1.0f, 0, &Button2);
+		UI()->DoLabel(&Button2, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 	EndScrollRegion(&s_ScrollRegion);
 
@@ -340,6 +346,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
 			vec3 RGBColor = HslToRgb(HSLColor);
 			g_Config.m_TcColoredTeesTeam2 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+			TeesNeedUpdate = true;
 		}
 	}
 
@@ -369,7 +376,10 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			Selected = 1;
 
 		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button))
+		{
+			TeesNeedUpdate = true;
 			str_copy(g_Config.m_TcForcedSkin2, s->m_aName, sizeof(g_Config.m_TcForcedSkin2));
+		}
 
 		Button.VMargin(5.0f, &Button);
 		Button.HSplitTop(1.0f, 0, &Button);
