@@ -751,7 +751,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 		dbg_assert(GameServer()->m_apPlayers[playerToReleaseID] != nullptr, "player, that's to be released, does not exist.");
 
 		// look at last still existing player.
-		if(GameServer()->m_apPlayers[playerToReleaseID]->BeReleased(reason))
+		if(GameServer()->m_apPlayers[playerToReleaseID] && GameServer()->m_apPlayers[playerToReleaseID]->BeReleased(reason))
 		{
 			// player can be released
 			m_CaughtPlayers.pop_back();
@@ -799,6 +799,10 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 		}
 		else
 		{
+			// player that need sto be released does not exist anymore
+			// but is still popped from the vector
+			m_CaughtPlayers.pop_back();
+
 			// player cannot be released
 			return NOT_CAUGHT;
 		}	
