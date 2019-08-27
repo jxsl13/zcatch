@@ -13,22 +13,22 @@ jobs:
     steps:
     - name: Prepare
       run: |
-      apt-get update -y && \
-      apt-get install cmake libfreetype6-dev libsdl2-dev -y && \
-      git submodule update --init --recursive
+        apt-get update -y
+        apt-get install cmake libfreetype6-dev libsdl2-dev -y
+        git submodule update --init --recursive
     - name: Build zCatch with cmake in Release mode
       run: |
-      mkdir -p release && \
-      cd release && \
-      env CFLAGS="-Wdeclaration-after-statement -Wno-error" CXXFLAGS="-Wno-error" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON .. && \
-      make everything && \
-      make run_tests && \
-      ./zcatch_srv shutdown
+        mkdir -p release
+        cd release
+        env CFLAGS="-Wdeclaration-after-statement -Wno-error" CXXFLAGS="-Wno-error" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON ..
+        make everything
+        make run_tests
+        ./zcatch_srv shutdown
     - name: Build zCatch with cmake in Debug mode
       run: |
-      mkdir -p debug && \
-      cd debug && \
-      env CFLAGS="-Wdeclaration-after-statement -Wno-error" CXXFLAGS="-Wno-error" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON .. && \
-      make everything && \
-      make run_tests && \
-      ./zcatch_srv shutdown && \
+        mkdir -p debug
+        cd debug
+        env CFLAGS="-Wdeclaration-after-statement -Wno-error" CXXFLAGS="-Wno-error" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
+        make everything
+        make run_tests
+        ./zcatch_srv shutdown
