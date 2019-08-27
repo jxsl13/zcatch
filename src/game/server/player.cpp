@@ -616,7 +616,7 @@ bool CPlayer::BeCaught(int byID, int reason)
 				str_format(aBuf, sizeof(aBuf), "You will be released, when '%s' dies.", Server()->ClientName(byID));
 				break;
 			case REASON_PLAYER_JOINED:
-				str_format(aBuf, sizeof(aBuf), "You were added to \"%s's\" victims. You will be released, once \"%s\" dies.", Server()->ClientName(byID), Server()->ClientName(byID));
+				str_format(aBuf, sizeof(aBuf), "You were added to \"%s\"'s victims. You will be released, once \"%s\" dies.", Server()->ClientName(byID), Server()->ClientName(byID));
 				break;
 			case REASON_PLAYER_WARMUP_CAUGHT:
 				sendReasonMessage = false;
@@ -967,7 +967,7 @@ int CPlayer::GetNumCurrentlyCaughtPlayers()
 
 int CPlayer::GetNumTotalCaughtPlayers()
 {
-	return m_CaughtPlayers.size() + m_NumCaughtPlayersWhoLeft;
+	return m_CaughtPlayers.size() + m_NumCaughtPlayersWhoLeft - m_NumCaughtPlayersWhoJoined;
 }
 
 int CPlayer::GetNumCaughtPlayersWhoLeft()
