@@ -140,15 +140,14 @@ void CMenus::RenderFlag(int Team, vec2 Pos)
 {
 	float Size = 32.0f;
 	Graphics()->BlendNormal();
-	if(g_Config.m_TcColoredFlags)
+	if(g_Config.m_TcColoredFlags  && !CTeecompUtils::UseDefaultTeamColor(Team, Team, g_Config))
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
 	else
 		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 	Graphics()->QuadsBegin();
 
-	if(g_Config.m_TcColoredFlags)
+	if(g_Config.m_TcColoredFlags  && !CTeecompUtils::UseDefaultTeamColor(Team, Team, g_Config))
 	{
-		// vec3 Col = CTeecompUtils::GetTeamColor(Team, Team, g_Config.m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod);
 		vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(Team, Team, g_Config);
 		Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 	}
@@ -258,6 +257,20 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	CUIRect SkinSelection, List;
 
+	// Custom colors team 1
+	bool CustomColorsTeam1 = g_Config.m_TcColoredTeesTeam1Hsl != -1;
+	LeftView.HSplitTop(20.0f, &Button, &LeftView);
+	str_format(aBuf, sizeof(aBuf), Localize("Customize team %s/FFA colors"), (g_Config.m_TcColoredTeesMethod)?Localize("mates"):"1");
+	if(DoButton_CheckBox(&CustomColorsTeam1, aBuf, CustomColorsTeam1, &Button))
+	{
+		CustomColorsTeam1 ^= 1;
+		if(CustomColorsTeam1)
+			g_Config.m_TcColoredTeesTeam1Hsl = (0<<16)+(255<<8)+110/* 181 */;
+		else
+			g_Config.m_TcColoredTeesTeam1Hsl = -1;
+		TeesNeedUpdate = true;
+	}
+
 	// Force skins team 1
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	str_format(aBuf, sizeof(aBuf), Localize("Force team %s/FFA skins"), (g_Config.m_TcForcedSkinsMethod)?Localize("mates"):"1");
@@ -268,20 +281,23 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	{
 		CUIRect LeftColorView;
 		LeftView.VSplitLeft(LeftView.w*0.4f, &LeftView, &LeftColorView);
-		bool Modified;
-		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam1Hsl;
-		LeftColorView.HSplitBottom(144.0f+8.0f+16.0f*3+8.0f, &LeftColorView, &Button); // the last 8 is a magic value
-		static HSLPickerState s_State;
-		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified, s_State);
-		if(Modified)
 		{
-			int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
-			g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
+			bool Modified;
+			int OriginalHSLColor = g_Config.m_TcColoredTeesTeam1Hsl;
+			LeftColorView.HSplitBottom(144.0f+8.0f+16.0f*3+8.0f, &LeftColorView, &Button); // the last 8 is a magic value
+			static HSLPickerState s_State;
+			s_State.m_Enabled = CustomColorsTeam1;
+			ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified, s_State);
+			if(Modified)
+			{
+				int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
+				g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
 
-			vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
-			vec3 RGBColor = HslToRgb(HSLColor);
-			g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
-			TeesNeedUpdate = true;
+				vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
+				vec3 RGBColor = HslToRgb(HSLColor);
+				g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
+				TeesNeedUpdate = true;
+			}
 		}
 	}
 
@@ -322,7 +338,21 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	}
 	EndScrollRegion(&s_ScrollRegion);
 
-	// Forced skin team 2
+	// Custom colors team 2
+	bool CustomColorsTeam2 = g_Config.m_TcColoredTeesTeam2Hsl != -1;
+	RightView.HSplitTop(20.0f, &Button, &RightView);
+	str_format(aBuf, sizeof(aBuf), Localize("Customize %s colors"), (g_Config.m_TcColoredTeesMethod)?Localize("enemies"):Localize("team 2"));
+	if(DoButton_CheckBox(&CustomColorsTeam2, aBuf, CustomColorsTeam2, &Button))
+	{
+		CustomColorsTeam2 ^= 1;
+		if(CustomColorsTeam2)
+			g_Config.m_TcColoredTeesTeam2Hsl = (155<<16)+(255<<8)+110/* 181 */;
+		else
+			g_Config.m_TcColoredTeesTeam2Hsl = -1;
+		TeesNeedUpdate = true;
+	}
+
+	// Force skins team 2
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	str_format(aBuf, sizeof(aBuf), Localize("Force %s skins"), (g_Config.m_TcForcedSkinsMethod)?Localize("enemies"):Localize("team 2"));
 	if(DoButton_CheckBox(&g_Config.m_TcForceSkinTeam2, aBuf, g_Config.m_TcForceSkinTeam2, &Button))
@@ -336,6 +366,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		int OriginalHSLColor = g_Config.m_TcColoredTeesTeam2Hsl;
 		RightColorView.HSplitBottom(144.0f+8.0f+16.0f*3+8.0f, &RightColorView, &Button); // the last 8 is a magic value
 		static HSLPickerState s_State;
+		s_State.m_Enabled = CustomColorsTeam2;
 		ivec4 HSLAColor = RenderHSLPicker(Button, OriginalHSLColor, false, Modified, s_State);
 		if(Modified)
 		{

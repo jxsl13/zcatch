@@ -229,13 +229,13 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 		Graphics()->QuadsBegin();
 
 		// base: grey - hue
-		vec3 c = HslToRgb(vec3(Hue/255.0f, 0.0f, 0.5f));
+		vec3 c = State.m_Enabled ? HslToRgb(vec3(Hue/255.0f, 0.0f, 0.5f)) : HslToRgb(vec3(0.0f, 0.0f, 0.5f));
 		ColorArray[0] = IGraphics::CColorVertex(0, c.r, c.g, c.b, 1.0f);
-		c = HslToRgb(vec3(Hue/255.0f, 1.0f, 0.5f));
+		c = State.m_Enabled ? HslToRgb(vec3(Hue/255.0f, 1.0f, 0.5f)) : HslToRgb(vec3(0.0f, 0.0f, 0.5f));
 		ColorArray[1] = IGraphics::CColorVertex(1, c.r, c.g, c.b, 1.0f);
-		c = HslToRgb(vec3(Hue/255.0f, 1.0f, 0.5f));
+		c = State.m_Enabled ? HslToRgb(vec3(Hue/255.0f, 1.0f, 0.5f)) : HslToRgb(vec3(0.0f, 0.0f, 0.5f));
 		ColorArray[2] = IGraphics::CColorVertex(2, c.r, c.g, c.b, 1.0f);
-		c = HslToRgb(vec3(Hue/255.0f, 0.0f, 0.5f));
+		c = State.m_Enabled ? HslToRgb(vec3(Hue/255.0f, 0.0f, 0.5f)) : HslToRgb(vec3(0.0f, 0.0f, 0.5f));
 		ColorArray[3] = IGraphics::CColorVertex(3, c.r, c.g, c.b, 1.0f);
 		Graphics()->SetColorVertex(ColorArray, 4);
 		IGraphics::CQuadItem QuadItem(Picker.x, Picker.y, Picker.w, Picker.h);
@@ -261,31 +261,35 @@ ivec4 CMenus::RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& 
 
 		Graphics()->QuadsEnd();
 
-		// marker
-		vec2 Marker = vec2(Sat/2.0f, Lgt/2.0f);
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
-		IGraphics::CQuadItem aMarker[2];
-		aMarker[0] = IGraphics::CQuadItem(Picker.x+Marker.x, Picker.y+Marker.y - 5.0f*UI()->PixelSize(), UI()->PixelSize(), 11.0f*UI()->PixelSize());
-		aMarker[1] = IGraphics::CQuadItem(Picker.x+Marker.x - 5.0f*UI()->PixelSize(), Picker.y+Marker.y, 11.0f*UI()->PixelSize(), UI()->PixelSize());
-		Graphics()->QuadsDrawTL(aMarker, 2);
-		Graphics()->QuadsEnd();
-
-		// logic
-		float X, Y;
-		// static int State.s_HLPicker;
-		if(UI()->DoPickerLogic(&State.m_HLPicker, &Picker, &X, &Y))
+		if(State.m_Enabled)
 		{
-			Sat = (int)(255.0f*X/Picker.w);
-			Lgt = (int)(255.0f*Y/Picker.h);
-			Modified = true;
+			// marker
+			vec2 Marker = vec2(Sat/2.0f, Lgt/2.0f);
+			Graphics()->TextureClear();
+			Graphics()->QuadsBegin();
+			Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
+			IGraphics::CQuadItem aMarker[2];
+			aMarker[0] = IGraphics::CQuadItem(Picker.x+Marker.x, Picker.y+Marker.y - 5.0f*UI()->PixelSize(), UI()->PixelSize(), 11.0f*UI()->PixelSize());
+			aMarker[1] = IGraphics::CQuadItem(Picker.x+Marker.x - 5.0f*UI()->PixelSize(), Picker.y+Marker.y, 11.0f*UI()->PixelSize(), UI()->PixelSize());
+			Graphics()->QuadsDrawTL(aMarker, 2);
+			Graphics()->QuadsEnd();
+
+			// logic
+			float X, Y;
+			// static int State.s_HLPicker;
+			if(UI()->DoPickerLogic(&State.m_HLPicker, &Picker, &X, &Y))
+			{
+				Sat = (int)(255.0f*X/Picker.w);
+				Lgt = (int)(255.0f*Y/Picker.h);
+				Modified = true;
+			}
 		}
 	}
 
 	MainView.HSplitTop(Spacing, 0, &MainView);
 
 	// H/S/L/A sliders :
+	if(State.m_Enabled)
 	{
 		int NumBars = UseAlpha ? 4 : 3;
 		const char *const apNames[4] = {Localize("Hue:"), Localize("Sat:"), Localize("Lgt:"), Localize("Alp:")};

@@ -212,20 +212,16 @@ void CHud::RenderScoreHud()
 					{
 						// draw flag
 						Graphics()->BlendNormal();
-						if(g_Config.m_TcColoredFlags)
+						if(g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
 							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
 						else
 							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 						Graphics()->QuadsBegin();
 						RenderTools()->SelectSprite(t==0?SPRITE_FLAG_RED:SPRITE_FLAG_BLUE);
 						
-						if(g_Config.m_TcColoredFlags)
+						if(g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
 						{
-							vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t,
-																   m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-																   g_Config/* .m_TcColoredTeesTeam1,
-																   g_Config.m_TcColoredTeesTeam2,
-																   g_Config.m_TcColoredTeesMethod */);
+							vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 							Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 						}
 

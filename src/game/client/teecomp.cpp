@@ -13,9 +13,9 @@ vec3 CTeecompUtils::GetTeamColorSaturatedRGB(int ForTeam, int LocalTeam, const C
 	if(UseDefaultTeamColor(ForTeam, LocalTeam, Config))
 	{
 		if(SelectedTeamIsBlue(ForTeam, LocalTeam, g_Config.m_TcColoredTeesMethod))
-			return vec3(0.975f, 0.17f, 0.17f); // values taken from the scoreboard
-		else
 			return vec3(0.17f, 0.46f, 0.975f);
+		else
+			return vec3(0.975f, 0.17f, 0.17f); // values taken from the scoreboard
 	}
 
 	// teecomp values
@@ -45,9 +45,9 @@ int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int C
 bool CTeecompUtils::UseDefaultTeamColor(int ForTeam, int LocalTeam, const CConfiguration& Config)
 {
 	if(SelectedTeamIsBlue(ForTeam, LocalTeam, g_Config.m_TcColoredTeesMethod))
-		return g_Config.m_TcColoredTeesTeam1Hsl == -1;
-	else
 		return g_Config.m_TcColoredTeesTeam2Hsl == -1;
+	else
+		return g_Config.m_TcColoredTeesTeam1Hsl == -1;
 }
 
 bool CTeecompUtils::SelectedTeamIsBlue(int ForTeam, int LocalTeam, int Method)

@@ -674,6 +674,7 @@ private:
 	{
 		int m_HLPicker;
 		CMenus::CButtonContainer m_aButtons[12];
+		bool m_Enabled = true;
 	};
 	void RenderFlag(int Team, vec2 Pos);
 	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified, HSLPickerState& State); // intermediary, used by teecomp
