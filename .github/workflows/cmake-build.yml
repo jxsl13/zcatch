@@ -6,10 +6,25 @@ on:
     - zCatch-0.7.x
 
 jobs:
-  build:
-
+  build_ubuntu_debug:
     runs-on: ubuntu-latest
-    
+    steps:
+    - name: Prepare
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
+    - name: Build zCatch with cmake in Debug mode
+      env:
+        CFLAGS: -Wdeclaration-after-statement -Wno-error
+        CXXFLAGS: -Wno-error
+      run: |
+        cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
+        make everything
+        make run_tests
+        ./zcatch_srv shutdown
+   
+  build_ubuntu_release:
+    runs-on: ubuntu-latest
     steps:
     - name: Prepare
       run: |
@@ -20,20 +35,10 @@ jobs:
         CFLAGS: -Wdeclaration-after-statement -Wno-error
         CXXFLAGS: -Wno-error
       run: |
-        mkdir -p release
-        cd release
         cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON ..
         make everything
         make run_tests
         ./zcatch_srv shutdown
-    - name: Build zCatch with cmake in Debug mode
-      env:
-        CFLAGS: -Wdeclaration-after-statement -Wno-error
-        CXXFLAGS: -Wno-error
-      run: |
-        mkdir -p debug
-        cd debug
-        cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
-        make everything
-        make run_tests
-        ./zcatch_srv shutdown
+
+
+
