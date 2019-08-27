@@ -1660,7 +1660,7 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 					else
 						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
 				}
-				else
+				else 
 				{
 					m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
 					// teecomp colors

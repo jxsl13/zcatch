@@ -80,26 +80,24 @@ void CKillMessages::OnRender()
 		{
 			if(m_aKillmsgs[r].m_ModeSpecial&1)
 			{
+				int Team = m_aKillmsgs[r].m_VictimTeam;
+				bool UseColoredFlags = g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+
 				Graphics()->BlendNormal();
-				if(g_Config.m_TcColoredFlags)
+				if(UseColoredFlags)
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
 				else
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 				Graphics()->QuadsBegin();
 
-				int Team = m_aKillmsgs[r].m_VictimTeam;
 				if(Team == TEAM_RED)
 					RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
 				else
 					RenderTools()->SelectSprite(SPRITE_FLAG_RED);
 
-				if(g_Config.m_TcColoredFlags)
+				if(UseColoredFlags)
 				{
-					vec3 Col = CTeecompUtils::GetTeamColor(Team^1,
-						m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-						g_Config.m_TcColoredTeesTeam1,
-						g_Config.m_TcColoredTeesTeam2,
-						g_Config.m_TcColoredTeesMethod);
+					vec3 Col = CTeecompUtils::GetTeamColorRGB(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 					Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 				}
 
@@ -146,11 +144,7 @@ void CKillMessages::OnRender()
 
 					if(g_Config.m_TcColoredFlags)
 					{
-						vec3 Col = CTeecompUtils::GetTeamColor(Team^1,
-							m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-							g_Config.m_TcColoredTeesTeam1,
-							g_Config.m_TcColoredTeesTeam2,
-							g_Config.m_TcColoredTeesMethod);
+						vec3 Col = CTeecompUtils::GetTeamColorRGB(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 						Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 					}
 

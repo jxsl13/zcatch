@@ -170,7 +170,7 @@ void CHud::RenderScoreHud()
 				CUIRect Rect = {Whole-ScoreWidthMax-ImageSize-2*Split, StartY+t*20, ScoreWidthMax+ImageSize+2*Split, 18.0f};
 				Graphics()->BlendNormal();
 				vec4 Color;				
-				if(!g_Config.m_TcHudMatch)
+				if(!g_Config.m_TcHudMatch || CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
 				{
 					if(t == 0)
 						Color = vec4(1.0f, 0.0f, 0.0f, 0.25f);
@@ -179,8 +179,7 @@ void CHud::RenderScoreHud()
 				}
 				else
 				{
-					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-														   g_Config/* .m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod */);
+					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 					Color = vec4(Col.r, Col.g, Col.b, 0.50f); // doubled alpha for teecomp
 				}
 				RenderTools()->DrawUIRect(&Rect, Color, CUI::CORNER_L, 5.0f);

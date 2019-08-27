@@ -1080,6 +1080,7 @@ void CChat::OnRender()
 		const vec4 ColorWhisper(0.4f, 1.0f, 1.0f, Blend);
 		const vec4 ColorRed(1.0f, 0.5f, 0.5f, Blend);
 		const vec4 ColorBlue(0.7f, 0.7f, 1.0f, Blend);
+		if(UseDefaultTeamColor(ForTeam, LocalTeam, Config)))
 		const vec4 ColorSpec(0.75f, 0.5f, 0.75f, Blend);
 		const vec4 ColorAllPre(0.8f, 0.8f, 0.8f, Blend);
 		const vec4 ColorAllText(1.0f, 1.0f, 1.0f, Blend);
@@ -1166,6 +1167,9 @@ void CChat::OnRender()
 			// if(!m_pClient->m_Snap.m_pLocalInfo)
 			// 	TextColor = ColorRed;
 			// else
+			if(CTeecompUtils::UseDefaultTeamColor(0, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+				TextColor = ColorRed;
+			else
 			{
 				vec3 TColor = CTeecompUtils::GetTeamColorSaturatedRGB(0, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);
@@ -1176,6 +1180,9 @@ void CChat::OnRender()
 			// if(!m_pClient->m_Snap.m_pLocalInfo)
 			// 	TextColor = ColorBlue;
 			// else
+			if(CTeecompUtils::UseDefaultTeamColor(1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+				TextColor = ColorBlue;
+			else
 			{
 				vec3 TColor = CTeecompUtils::GetTeamColorSaturatedRGB(1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				TextColor = vec4(TColor.r, TColor.g, TColor.b, Blend);

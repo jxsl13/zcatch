@@ -47,17 +47,20 @@ void CNamePlates::RenderNameplate(
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, a);
 		if(g_Config.m_ClNameplatesTeamcolors && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
 		{
-			if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
-				TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
-			else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
-				TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
-			vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(
-				m_pClient->m_aClients[ClientID].m_Team,
-				m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
-				g_Config/* .m_TcColoredTeesTeam1,
-				g_Config.m_TcColoredTeesTeam2,
-				g_Config.m_TcColoredTeesMethod */);
-			TextRender()->TextColor(Col.r, Col.g, Col.b, a);
+			if(CTeecompUtils::UseDefaultTeamColor(m_pClient->m_aClients[ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+			{
+				// non-teecomp
+				if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
+					TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
+				else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
+					TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
+			}
+			else
+			{
+				// teecomp
+				vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(m_pClient->m_aClients[ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+				TextRender()->TextColor(Col.r, Col.g, Col.b, a);
+			}
 		}
 
 		const vec4 IdTextColor(0.1f, 0.1f, 0.1f, a);

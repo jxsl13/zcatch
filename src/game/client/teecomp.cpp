@@ -6,49 +6,64 @@
 #include <generated/client_data.h>
 #include "teecomp.h"
 
-
 // returns RGB for flags, HUD elements
 vec3 CTeecompUtils::GetTeamColorSaturatedRGB(int ForTeam, int LocalTeam, const CConfiguration& Config)
 {
+	// non-teecomp values
+	if(UseDefaultTeamColor(ForTeam, LocalTeam, Config))
+	{
+		if(SelectedTeamIsBlue(ForTeam, LocalTeam, g_Config.m_TcColoredTeesMethod))
+			return vec3(0.975f, 0.17f, 0.17f); // values taken from the scoreboard
+		else
+			return vec3(0.17f, 0.46f, 0.975f);
+	}
+
+	// teecomp values
 	vec3 c = GetTeamColor(ForTeam, LocalTeam, g_Config.m_TcColoredTeesTeam1Hsl, g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
 	c.s = c.s + (1.0f-c.s)/2.0f;
-	c.l = c.l + (1.0f-c.l)/3.0f;
+	c.l = c.l + (1.0f-c.l)/4.0f;
 	return HslToRgb(c);
 }
 
 vec3 CTeecompUtils::GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
 {
-	vec3 c1((Color1>>16)/255.0f, ((Color1>>8)&0xff)/255.0f, (Color1&0xff)/255.0f);
-	vec3 c2((Color2>>16)/255.0f, ((Color2>>8)&0xff)/255.0f, (Color2&0xff)/255.0f);
-
-	// Team based Colors or spectating
-	if(!Method || LocalTeam == -1)
-	{
-		if(ForTeam == 0)
-			return c1;
-		return c2;
-	}
-
-	// Enemy based Colors
-	if(ForTeam == LocalTeam)
-		return c1;
-	return c2;
+	int Color = GetTeamColorInt(ForTeam, LocalTeam, Color1, Color2, Method);
+	return vec3((Color>>16)/255.0f, ((Color>>8)&0xff)/255.0f, (Color&0xff)/255.0f);
 }
 
 int CTeecompUtils::GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method)
+{
+	static const int s_aTeamColors[2] = {0xC4C34E, 0x00FF6B};
+	int aTeamColors[2] = 
+		{
+			(Color1 == -1) ? s_aTeamColors[0] : Color1,
+			(Color2 == -1) ? s_aTeamColors[0] : Color2,
+		};
+	return aTeamColors[(int)SelectedTeamIsBlue(ForTeam, LocalTeam, Method)];
+}
+
+bool CTeecompUtils::UseDefaultTeamColor(int ForTeam, int LocalTeam, const CConfiguration& Config)
+{
+	if(SelectedTeamIsBlue(ForTeam, LocalTeam, g_Config.m_TcColoredTeesMethod))
+		return g_Config.m_TcColoredTeesTeam1Hsl == -1;
+	else
+		return g_Config.m_TcColoredTeesTeam2Hsl == -1;
+}
+
+bool CTeecompUtils::SelectedTeamIsBlue(int ForTeam, int LocalTeam, int Method)
 {
 	// Team based Colors or spectating
 	if(!Method || LocalTeam == -1)
 	{
 		if(ForTeam == 0)
-			return Color1;
-		return Color2;
+			return 0;
+		return 1;
 	}
 
 	// Enemy based Colors
 	if(ForTeam == LocalTeam)
-		return Color1;
-	return Color2;
+		return 0;
+	return 1;
 }
 
 bool CTeecompUtils::GetForcedSkinName(int ForTeam, int LocalTeam, const char*& pSkinName)

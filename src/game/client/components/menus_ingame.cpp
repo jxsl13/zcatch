@@ -140,7 +140,7 @@ void CMenus::RenderGame(CUIRect MainView)
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);
 			static CButtonContainer s_RedButton;
 			vec4 Color = vec4(0.975f, 0.17f, 0.17f, 0.75f);
-			if(g_Config.m_TcHudMatch)
+			if(g_Config.m_TcHudMatch && !CTeecompUtils::UseDefaultTeamColor(TEAM_RED, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
 			{
 				vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(TEAM_RED, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
@@ -176,7 +176,7 @@ void CMenus::RenderGame(CUIRect MainView)
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);
 			static CButtonContainer s_BlueButton;
 			Color = vec4(0.17f, 0.46f, 0.975f, 0.75f);
-			if(g_Config.m_TcHudMatch)
+			if(g_Config.m_TcHudMatch && !CTeecompUtils::UseDefaultTeamColor(TEAM_BLUE, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
 			{
 				vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(TEAM_BLUE, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
 				Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
