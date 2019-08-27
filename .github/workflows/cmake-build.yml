@@ -13,11 +13,15 @@ jobs:
       run: |
         sudo apt-get update -y
         sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
+        git checkout zCatch-0.7.x
+        git submodule update --init --recursive
     - name: Build zCatch with cmake in Debug mode
       env:
         CFLAGS: -Wdeclaration-after-statement -Wno-error
         CXXFLAGS: -Wno-error
       run: |
+        mkdir debug
+        cd debug
         cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..
         make everything
         make run_tests
@@ -30,11 +34,16 @@ jobs:
       run: |
         sudo apt-get update -y
         sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
+        git checkout zCatch-0.7.x
+        git submodule update --init --recursive
+
     - name: Build zCatch with cmake in Release mode
       env:
         CFLAGS: -Wdeclaration-after-statement -Wno-error
         CXXFLAGS: -Wno-error
       run: |
+        mkdir release
+        cd release
         cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON ..
         make everything
         make run_tests
