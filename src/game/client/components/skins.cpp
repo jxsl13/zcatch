@@ -390,7 +390,7 @@ vec4 CSkins::GetColorV4(int v, bool UseAlpha) const
 int CSkins::GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part, int TeamColor) const
 {
 	static const int s_aTeamColors[3] = {0xC4C34E, 0x00FF6B, 0x9BFF6B};
-
+	
 	if(TeamColor == -1) // no color set, use default ones (non teecomp)
 		TeamColor = s_aTeamColors[Team+1];		
 

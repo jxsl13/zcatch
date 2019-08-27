@@ -234,7 +234,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		for(int i = 0; i < NUM_SKINPARTS; i++)
 		{
 			Info.m_aTextures[i] = s->m_apParts[i]->m_ColorTexture;
-			int HSLColorFiltered = m_pClient->m_pSkins->GetTeamColor(s->m_aUseCustomColors[i], s->m_aPartColors[i], 0, i, g_Config.m_TcColoredTeesTeam2Hsl);
+			int HSLColorFiltered = m_pClient->m_pSkins->GetTeamColor(s->m_aUseCustomColors[i], s->m_aPartColors[i], TEAM_BLUE, i, g_Config.m_TcColoredTeesTeam2Hsl);
 			vec4 RGBColorFiltered = m_pClient->m_pSkins->GetColorV4(HSLColorFiltered, i==SKINPART_MARKING); // does HSL to RGB, with alpha
 			Info.m_aColors[i] = RGBColorFiltered;
 		}
