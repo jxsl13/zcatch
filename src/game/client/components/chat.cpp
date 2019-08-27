@@ -1080,7 +1080,6 @@ void CChat::OnRender()
 		const vec4 ColorWhisper(0.4f, 1.0f, 1.0f, Blend);
 		const vec4 ColorRed(1.0f, 0.5f, 0.5f, Blend);
 		const vec4 ColorBlue(0.7f, 0.7f, 1.0f, Blend);
-		if(UseDefaultTeamColor(ForTeam, LocalTeam, Config)))
 		const vec4 ColorSpec(0.75f, 0.5f, 0.75f, Blend);
 		const vec4 ColorAllPre(0.8f, 0.8f, 0.8f, Blend);
 		const vec4 ColorAllText(1.0f, 1.0f, 1.0f, Blend);

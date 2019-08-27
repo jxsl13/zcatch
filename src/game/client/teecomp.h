@@ -20,10 +20,10 @@ public:
 	static void TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics);
 
 	static bool UseDefaultTeamColor(int ForTeam, int LocalTeam, const CConfiguration& Config);
+	static int GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method);
 private:
 	static vec3 GetTeamColor(int ForTeam, int LocalTeam, int Color1, int Color2, int Method);
-	static int GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method);
-	static bool CTeecompUtils::SelectedTeamIsBlue(int ForTeam, int LocalTeam, int Method);
+	static bool SelectedTeamIsBlue(int ForTeam, int LocalTeam, int Method);
 };
 
 #endif

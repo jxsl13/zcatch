@@ -1639,14 +1639,20 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 
 	m_RenderInfo = m_SkinInfo;
 
+
 	// force team colors
 	if(pGameClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
 	{
+		/* for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			// old code: 
+			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+		} */
 		for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
-			// m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
-			// old code: int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
-			if(m_Team != TEAM_SPECTATORS)
+			if(m_Team != TEAM_SPECTATORS && !CTeecompUtils::UseDefaultTeamColor(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config))
 			{
 				int LocalTeam = pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team;
 				const char* pForcedSkin;
@@ -1690,6 +1696,7 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 			else
 			{
 				// classic specs
+				m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
 				int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
 				m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
 			}
