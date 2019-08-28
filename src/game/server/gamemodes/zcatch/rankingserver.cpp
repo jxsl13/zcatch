@@ -114,7 +114,7 @@ bool IRankingServer::GetRanking(std::string nickname, IRankingServer::cb_stats_t
             }
 
             // calling callback
-            // this should not hrow anything.
+            // this should not throw anything.
             cb(stats); // call callback on data
         },
         nickname, callback, prefix));

@@ -218,6 +218,39 @@ void CGameContext::SendServerMessage(int To, const char *pText)
 	}
 }
 
+void CGameContext::SendServerMessageText(int To, const char *pText)
+{
+	constexpr int LineMaxLength = 62 - 4; // line widths - '*** ' prefix
+
+	std::stringstream ssText{pText};
+	std::stringstream ssCurrentLine;
+    std::string Word;
+	size_t CurrentLineLength = 0;
+
+    while (ssText >> Word) {
+        if (CurrentLineLength + Word.size() > LineMaxLength) {
+			// line size exceeded
+
+			// send previously accumulated line 
+			SendServerMessage(To, ssCurrentLine.str().c_str());
+
+			// reset line buffer
+			CurrentLineLength = 0;
+			ssCurrentLine.str({});
+        	ssCurrentLine.clear();     
+        }
+		// line size not exceeded
+        ssCurrentLine << Word << ' ';
+        CurrentLineLength += Word.size() + 1;
+    }
+
+	std::string LastLine = ssCurrentLine.str();
+	if (LastLine.size() > 0)
+	{
+		SendServerMessage(To, LastLine.c_str());
+	}
+	
+}
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
 	char aBuf[256];

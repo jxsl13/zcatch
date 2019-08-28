@@ -110,46 +110,50 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 		{
 			if(tokens[0] == "welcome")
 			{
-				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
+				GameServer()->SendServerMessageText(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
 			}
 			else if (tokens[0] == "help")
 			{
 				if (size == 1)
 				{
+					GameServer()->SendServerMessage(ofID, "========== Help ==========");
 					GameServer()->SendServerMessage(ofID, "/welcome - The message you get, when you join the server.");
 					GameServer()->SendServerMessage(ofID, "/rules - If you want to know about zCatch's ruleset.");
 					GameServer()->SendServerMessage(ofID, "/info - If to know about this mod's creators.");
 					GameServer()->SendServerMessage(ofID, "/help list - To see a list of all the help screens.");
 
 				}
-				else if (size == 2)
+				else if (size >= 2)
 				{
 					if(tokens[1] == "list")
 					{
-						GameServer()->SendServerMessage(ofID, "/help release - Learn how to release players.");
-						GameServer()->SendServerMessage(ofID, "/help warmup - Learn more about how the warmup works.");
-						GameServer()->SendServerMessage(ofID, "/help anticamper - Learn more about how the anti camper works.");
-						GameServer()->SendServerMessage(ofID, "/help servermessages - How to enable more detailed information.");
-						GameServer()->SendServerMessage(ofID, "/help ranking - Some information about the ranking.");
+						GameServer()->SendServerMessage(ofID, "========== Help - List ==========");
+						GameServer()->SendServerMessageText(ofID, "/help release - Learn how to release players.");
+						GameServer()->SendServerMessageText(ofID, "/help warmup - Learn more about how the warmup works.");
+						GameServer()->SendServerMessageText(ofID, "/help anticamper - More about how the anti camper works.");
+						GameServer()->SendServerMessageText(ofID, "/help servermessages - How to enable more detailed information.");
+						GameServer()->SendServerMessageText(ofID, "/help ranking - Some information about the ranking.");
+						GameServer()->SendServerMessageText(ofID, "/help definitions [general|grenade|laser] - A list of zCatch terminology.");
 					}
 					else if(tokens[1] == "release")
 					{
-						GameServer()->SendServerMessage(ofID, "First off, releasing other players is optional and is a way of improving fair play.");
+						GameServer()->SendServerMessage(ofID, "========== Release ==========");
+						GameServer()->SendServerMessageText(ofID, "First off, releasing other players is optional and is a way of improving fair play.");
 						GameServer()->SendServerMessage(ofID, "There are two ways to release a player, that you have caught:");
-						GameServer()->SendServerMessage(ofID, "The first one is to create a suicide bind like this 'bind k kill' using the F1 console. The second way is to write");
-						GameServer()->SendServerMessage(ofID, "'/release' in the chat. The difference between both methods is that if you use your kill bind, you will kill yourself if");
-						GameServer()->SendServerMessage(ofID, "nobody is left to be released. In contrast, the second method will not do anything if there is nobody left to be released.");
+						GameServer()->SendServerMessageText(ofID, "The first one is to create a suicide bind like this 'bind k kill' using the F1 console. The second way is to write '/release' in the chat. The difference between both methods is that if you use your kill bind, you will kill yourself if nobody is left to be released. In contrast, the second method will not do anything if there is nobody left to be released.");
 					}
 					else if(tokens[1] == "warmup")
 					{
+						GameServer()->SendServerMessage(ofID, "========== Warmup ==========");
 						char aBuf[128];
 						str_format(aBuf, sizeof(aBuf), "As long as there are less than %d players ingame, warmup is enabled.", g_Config.m_SvPlayersToStartRound);
 						GameServer()->SendServerMessage(ofID, aBuf);
-						GameServer()->SendServerMessage(ofID, "While in warmup, any player caught will respawn immediatly.");
-						GameServer()->SendServerMessage(ofID, "If there are enough players for a round of zCatch, the warmup ends and players are caught normally.");
+
+						GameServer()->SendServerMessageText(ofID, "While in warmup, any player caught will respawn immediatly. If there are enough players for a round of zCatch, the warmup ends and players are caught normally.");
 					}
 					else if(tokens[1] == "anticamper")
 					{
+						GameServer()->SendServerMessage(ofID, "========== Anti-Camper ==========");
 						char aBuf[128];
 						if(g_Config.m_SvAnticamperFreeze > 0)
 						{
@@ -159,54 +163,84 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						{
 							str_format(aBuf, sizeof(aBuf), "If you don't move for %d seconds out of the range of %d units, you will be killed.", g_Config.m_SvAnticamperTime, g_Config.m_SvAnticamperRange);
 						}
-						GameServer()->SendServerMessage(ofID, aBuf);
+						GameServer()->SendServerMessageText(ofID, aBuf);
 						str_format(aBuf, sizeof(aBuf), "Anticamper is currently %s.", g_Config.m_SvAnticamper > 0 ? "enabled" : "disabled");	
 						GameServer()->SendServerMessage(ofID, aBuf);
 					}
 					else if(tokens[1] == "servermessages")
 					{
-						GameServer()->SendServerMessage(ofID, "Type /allmessages to get all of the information about your and other player's deaths.");
-						GameServer()->SendServerMessage(ofID, "Type /allmessages again, in order to disable the extra information again.");
+						GameServer()->SendServerMessage(ofID, "========== All Messages ==========");
+						GameServer()->SendServerMessageText(ofID, "Type /allmessages to get all of the information about your and other player's deaths.");
+						GameServer()->SendServerMessageText(ofID, "Type /allmessages again, in order to disable the extra information again.");
 					}
-					else if (tokens[1] == "ranking" && size == 2)
+					else if (tokens[1] == "ranking")
 					{
+						GameServer()->SendServerMessage(ofID, "========== Ranking ==========");
 						bool rankingEnabled = m_pRankingServer != nullptr;
 						if(rankingEnabled)
 							GameServer()->SendServerMessage(ofID, "Ranking is currently enabled on this server.");
 						else
 							GameServer()->SendServerMessage(ofID, "There is currently no player ranking enabled.");
 
-						GameServer()->SendServerMessage(ofID, "The player ranking saves some of your playing statistics in a database.");
-						GameServer()->SendServerMessage(ofID, "You can see your own statistics by typing the command /rank in the chat.");
-						GameServer()->SendServerMessage(ofID, "If you want to see somone else's statistics, write /rank <nickname> instead.");
-						GameServer()->SendServerMessage(ofID, "In order to see the top players on the server, use the /top command.");
-
+						GameServer()->SendServerMessageText(ofID, "The player ranking saves some of your playing statistics in a database. You can see your own statistics by typing the command /rank in the chat. If you want to see somone else's statistics, write /rank <nickname> instead. In order to see the top players on the server, use the /top command.");
+					}
+					else if(tokens[1] == "definitions" && size == 2)
+					{
+						GameServer()->SendServerMessage(ofID, "========== Definitions ==========");
+						GameServer()->SendServerMessageText(ofID, "/help definitions general - A list of general terminology for all zCatch modes.");
+						GameServer()->SendServerMessageText(ofID, "/help definitions grenade - A list of zCatch Grenade only terminology.");
+						GameServer()->SendServerMessageText(ofID, "/help definitions laser - A list of zCatch Laser only terminology.");
+					}
+					else if(tokens[1] == "definitions" && size >= 3)
+					{
+						if (tokens[2] == "general")
+						{
+							GameServer()->SendServerMessage(ofID, "========== Definitions - General ==========");
+							GameServer()->SendServerMessageText(ofID, "Camping : Waiting for an extended period in the same location(not necessary position) in order to easily catch an enemy.");
+							GameServer()->SendServerMessageText(ofID, "Flooding : Sending a excessive amount of, often similar, chat messages(also called chat spam).");
+							GameServer()->SendServerMessageText(ofID, "AFK : Being [A]way [F]rom the [K]eyboard for an extended period of time. It is appropriate to move these players to the spectator's team via vote.");
+						}
+						else if(tokens[2] == "grenade")
+						{
+							GameServer()->SendServerMessage(ofID, "========== Definitions - Grenade ==========");
+							GameServer()->SendServerMessageText(ofID, "Spamming : Shooting an excessive amount of grenades, often without properly aiming.");
+							GameServer()->SendServerMessageText(ofID, "Spraying : Shooting one or more grenades without seeing a player's position or predicting his position, often random shooting in order to hit someone that might luckily pass by.(also called random nade). It is appropriate to release the randomly caught player. Forward facing boost fades are considered as spraying, if they hit a target without hitting the speeding player at the same time. Backwards facing boost nades are not considered as spraying.");
+							GameServer()->SendServerMessageText(ofID, "Lucky Shot: Hitting a player, while aiming and shooting at another player is not considered as spraying, but it is appropriate to release the caught player.");
+						}
+						else if(tokens[2] == "laser")
+						{
+							GameServer()->SendServerMessage(ofID, "========== Definitions - Laser ==========");
+							GameServer()->SendServerMessageText(ofID, "zCatch Laser has no extraordinary terminology, other than the gerneral one.");
 					}
 					else
 					{
+							// unknown second token
 						throw std::invalid_argument("");
 					}
+				}
+					
+				else
+				{
+					throw std::invalid_argument("");
+				}
 				}
 				else
 				{
 					throw std::invalid_argument("");
 				}
-				
 			}
 			else if (tokens[0] == "info" && size == 1)
 			{
-				GameServer()->SendServerMessage(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime");
-				GameServer()->SendServerMessage(ofID, "and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank ");
-				GameServer()->SendServerMessage(ofID, "you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
+				GameServer()->SendServerMessage(ofID, "========== Info  ==========");
+				GameServer()->SendServerMessageText(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
+
 				GameServer()->SendServerMessage(ofID, "This zCatch modification is being created by jxsl13.");
 			}
 			else if(tokens[0] == "rules")
 			{  
-				GameServer()->SendServerMessage(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is");
-				GameServer()->SendServerMessage(ofID, "considered as caught. If you die, all of you caught players are released.");
-				GameServer()->SendServerMessage(ofID, "If you catch all of them, you win the round.");
-				GameServer()->SendServerMessage(ofID, "As a measure of fair play, you are able to release your caught players manually in reverse order.");
-				GameServer()->SendServerMessage(ofID, "Releasing players is optional in zCatch. Type '/help release' for more information.");
+				GameServer()->SendServerMessage(ofID, "========== Rules ==========");
+				GameServer()->SendServerMessageText(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is considered as caught. If you die, all of your caught players are released. If you catch all of them, you win the round. As a measure of fair play, you are able to release your caught players manually in reverse order. Releasing players is optional in zCatch. Type '/help release' for more information.");
+				
 			}
 			else if(tokens[0] == "release" && size == 1)
 			{
@@ -259,7 +293,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 		}
 		catch (const std::invalid_argument&)
 		{
-			GameServer()->SendServerMessage(ofID, "No such command, please try /cmdlist or /help");
+			GameServer()->SendServerMessage(ofID, "No such command, please try /help");
 		}
 	}
 	else

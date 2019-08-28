@@ -106,6 +106,7 @@ public:
 	virtual const char *NetVersionHashReal() const = 0;
 
 	virtual void SendServerMessage(int To, const char *pText) = 0;
+	virtual void SendServerMessageText(int To, const char *pText) = 0;
 };
 
 extern IGameServer *CreateGameServer();
