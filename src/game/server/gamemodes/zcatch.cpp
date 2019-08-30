@@ -442,19 +442,23 @@ void CGameControllerZCATCH::DoWincheckRound()
 		CPlayer *pAlivePlayer = 0;
 		
 		int alivePlayerCount = 0;
+
+
+		// keeping track of any change of ingame players.		
 		m_PreviousIngamePlayerCount = m_IngamePlayerCount;
 		m_IngamePlayerCount = 0;
 
-		for(int i : GameServer()->PlayerIDs())
+		for (int i : GameServer()->PlayerIDs())
 		{
-			if(GameServer()->m_apPlayers[i])
+			if (GameServer()->m_apPlayers[i])
 			{
 				if (GameServer()->m_apPlayers[i]->IsNotCaught())
 				{
-					++alivePlayerCount;
+					alivePlayerCount++;
 					pAlivePlayer = GameServer()->m_apPlayers[i];
 				}
-				
+
+				// players actually ingame
 				if (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 				{
 					m_IngamePlayerCount++;
@@ -515,10 +519,7 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 		return;
 	}
 
-	// If the player spawns, his and all of the other player's 
-	// broadcast needs to be updated, because that player could have been 
-	// in spec previously
-	UpdateBroadcastOfEverybody();
+	// set the joining player's skin color
 	UpdateSkinsOf({player.GetCID()});
 }
 
@@ -537,7 +538,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	if (IsGameWarmup())
 	{	
 		UpdateSkinsOf({ID});
-		UpdateBroadcastOfEverybody();
 
 		// simply allow that player to join.
 		IGameController::OnPlayerConnect(pPlayer);
@@ -572,7 +572,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		}
 	}
 	
-	UpdateBroadcastOfEverybody();
 	// needed to do the spawning stuff.
 	IGameController::OnPlayerConnect(pPlayer);
 }
@@ -621,9 +620,6 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 		}
 	}
 	
-
-	// less players to catch.
-	UpdateBroadcastOfEverybody();
 
 	// needed to do the disconnect handling.
 	IGameController::OnPlayerDisconnect(pPlayer);
@@ -762,6 +758,14 @@ void CGameControllerZCATCH::Tick()
 		// by the client for 10 seconds.
 		RefreshBroadcast();
 	}
+
+
+	// we have a change of ingame players.
+	// either someone left or joined the spectators or joined the game(from lobby or from spec).
+	// these two values are updated in DoWincheckRound()
+	if(m_PreviousIngamePlayerCount != m_IngamePlayerCount)
+		UpdateBroadcastOfEverybody();
+
 
 	// checks if there are messages to process
 	// and sends those messages if needed to the requesting

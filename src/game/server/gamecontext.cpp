@@ -251,6 +251,7 @@ void CGameContext::SendServerMessageText(int To, const char *pText)
 	}
 	
 }
+
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
 	char aBuf[256];
