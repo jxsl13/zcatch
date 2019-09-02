@@ -8,15 +8,15 @@ class CTeecompUtils
 {
 public:
 	static vec3 GetTeamColorSaturatedRGB(int ForTeam, int LocalTeam, const CConfiguration& Config);
-	static inline vec3 GetTeamColorRGB(int ForTeam, int LocalTeam, const CConfiguration& Config)
-		{ return GetTeamColor(ForTeam, LocalTeam, Config.m_TcColoredTeesTeam1, Config.m_TcColoredTeesTeam2, Config.m_TcColoredTeesMethod); }
+	// static inline vec3 GetTeamColorRGB(int ForTeam, int LocalTeam, const CConfiguration& Config)
+	// 	{ return GetTeamColor(ForTeam, LocalTeam, Config.m_TcColoredTeesTeam1, Config.m_TcColoredTeesTeam2, Config.m_TcColoredTeesMethod); }
 	static inline vec3 GetTeamColorHSL(int ForTeam, int LocalTeam, const CConfiguration& Config)
 		{ return GetTeamColor(ForTeam, LocalTeam, Config.m_TcColoredTeesTeam1Hsl, Config.m_TcColoredTeesTeam2Hsl, Config.m_TcColoredTeesMethod); }
 	static bool GetForcedSkinName(int ForTeam, int LocalTeam, const char*& SkinName);
 	static bool GetForceDmColors(int ForTeam, int LocalTeam);
 	static void ResetConfig();
-	static const char* RgbToName(int rgb);
-	static const char* TeamColorToName(int rgb);
+	static const char* HslToName(int hsl, int Team);
+	static const char* TeamColorToName(int hsl, int Team);
 	static void TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics);
 
 	static bool UseDefaultTeamColor(int ForTeam, int LocalTeam, const CConfiguration& Config);

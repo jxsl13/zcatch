@@ -113,9 +113,9 @@ const char* GetStrTeam(int Team, bool Teamplay)
 	if(Teamplay)
 	{
 		if(Team == TEAM_RED)
-			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam1)); // todo teecomp fix for tccoloredteesmethod
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED)); // todo teecomp fix for tccoloredteesmethod
 		else if(Team == TEAM_BLUE)
-			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam2)); // todo teecomp fix for tccoloredteesmethod
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE)); // todo teecomp fix for tccoloredteesmethod
 	}
 	else if(Team == 0)
 		return "game";

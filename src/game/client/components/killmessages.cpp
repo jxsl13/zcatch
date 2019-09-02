@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/color.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
@@ -97,7 +98,7 @@ void CKillMessages::OnRender()
 
 				if(UseColoredFlags)
 				{
-					vec3 Col = CTeecompUtils::GetTeamColorRGB(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+					vec3 Col = HslToRgb(CTeecompUtils::GetTeamColorHSL(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config));
 					Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 				}
 
@@ -144,7 +145,7 @@ void CKillMessages::OnRender()
 
 					if(g_Config.m_TcColoredFlags)
 					{
-						vec3 Col = CTeecompUtils::GetTeamColorRGB(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+						vec3 Col = HslToRgb(CTeecompUtils::GetTeamColorHSL(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config));
 						Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
 					}
 

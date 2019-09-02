@@ -113,58 +113,61 @@ void CTeecompUtils::ResetConfig()
 	#undef MACRO_CONFIG_STR
 }
 
-const char* CTeecompUtils::RgbToName(int rgb)
+const char* CTeecompUtils::HslToName(int hsl, int Team)
 {
-	vec3 rgb_v((rgb>>16)/255.0f, ((rgb>>8)&0xff)/255.0f, (rgb&0xff)/255.0f);
-	vec3 hsl = RgbToHsl(rgb_v);
+	if(hsl == -1)
+		return Team == 0 ? "Red" : "Blue";
+	vec3 hsl_v(hsl>>16, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
 	
-	// 2019: hack like this for now, no black anymore
-	hsl.s = hsl.s + (1.0f-hsl.s)/2.0f;
-	hsl.l = hsl.l + (1.0f-hsl.l)/3.0f;
+	// 0.7 teecomp: hack like this for now, no black anymore
+	// hsl_v.s = hsl_v.s + (1.0f-hsl_v.s)/2.0f;
+	// hsl_v.l = hsl_v.l + (1.0f-hsl_v.l)/3.0f;
 
-	if(hsl.l < 0.2f)
+	if(hsl_v.l < 0.2f)
 		return "Black";
-	if(hsl.l > 0.9f)
+	if(hsl_v.l > 0.9f)
 		return "White";
-	if(hsl.s < 0.1f)
+	if(hsl_v.s < 0.1f)
 		return "Gray";
-	if(hsl.h < 20)
+	if(hsl_v.h < 20)
 		return "Red";
-	if(hsl.h < 45)
+	if(hsl_v.h < 45)
 		return "Orange";
-	if(hsl.h < 70)
+	if(hsl_v.h < 70)
 		return "Yellow";
-	if(hsl.h < 155)
+	if(hsl_v.h < 155)
 		return "Green";
-	if(hsl.h < 260)
+	if(hsl_v.h < 260)
 		return "Blue";
-	if(hsl.h < 335)
+	if(hsl_v.h < 335)
 		return "Purple";
 	return "Red";
 }
 
-const char* CTeecompUtils::TeamColorToName(int rgb)
+// TODO: merge with above
+const char* CTeecompUtils::TeamColorToName(int hsl, int Team)
 {
-	vec3 rgb_v((rgb>>16)/255.0f, ((rgb>>8)&0xff)/255.0f, (rgb&0xff)/255.0f);
-	vec3 hsl = RgbToHsl(rgb_v);
+	if(hsl == -1)
+		return Team == 0 ? "red team" : "blue team";
+	vec3 hsl_v(hsl>>16, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
 
-	if(hsl.l < 0.2f)
+	if(hsl_v.l < 0.2f)
 		return "black team";
-	if(hsl.l > 0.9f)
+	if(hsl_v.l > 0.9f)
 		return "white team";
-	if(hsl.s < 0.1f)
+	if(hsl_v.s < 0.1f)
 		return "gray team";
-	if(hsl.h < 20)
+	if(hsl_v.h < 20)
 		return "red team";
-	if(hsl.h < 45)
+	if(hsl_v.h < 45)
 		return "orange team";
-	if(hsl.h < 70)
+	if(hsl_v.h < 70)
 		return "yellow team";
-	if(hsl.h < 155)
+	if(hsl_v.h < 155)
 		return "green team";
-	if(hsl.h < 260)
+	if(hsl_v.h < 260)
 		return "blue team";
-	if(hsl.h < 335)
+	if(hsl_v.h < 335)
 		return "purple team";
 	return "red team";
 }

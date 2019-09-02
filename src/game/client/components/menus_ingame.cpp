@@ -130,10 +130,9 @@ void CMenus::RenderGame(CUIRect MainView)
 				//str_copy(aBuf, Localize(Team != TEAM_RED ? "Join red" : "Joined red"), sizeof(aBuf)); // Localize("Join red");Localize("Joined red");
 			{
 				if(Team == TEAM_SPECTATORS || g_Config.m_TcColoredTeesMethod == 0)
-					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam1));
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
 				else
-					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
-				//str_format(aBuf, sizeof(aBuf), "%s", Localize(aBuf)); // todo teecomp
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
 			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
@@ -168,8 +167,7 @@ void CMenus::RenderGame(CUIRect MainView)
 			else
 				//str_copy(aBuf, Localize(Team != TEAM_BLUE ? "Join blue" : "Joined blue"), sizeof(aBuf)); // Localize("Join blue");Localize("Joined blue");
 			{
-				str_format(aBuf, sizeof(aBuf), Team != TEAM_BLUE ? "Join %s" : "Joined %s", CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
-				//str_format(aBuf, sizeof(aBuf), "%s", Localize(aBuf)); // todo teecomp
+				str_format(aBuf, sizeof(aBuf), Team != TEAM_BLUE ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
 			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
