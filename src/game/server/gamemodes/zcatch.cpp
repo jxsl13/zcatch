@@ -29,7 +29,26 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 
 	m_pRankingServer = nullptr;
 
-	InitRankingServer();	
+	InitRankingServer();
+
+
+	m_VoteOptionServer.AddVoteOptionHandler(
+		"test", 
+		"say test",
+		[this](int toID, std::string& Description, std::string& Command, std::string& Reason){
+			std::string s;
+
+			s = "Description: " + Description;
+			this->GameServer()->SendServerMessage(toID, s.c_str());
+
+			s = "Command: " + Command;
+			this->GameServer()->SendServerMessage(toID, s.c_str());
+
+			s = "Reason: " + Reason;
+			this->GameServer()->SendServerMessage(toID, s.c_str());
+
+		}
+	);
 
 }
 
@@ -321,6 +340,7 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 	if(!pCommand)
 	{
 		dbg_msg("DEBUG", "Player %d called CUSTOM option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
+		m_VoteOptionServer.ExecuteVoteOption(ClientID, {pDescription}, {pReason});
 		//ExecuteCustomVoteOptionCommand(ClientID, {pDescription}, {pReason});
 		return true;
 	}
