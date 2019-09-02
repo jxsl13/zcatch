@@ -709,18 +709,18 @@ void CScoreboard::OnRender()
 		else if(m_pClient->m_Snap.m_pGameDataTeam)
 		{
 			char aText[64];
-			if(g_Config.m_TcColoredTeesMethod == 1)
+			if(g_Config.m_TcColoredTeesMethod == 1) // enemy based skin colors
 			{
-				if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE)
-					str_format(aText, sizeof(aText), Localize("%s team"), g_Config.m_TcColoredTeesTeam2 == -1 ? "blue" : CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
+				if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE)// TODO: should be swapped or something?
+					str_format(aText, sizeof(aText), Localize("%s team"), CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
 				else
-					str_format(aText, sizeof(aText), Localize("%s team"), g_Config.m_TcColoredTeesTeam1 == -1 ? "red" : CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam1));
+					str_format(aText, sizeof(aText), Localize("%s team"), CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam1));
 			}
 			else
 				if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE)
-					str_format(aText, sizeof(aText), Localize("blue team"));
+					str_format(aText, sizeof(aText), Localize("%s team"), CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam2));
 				else
-					str_format(aText, sizeof(aText), Localize("red team"));
+					str_format(aText, sizeof(aText), Localize("%s team"), CTeecompUtils::RgbToName(g_Config.m_TcColoredTeesTeam1));
 			float ScoreboardHeight = RenderScoreboard(Width/2-w-1.5f, y, w, TEAM_RED, pCustomRedClanName ? pCustomRedClanName : Localize(aText), -1);
 			RenderScoreboard(Width/2+1.5f, y, w, TEAM_BLUE, pCustomBlueClanName ? pCustomBlueClanName : Localize(aText), 1);
 
