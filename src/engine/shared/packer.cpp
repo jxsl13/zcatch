@@ -9,8 +9,6 @@
 void CPacker::Reset()
 {
 	m_Error = 0;
-	mem_zero(m_aBuffer, PACKER_BUFFER_SIZE);
-
 	m_pCurrent = m_aBuffer;
 	m_pEnd = m_pCurrent + PACKER_BUFFER_SIZE;
 }
