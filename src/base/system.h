@@ -136,7 +136,7 @@ void mem_copy(void *dest, const void *source, unsigned size);
 
 /*
 	Function: mem_move
-		Copies a a memory block
+		Copies a memory block
 
 	Parameters:
 		dest - Destination

@@ -7,6 +7,7 @@
 
 class CPacker
 {
+protected:
 	enum
 	{
 		PACKER_BUFFER_SIZE=1024*2
@@ -29,6 +30,7 @@ public:
 
 class CUnpacker
 {
+protected:
 	const unsigned char *m_pStart;
 	const unsigned char *m_pCurrent;
 	const unsigned char *m_pEnd;
