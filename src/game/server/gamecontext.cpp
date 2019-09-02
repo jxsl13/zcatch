@@ -927,8 +927,15 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					pOption = pOption->m_pNext;
 				}
 
+				// did not find option in default
+				// execute custom option of the specific mod.
 				if(!pOption)
+				{	
+					//execute custom option.
+					str_format(aDesc, sizeof(aDesc), "%s", pMsg->m_Value);
+					m_pController->OnCallvoteOption(ClientID, aDesc, nullptr, pReason);
 					return;
+				}	
 			}
 			else if(str_comp_nocase(pMsg->m_Type, "kick") == 0)
 			{
@@ -1413,6 +1420,13 @@ void CGameContext::ConAddVote(IConsole::IResult *pResult, void *pUserData)
 	CNetMsg_Sv_VoteOptionAdd OptionMsg;
 	OptionMsg.m_pDescription = pOption->m_aDescription;
 	pSelf->Server()->SendPackMsg(&OptionMsg, MSGFLAG_VITAL, -1);
+
+	// refresh infividual player options
+	for (auto &ID : pSelf->PlayerIDs())
+	{
+		pSelf->m_pController->RefreshVoteOptions(ID);
+	}
+	
 }
 
 void CGameContext::ConRemoveVote(IConsole::IResult *pResult, void *pUserData)
@@ -1478,6 +1492,12 @@ void CGameContext::ConRemoveVote(IConsole::IResult *pResult, void *pUserData)
 	pSelf->m_pVoteOptionFirst = pVoteOptionFirst;
 	pSelf->m_pVoteOptionLast = pVoteOptionLast;
 	pSelf->m_NumVoteOptions = NumVoteOptions;
+
+	// refresh infividual player options
+	for (auto &ID : pSelf->PlayerIDs())
+	{
+		pSelf->m_pController->RefreshVoteOptions(ID);
+	}
 }
 
 void CGameContext::ConClearVotes(IConsole::IResult *pResult, void *pUserData)
@@ -1867,7 +1887,6 @@ bool CGameContext::IsAllowedToChat(int ClientID)
 
 void CGameContext::AddPlayer(int ClientID) 
 {
-
 	m_PlayerIDs.insert(m_PlayerIDs.end(), ClientID); 
 	std::sort(m_PlayerIDs.begin(), m_PlayerIDs.end());
 }

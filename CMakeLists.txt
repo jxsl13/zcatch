@@ -1554,6 +1554,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gamemodes/zcatch/playerstats.h
   gamemodes/zcatch/rankingserver.cpp
   gamemodes/zcatch/rankingserver.h
+  gamemodes/zcatch/voteoptionserver.cpp
+  gamemodes/zcatch/voteoptionserver.h
   gameworld.cpp
   gameworld.h
   player.cpp

@@ -177,6 +177,8 @@ public:
 	virtual bool OnCallvoteBan(int ClientID, int KickID, const char* pReason);
 	virtual bool OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason);
 
+	virtual void RefreshVoteOptions(int ofID) {};
+
 	virtual void OnReset();
 
 	// game

@@ -14,7 +14,7 @@
 #include <iomanip>
 
 
-CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
+CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer), m_VoteOptionServer(pGameServer)
 {
 	m_pGameType = "zCatch";
 	m_WeaponMode = g_Config.m_SvWeaponMode;
@@ -29,7 +29,8 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 
 	m_pRankingServer = nullptr;
 
-	InitRankingServer();		
+	InitRankingServer();	
+
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -108,6 +109,11 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	{
 		try
 		{
+			if(tokens[0] == "test")
+			{
+				m_VoteOptionServer.Test(ofID);
+				return;
+			}
 			if(tokens[0] == "welcome")
 			{
 				GameServer()->SendServerMessageText(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
@@ -211,18 +217,18 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 						{
 							GameServer()->SendServerMessage(ofID, "========== Definitions - Laser ==========");
 							GameServer()->SendServerMessageText(ofID, "zCatch Laser has no extraordinary terminology, other than the gerneral one.");
+						}
+						else 
+						{
+							// unknown second token
+							throw std::invalid_argument("");
+						}
 					}
+					
 					else
 					{
-							// unknown second token
 						throw std::invalid_argument("");
 					}
-				}
-					
-				else
-				{
-					throw std::invalid_argument("");
-				}
 				}
 				else
 				{
@@ -310,8 +316,19 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 		return false;
 	}
 
-	dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
-	return true;
+
+	// no command passed means that a custom vote was invoked.
+	if(!pCommand)
+	{
+		dbg_msg("DEBUG", "Player %d called CUSTOM option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
+		//ExecuteCustomVoteOptionCommand(ClientID, {pDescription}, {pReason});
+		return true;
+	}
+	else
+	{
+		dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
+		return true;
+	}
 }
 bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* pReason)
 {
@@ -462,10 +479,9 @@ void CGameControllerZCATCH::DoWincheckRound()
 				if (GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS)
 				{
 					m_IngamePlayerCount++;
-				}	
+				}
 			}
 		}
-
 
 		if(m_IngamePlayerCount == 1 && alivePlayerCount == 0)
 		{
@@ -528,6 +544,10 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
 
+	// Adds custom vote options to a player's vote options.
+	m_VoteOptionServer.RefreshVoteOptions(ID);
+	//InitializeCustomVoteOptions(ID);
+
 	// fill player's stats with database information.
 	RetrieveRankingData(ID);
 
@@ -581,6 +601,8 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
+
+	//m_CustomVoteOptions[ID].clear();
 
 	// save player's statistics to the database
 	SaveRankingData(ID);
@@ -758,7 +780,7 @@ void CGameControllerZCATCH::Tick()
 		// by the client for 10 seconds.
 		RefreshBroadcast();
 	}
-
+	
 
 	// we have a change of ingame players.
 	// either someone left or joined the spectators or joined the game(from lobby or from spec).
@@ -772,6 +794,18 @@ void CGameControllerZCATCH::Tick()
 	// player.
 	ProcessMessageQueue();
 
+	// process voteoption stuff.
+	m_VoteOptionServer.Tick();
+
+	// sends changes vote options
+	// to the player.
+	//ProcessVoteOptionUpdatesQueue();
+
+
+	// checks if there are any vote option updates
+	// available and sends those to the corresponding players
+	//ProcessVoteExecutionQueue();
+
 
 	// we do not want WeaponModes to be changed mid game, as it is not supported
 	if (m_WeaponMode != g_Config.m_SvWeaponMode)
@@ -780,7 +814,7 @@ void CGameControllerZCATCH::Tick()
 		g_Config.m_SvWeaponMode = m_WeaponMode;
 		GameServer()->SendServerMessage(-1, "If you want to change the weapon mode, please update your configuration file and restart the server.");
 	}
-	
+
 	if(m_SkillLevel != g_Config.m_SvSkillLevel)
 	{
 		g_Config.m_SvSkillLevel = m_SkillLevel;
@@ -1082,7 +1116,6 @@ std::string CGameControllerZCATCH::GetDatabasePrefix(){
 
 int CGameControllerZCATCH::CalculateScore(int PlayersCaught)
 {	
-
 	// clip
 	int MaxPlayersCaught = PlayersCaught < MAX_PLAYERS - 1 ? PlayersCaught : MAX_PLAYERS - 1;
 
@@ -1309,6 +1342,4 @@ void CGameControllerZCATCH::ProcessMessageQueue()
 	
 
 }
-
-
 

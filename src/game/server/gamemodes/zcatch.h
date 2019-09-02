@@ -6,6 +6,7 @@
 #include <set>
 #include <game/server/gamecontroller.h>
 #include <game/server/gamemodes/zcatch/rankingserver.h>
+#include <game/server/gamemodes/zcatch/voteoptionserver.h>
 
 class CGameControllerZCATCH : public IGameController
 {
@@ -87,6 +88,8 @@ private:
 	 * allows the usage of UpdateSkinsOf({multiple, ids})
 	 * sends to everyone that the skin information of those
 	 * multiple ids has changed. (color change)
+	 * The parameter CountIngamePlayers forces the counting, that is usually done
+	 * in DoWincheckRound()
 	 */
 	void UpdateSkinsOf(std::initializer_list<int> IDs);
 	void UpdateSkinsOfEverybody();
@@ -142,6 +145,11 @@ private:
 
 	// handles the filling of the MessageQueue for the /top command
 	void RequestTopRankingData(int requestingID, std::string key);
+
+
+	class CVoteOptionServerExtended m_VoteOptionServer;
+	
+	virtual void RefreshVoteOptions(int ofID) {m_VoteOptionServer.RefreshVoteOptions(ofID);};
 
 };
 
