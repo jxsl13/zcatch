@@ -181,9 +181,9 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcDmColorsTeam1, aBuf, g_Config.m_TcDmColorsTeam1, &Button))
 		g_Config.m_TcDmColorsTeam1 ^= 1;
 
+	LeftView.HSplitTop(10.0f, &Button, &LeftView);
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	LeftView.HSplitTop(20.0f, &Button, &LeftView);
-	// UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Team mates"):Localize("Team 1"), 14.0f, CUI::ALIGN_LEFT);
 
 	// render skin
 	const CSkins::CSkin *s = m_pClient->m_pSkins->Get(max(0, m_pClient->m_pSkins->Find(g_Config.m_TcForcedSkin1, false)));
@@ -224,7 +224,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_TcDmColorsTeam2, aBuf, g_Config.m_TcDmColorsTeam2, &Button))
 		g_Config.m_TcDmColorsTeam2 ^= 1;
 
-	RightView.HSplitTop(20.0f, &Button, &RightView);
+	RightView.HSplitTop(10.0f, &Button, &RightView);
 	RightView.HSplitTop(20.0f, &Button, &RightView);
 	UI()->DoLabel(&Button, (g_Config.m_TcColoredTeesMethod)?Localize("Enemies"):Localize("Team 2"), 14.0f, CUI::ALIGN_LEFT);
 	
@@ -384,6 +384,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	RightView.Margin(10.0f, &SkinSelection);
 
+#ifdef OLD_HARDCODED_LISTBOX
 	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
 	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
 	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
@@ -427,6 +428,68 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 				m_pClient->m_aClients[i].UpdateRenderInfo(m_pClient, i, true);
 		}
 	}
+#else
+	static sorted_array<const CSkins::CSkin *> s_paSkinList;
+	static CListBoxState s_ListBoxState;
+	static bool RefreshSkinSelector = true;
+	static const CSkins::CSkin *pSelectedSkin;
+	if(RefreshSkinSelector)
+	{
+		s_paSkinList.clear();
+		for(int i = 0; i < m_pClient->m_pSkins->Num(); ++i)
+		{
+			const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);
+			// no special skins
+			if((s->m_Flags&CSkins::SKINFLAG_SPECIAL) == 0)
+				s_paSkinList.add(s);
+		}
+		RefreshSkinSelector = false;
+	}
+
+	pSelectedSkin = 0;
+	int OldSelected = -1;
+	UiDoListboxHeader(&s_ListBoxState, &SkinSelection, Localize("Forced skin"), 20.0f, 2.0f);
+	UiDoListboxStart(&s_ListBoxState, &RefreshSkinSelector, 20.0f, 0, s_paSkinList.size(), 1, OldSelected);
+
+	for(int i = 0; i < s_paSkinList.size(); ++i)
+	{
+		const CSkins::CSkin *s = s_paSkinList[i];
+		if(s == 0)
+			continue;
+		if(!str_comp(s->m_aName, g_Config.m_TcForcedSkin2))
+		{
+			pSelectedSkin = s;
+			OldSelected = i;
+		}
+
+		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, &s_paSkinList[i], OldSelected == i);
+		// if(Item.m_Visible)
+		{
+			str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
+			Item.m_Rect.VMargin(5.0f, &Item.m_Rect);
+			Item.m_Rect.HSplitTop(1.0f, 0, &Item.m_Rect);
+			UI()->DoLabel(&Item.m_Rect, aBuf, 14.0f, CUI::ALIGN_LEFT);
+		}
+	}
+
+	const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
+	if(NewSelected != -1)
+	{
+		if(NewSelected != OldSelected)
+		{
+			pSelectedSkin = s_paSkinList[NewSelected];
+			mem_copy(g_Config.m_TcForcedSkin2, pSelectedSkin->m_aName, sizeof(g_Config.m_TcForcedSkin2));
+			for(int p = 0; p < NUM_SKINPARTS; p++)
+			{
+				mem_copy(CSkins::ms_apSkinVariables[p], pSelectedSkin->m_apParts[p]->m_aName, 24);
+				*CSkins::ms_apUCCVariables[p] = pSelectedSkin->m_aUseCustomColors[p];
+				*CSkins::ms_apColorVariables[p] = pSelectedSkin->m_aPartColors[p];
+			}
+			// m_SkinModified = true;
+		}
+	}
+	OldSelected = NewSelected;
+#endif
 }
 
 void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
