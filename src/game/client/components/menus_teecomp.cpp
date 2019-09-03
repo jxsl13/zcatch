@@ -293,10 +293,6 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 			{
 				int NewHSLVal = (HSLAColor.x << 16) + (HSLAColor.y << 8) + HSLAColor.z;
 				g_Config.m_TcColoredTeesTeam1Hsl = NewHSLVal;
-
-				// vec3 HSLColor = vec3(HSLAColor.x/255.f, HSLAColor.y/255.f, HSLAColor.z/255.f);
-				// vec3 RGBColor = HslToRgb(HSLColor);
-				// g_Config.m_TcColoredTeesTeam1 = (int(255*RGBColor.r)<<16) + (int(255*RGBColor.g)<<8) + int(255*RGBColor.b);
 				TeesNeedUpdate = true;
 			}
 		}
@@ -419,6 +415,11 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 	EndScrollRegion(&s_ScrollRegion2);
+#else
+	static CListBoxState s_SkinListBoxState2;
+	static const CSkins::CSkin *s_pSelectedSkin;
+	RenderSkinNameList(SkinSelection, &s_SkinListBoxState2, s_pSelectedSkin, g_Config.m_TcForcedSkin2);
+#endif
 
 	if(TeesNeedUpdate)
 	{
@@ -428,11 +429,13 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 				m_pClient->m_aClients[i].UpdateRenderInfo(m_pClient, i, true);
 		}
 	}
-#else
+}
+
+// inspired by void CMenus::RenderSkinSelection(CUIRect MainView)
+void CMenus::RenderSkinNameList(CUIRect MainView, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig)
+{
 	static sorted_array<const CSkins::CSkin *> s_paSkinList;
-	static CListBoxState s_ListBoxState;
 	static bool RefreshSkinSelector = true;
-	static const CSkins::CSkin *pSelectedSkin;
 	if(RefreshSkinSelector)
 	{
 		s_paSkinList.clear();
@@ -448,48 +451,45 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	pSelectedSkin = 0;
 	int OldSelected = -1;
-	UiDoListboxHeader(&s_ListBoxState, &SkinSelection, Localize("Forced skin"), 20.0f, 2.0f);
-	UiDoListboxStart(&s_ListBoxState, &RefreshSkinSelector, 20.0f, 0, s_paSkinList.size(), 1, OldSelected);
+	UiDoListboxHeader(pListBoxState, &MainView, Localize("Forced skin"), 20.0f, 2.0f);
+	UiDoListboxStart(pListBoxState, &RefreshSkinSelector, 20.0f, 0, s_paSkinList.size(), 1, OldSelected);
 
 	for(int i = 0; i < s_paSkinList.size(); ++i)
 	{
 		const CSkins::CSkin *s = s_paSkinList[i];
 		if(s == 0)
 			continue;
-		if(!str_comp(s->m_aName, g_Config.m_TcForcedSkin2))
+		if(!str_comp(s->m_aName, pSkinConfig))
 		{
 			pSelectedSkin = s;
 			OldSelected = i;
 		}
 
-		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, &s_paSkinList[i], OldSelected == i);
-		// if(Item.m_Visible)
-		{
-			str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
-			Item.m_Rect.VMargin(5.0f, &Item.m_Rect);
-			Item.m_Rect.HSplitTop(1.0f, 0, &Item.m_Rect);
-			UI()->DoLabel(&Item.m_Rect, aBuf, 14.0f, CUI::ALIGN_LEFT);
-		}
+		CListboxItem Item = UiDoListboxNextItem(pListBoxState, &s_paSkinList[i], OldSelected == i);
+
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
+		Item.m_Rect.VMargin(5.0f, &Item.m_Rect);
+		Item.m_Rect.HSplitTop(1.0f, 0, &Item.m_Rect);
+		UI()->DoLabel(&Item.m_Rect, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 
-	const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
+	const int NewSelected = UiDoListboxEnd(pListBoxState, 0);
 	if(NewSelected != -1)
 	{
 		if(NewSelected != OldSelected)
 		{
 			pSelectedSkin = s_paSkinList[NewSelected];
-			mem_copy(g_Config.m_TcForcedSkin2, pSelectedSkin->m_aName, sizeof(g_Config.m_TcForcedSkin2));
+			mem_copy(pSkinConfig, pSelectedSkin->m_aName, sizeof(pSkinConfig));
 			for(int p = 0; p < NUM_SKINPARTS; p++)
 			{
 				mem_copy(CSkins::ms_apSkinVariables[p], pSelectedSkin->m_apParts[p]->m_aName, 24);
 				*CSkins::ms_apUCCVariables[p] = pSelectedSkin->m_aUseCustomColors[p];
 				*CSkins::ms_apColorVariables[p] = pSelectedSkin->m_aPartColors[p];
 			}
-			// m_SkinModified = true;
 		}
 	}
 	OldSelected = NewSelected;
-#endif
 }
 
 void CMenus::RenderSettingsTeecompStats(CUIRect MainView)
