@@ -31,25 +31,7 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 
 	InitRankingServer();
 
-
-	m_VoteOptionServer.AddVoteOptionHandler(
-		"test", 
-		"say test",
-		[this](int toID, std::string& Description, std::string& Command, std::string& Reason){
-			std::string s;
-
-			s = "Description: " + Description;
-			this->GameServer()->SendServerMessage(toID, s.c_str());
-
-			s = "Command: " + Command;
-			this->GameServer()->SendServerMessage(toID, s.c_str());
-
-			s = "Reason: " + Reason;
-			this->GameServer()->SendServerMessage(toID, s.c_str());
-
-		}
-	);
-
+	InitExtendedVoteOptionServer();
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -72,6 +54,56 @@ void CGameControllerZCATCH::InitRankingServer()
 		m_pRankingServer = new CSQLiteRankingServer{g_Config.m_SvSQLiteFilename, {GetDatabasePrefix()}};
 	}
 	
+}
+
+void CGameControllerZCATCH::InitExtendedVoteOptionServer()
+{
+	auto none = [](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool {return false;};
+	m_VoteOptionServer.AddVoteOptionHandler("========== Personal Options ==========", "", none);
+
+	m_VoteOptionServer.AddVoteOptionHandler(
+		"Enable all server messages. Currently disabled.", 
+		"/allmessages",
+		[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool
+		{
+			if(Description == "Enable all server messages. Currently disabled.")
+			{
+				Description = {"Disable all server messages. Currently enabled."};
+			}
+			else
+			{
+				Description = {"Enable all server messages. Currently disabled."};
+			}
+
+			// do the same as the chat command
+			OnChatMessage(ofID, 0, ofID, Command.c_str());
+			return true;
+		}
+	);
+
+	m_VoteOptionServer.AddVoteOptionHandler(
+		"Show my statistics.", 
+		"/rank",
+		[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool
+		{
+			// do the same as the chat command
+			OnChatMessage(ofID, 0, ofID, Command.c_str());
+			return false;
+		}
+	);
+
+	m_VoteOptionServer.AddVoteOptionHandler(
+		"Show top 5 players.", 
+		"/top",
+		[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool
+		{
+			// do the same as the chat command
+			OnChatMessage(ofID, 0, ofID, Command.c_str());
+			return false;
+		}
+	);
+
+
 }
 
 CGameControllerZCATCH::~CGameControllerZCATCH()
@@ -128,11 +160,6 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 	{
 		try
 		{
-			if(tokens[0] == "test")
-			{
-				m_VoteOptionServer.Test(ofID);
-				return;
-			}
 			if(tokens[0] == "welcome")
 			{
 				GameServer()->SendServerMessageText(ofID, "Welcome to zCatch, where you kill all of your enemies to win a round. Write '/help' for more information.");
@@ -565,8 +592,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	int ID = player.GetCID();
 
 	// Adds custom vote options to a player's vote options.
-	m_VoteOptionServer.RefreshVoteOptions(ID);
-	//InitializeCustomVoteOptions(ID);
+	m_VoteOptionServer.OnPlayerConnect(ID);
 
 	// fill player's stats with database information.
 	RetrieveRankingData(ID);
@@ -814,18 +840,6 @@ void CGameControllerZCATCH::Tick()
 	// player.
 	ProcessMessageQueue();
 
-	// process voteoption stuff.
-	m_VoteOptionServer.Tick();
-
-	// sends changes vote options
-	// to the player.
-	//ProcessVoteOptionUpdatesQueue();
-
-
-	// checks if there are any vote option updates
-	// available and sends those to the corresponding players
-	//ProcessVoteExecutionQueue();
-
 
 	// we do not want WeaponModes to be changed mid game, as it is not supported
 	if (m_WeaponMode != g_Config.m_SvWeaponMode)
@@ -840,7 +854,6 @@ void CGameControllerZCATCH::Tick()
 		g_Config.m_SvSkillLevel = m_SkillLevel;
 		GameServer()->SendServerMessage(-1, "If you want to change the skill level, please update your configuration file and restart the server.");
 	}
-	
 	
 	IGameController::Tick();
 }

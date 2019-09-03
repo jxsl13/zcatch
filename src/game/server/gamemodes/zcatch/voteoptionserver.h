@@ -1,8 +1,6 @@
 #pragma once
 #include <game/server/gamecontext.h>
 
-#include <future>
-#include <mutex>
 #include <tuple>
 #include <vector>
 #include <functional>
@@ -14,25 +12,11 @@ using std::string;
 class CVoteOptionServerExtended
 {
 public:
-    using tuple_2str_fn_int_3str_t = std::tuple<std::string, std::string, std::function<void(int, std::string&, std::string&, std::string&)> >;
+    using tuple_2str_fn_int_3str_t = std::tuple<std::string, std::string, std::function<bool(int, std::string&, std::string&, std::string&)> >;
 private:
     CGameContext* m_pGameServer;
 
-    // contains async tasks
-    std::vector<std::future<void>> m_Futures;
-
-    // cleanup finished futures from vector
-    void CleanupFutures();
-
-    // wait until all futures finished execution.
-    void AwaitFutures();
-
-
-    // contains messages that are to be sent to the specific players.
-    std::mutex m_VoteMessageQueueMutex;
-    std::vector<std::tuple<int, int, CMsgPacker> > m_VoteMessageQueue;
-
-
+    
     // <description>, <command>, 
     // <function> that gets a reference to the command passed as well as a reference to the description
     // the function might change both values and invoke a vote options update.
@@ -41,43 +25,46 @@ private:
 
 public:
 
+    // constructor
     CVoteOptionServerExtended(CGameContext *pGameServer);
-    ~CVoteOptionServerExtended();
-
-    // stuff that is to be executed in the game tick.
-    void Tick();
-
-    void Test(int forID);
-
-    // resend vote options.
-    void RefreshVoteOptions(int ofID);
-
-    // reset vote options to their default commands
-    // and descriptions
-    void ResetCustomVoteOptionsToDefault(int ofID);
 
     // add a new option handler
-    void AddVoteOptionHandler(std::string Description, std::string Command, std::function<void(int, std::string&, std::string&, std::string&)> Callback);
+    // pass a handler to the votes.
+    // Description - Initial Description Value
+    // Command - Initial command value. 
+    // Callback - bool function(string& Description, string& Command, string& Reason)
+    // Description and Command are references, that can be actually altered to contain new values.
+    // The Description value is the value that is shown to the player.
+    // Reason is only the extra data that a player can pass.
+    void AddVoteOptionHandler(std::string Description, std::string Command, std::function<bool(int, std::string&, std::string&, std::string&)> Callback);
+
+    // executes a vote option reset for the given ID
+    // and updates the vote list of that player.
+    void OnPlayerConnect(int PlayerID);
+
+    // sends all three messags below
+    void RefreshVoteOptions(int ofID);
 
 
+    // try to execute a specific vote option of a specific player.
     bool ExecuteVoteOption(int ofID, std::string ReceivedDescription, std::string ReceivedReason);
+
+    
 protected:
 
     inline class IServer* Server() { return m_pGameServer->Server(); };
     inline class CGameContext* GameServer() { return m_pGameServer; };
 
+    // reset vote options to their default commands and descriptions
+    void ResetCustomVoteOptionsToDefault(int ofID);
 
-	// add a message to clear the current vote options
-    // on the client side. Message will be sent
-    // in Tick()
-	void PutClearVoteOptions(int ofID);
+    // sends a message to clear the client's vote list.
+	void SendClearVoteOptions(int ofID);
 
-	// add a message with all of the default vote options 
-    // that are either defined in the config file or
-    // were added by an admin while the server is running.
-	void PutDefaultVoteOptions(int toID);
+    // send vanilla votes
+	void SendDefaultVoteOptions(int toID);
 
-    // Add a message for every custom vote 
-    void PutCustomVoteOptions(int toID);
+    // send custom votes
+    void SendCustomVoteOptions(int toID);
 
 };

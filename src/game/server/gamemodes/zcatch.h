@@ -43,6 +43,8 @@ public:
 	virtual bool OnCallvoteBan(int ClientID, int KickID, const char* pReason);
 	virtual bool OnCallvoteSpectate(int ClientID, int SpectateID, const char* pReason);
 
+	// used to refresh all votes, when a vanilla vote is being added or removed.
+	virtual void RefreshVoteOptions(int ofID) {m_VoteOptionServer.RefreshVoteOptions(ofID);};
 
 	virtual void OnReset();
 
@@ -147,9 +149,11 @@ private:
 	void RequestTopRankingData(int requestingID, std::string key);
 
 
+	// Handles custom vote options, that are personalized per player.
 	class CVoteOptionServerExtended m_VoteOptionServer;
 	
-	virtual void RefreshVoteOptions(int ofID) {m_VoteOptionServer.RefreshVoteOptions(ofID);};
+	// delegade initialization of all the vote option handlers.
+	void InitExtendedVoteOptionServer();
 
 };
 
