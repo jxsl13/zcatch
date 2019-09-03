@@ -715,7 +715,7 @@ private:
 	void RenderSettingsTeecompMisc(CUIRect MainView);
 	void RenderSettingsTeecompAbout(CUIRect MainView);
 	void RenderLaser(const struct CNetObj_Laser *pCurrent);
-	void RenderSkinNameList(CUIRect View, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig);
+	void RenderSkinNameList(CUIRect View, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig, bool* pRefreshSkinSelector);
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);

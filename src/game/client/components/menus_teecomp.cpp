@@ -310,42 +310,14 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		}
 	}
 
+	// skin list 1
 	LeftView.Margin(10.0f, &SkinSelection);
-
-	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
-	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
-	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
-	
-	List = SkinSelection;
-	// scroll
-	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0, 0);
-	BeginScrollRegion(&s_ScrollRegion, &List, &ScrollOffset);
-	List.y += ScrollOffset.y;
-
-	for(int i=0; i<m_pClient->m_pSkins->Num(); i++)
 	{
-		List.HSplitTop(20.0f, &Button, &List);
-		ScrollRegionAddRect(&s_ScrollRegion, Button);
-
-		const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);
-
-		str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
-		int Selected = 0;
-		if(str_comp(s->m_aName, g_Config.m_TcForcedSkin1) == 0)
-			Selected = 1;
-
-		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button))
-		{
-			TeesNeedUpdate = true;
-			str_copy(g_Config.m_TcForcedSkin1, s->m_aName, sizeof(g_Config.m_TcForcedSkin1));
-		}
-
-		Button.VMargin(5.0f, &Button);
-		Button.HSplitTop(1.0f, 0, &Button);
-		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
+		static CListBoxState s_SkinListBoxState1;
+		static const CSkins::CSkin *s_pSelectedSkin1;
+		static bool RefreshSkinSelector1 = true;
+		RenderSkinNameList(SkinSelection, &s_SkinListBoxState1, s_pSelectedSkin1, g_Config.m_TcForcedSkin1, &RefreshSkinSelector1);
 	}
-	EndScrollRegion(&s_ScrollRegion);
 
 	// Custom colors team 2
 	bool CustomColorsTeam2 = g_Config.m_TcColoredTeesTeam2Hsl != -1;
@@ -427,12 +399,15 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
 	}
 	EndScrollRegion(&s_ScrollRegion2);
-#else
-	static CListBoxState s_SkinListBoxState2;
-	static const CSkins::CSkin *s_pSelectedSkin;
-	RenderSkinNameList(SkinSelection, &s_SkinListBoxState2, s_pSelectedSkin, g_Config.m_TcForcedSkin2);
 #endif
-
+	// skin list 2
+	{
+		static CListBoxState s_SkinListBoxState2;
+		static const CSkins::CSkin *s_pSelectedSkin2;
+		static bool RefreshSkinSelector2 = true;
+		RenderSkinNameList(SkinSelection, &s_SkinListBoxState2, s_pSelectedSkin2, g_Config.m_TcForcedSkin2, &RefreshSkinSelector2);
+	}
+	
 	if(TeesNeedUpdate)
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -444,11 +419,11 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 }
 
 // inspired by void CMenus::RenderSkinSelection(CUIRect MainView)
-void CMenus::RenderSkinNameList(CUIRect MainView, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig)
+void CMenus::RenderSkinNameList(CUIRect MainView, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig, bool* pRefreshSkinSelector)
 {
 	static sorted_array<const CSkins::CSkin *> s_paSkinList;
-	static bool RefreshSkinSelector = true;
-	if(RefreshSkinSelector)
+	// static bool RefreshSkinSelector = true;
+	if(*pRefreshSkinSelector)
 	{
 		s_paSkinList.clear();
 		for(int i = 0; i < m_pClient->m_pSkins->Num(); ++i)
@@ -458,13 +433,13 @@ void CMenus::RenderSkinNameList(CUIRect MainView, CListBoxState* pListBoxState, 
 			if((s->m_Flags&CSkins::SKINFLAG_SPECIAL) == 0)
 				s_paSkinList.add(s);
 		}
-		RefreshSkinSelector = false;
+		*pRefreshSkinSelector = false;
 	}
 
 	pSelectedSkin = 0;
 	int OldSelected = -1;
 	UiDoListboxHeader(pListBoxState, &MainView, Localize("Forced skin"), 20.0f, 2.0f);
-	UiDoListboxStart(pListBoxState, &RefreshSkinSelector, 20.0f, 0, s_paSkinList.size(), 1, OldSelected);
+	UiDoListboxStart(pListBoxState, &pRefreshSkinSelector, 20.0f, 0, s_paSkinList.size(), 1, OldSelected);
 
 	for(int i = 0; i < s_paSkinList.size(); ++i)
 	{
@@ -813,7 +788,7 @@ void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	MainView.HSplitTop(20.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, Localize("TeeComp 0.5 By Alban 'spl0k' FERON"), 14.0f, CUI::ALIGN_CENTER);
+	UI()->DoLabel(&Button, Localize("TeeComp 0.5 By Alban 'spl0k' Feron"), 14.0f, CUI::ALIGN_CENTER);
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	UI()->DoLabel(&Button, Localize("Adapted to 0.6 By SushiTee"), 14.0f, CUI::ALIGN_CENTER);
 	MainView.HSplitTop(20.0f, &Button, &MainView);
