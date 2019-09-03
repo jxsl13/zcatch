@@ -51,27 +51,41 @@ void CMenus::RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int 
 
 void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 {
-	CUIRect Button;
+	CUIRect Button, BottomView;
 	static int s_SettingsPage = 0;
 						
 	// Tabs (Teecomp pattern)
-	MainView.HSplitBottom(80.0f, &MainView, 0);
+	MainView.HSplitBottom(80.0f, &MainView, &BottomView);
+	if(this->Client()->State() != IClient::STATE_ONLINE)
+		MainView.HSplitTop(20.0f, 0, 0);
+	BottomView.HSplitTop(20.f, 0, &BottomView);
 	MainView.HSplitTop(14.0f, 0, &MainView);
 
 	// if(s_SettingsPage != 3)
 	{
-		MainView.HSplitBottom(20.0f, 0, &Button);
-		Button.VSplitLeft(MainView.w/3, &Button, 0);
-		static CButtonContainer s_DefaultButton;
-		if(DoButton_Menu(&s_DefaultButton, Localize("Reset to defaults"), 0, &Button))
-			CTeecompUtils::ResetConfig();
+		// standard 0.7 reset button
+		float Spacing = 3.0f;
+		float ButtonWidth = (BottomView.w/6.0f)-(Spacing*5.0)/6.0f;
 
+		BottomView.VSplitRight(ButtonWidth, 0, &BottomView);
+		RenderTools()->DrawUIRect4(&BottomView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
+		// MainView.HSplitBottom(20.0f, 0, &Button);
+		// Button.VSplitLeft(MainView.w/3, &Button, 0)
+
+		BottomView.HSplitTop(25.0f, &BottomView, 0);
+		Button = BottomView;
+		static CButtonContainer s_ResetButton;
+		// if(DoButton_Menu(&s_DefaultButton, Localize("Reset to defaults"), 0, &Button))
+		if(DoButton_Menu(&s_ResetButton, Localize("Reset"), 0, &Button))
+			CTeecompUtils::ResetConfig();;
+
+		// removed the footer as it made the settings page height irregular
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
 		MainView.HSplitBottom(10.0f, &MainView, &Button);
-		char aBuf[64];
+		/*char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), Localize("Teeworlds %s with TeeComp %s"), GAME_VERSION, TEECOMP_VERSION);
 		UI()->DoLabel(&Button, aBuf, 10.0f, CUI::ALIGN_RIGHT);
-		MainView.HSplitBottom(10.0f, &MainView, 0);
+		MainView.HSplitBottom(10.0f, &MainView, 0); */
 	}
 
 	// render background
