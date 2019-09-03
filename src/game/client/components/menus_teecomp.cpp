@@ -69,8 +69,6 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 
 		BottomView.VSplitRight(ButtonWidth, 0, &BottomView);
 		RenderTools()->DrawUIRect4(&BottomView, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), CUI::CORNER_T, 5.0f);
-		// MainView.HSplitBottom(20.0f, 0, &Button);
-		// Button.VSplitLeft(MainView.w/3, &Button, 0)
 
 		BottomView.HSplitTop(25.0f, &BottomView, 0);
 		Button = BottomView;
@@ -80,8 +78,8 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 			CTeecompUtils::ResetConfig();;
 
 		// removed the footer as it made the settings page height irregular
-		MainView.HSplitBottom(10.0f, &MainView, &Button);
-		MainView.HSplitBottom(10.0f, &MainView, &Button);
+		// MainView.HSplitBottom(10.0f, &MainView, &Button);
+		// MainView.HSplitBottom(10.0f, &MainView, &Button);
 		/*char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), Localize("Teeworlds %s with TeeComp %s"), GAME_VERSION, TEECOMP_VERSION);
 		UI()->DoLabel(&Button, aBuf, 10.0f, CUI::ALIGN_RIGHT);
@@ -92,7 +90,7 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 	CUIRect Tabbar;
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
 
-	const char *pTabs[] = { Localize("Skins"), Localize("Entities"), Localize("Stats")/*, Localize("About")*/ };
+	const char *pTabs[] = { Localize("Skins"), Localize("Entities"), Localize("Stats"), Localize("About") };
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
@@ -113,8 +111,8 @@ void CMenus::RenderSettingsTeecomp(CUIRect MainView)
 		RenderSettingsTeecompMisc(MainView);
 	else if(s_SettingsPage == 2)
 		RenderSettingsTeecompStats(MainView);
-	// else if(s_SettingsPage == 3)
-	// 	RenderSettingsTeecompAbout(MainView);
+	else if(s_SettingsPage == 3)
+		RenderSettingsTeecompAbout(MainView);
 }
 
 // TODO Teecomp port
@@ -684,6 +682,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 		g_Config.m_TcColoredFlags ^= 1;
 
 	LeftView.HSplitTop(20.0f, &Button, &LeftView);
+	LeftView.HSplitTop(20.0f, &Button, &LeftView);
 	if(DoButton_CheckBox(&g_Config.m_TcSpeedmeter, Localize("Display speed meter"), g_Config.m_TcSpeedmeter, &Button))
 		g_Config.m_TcSpeedmeter ^= 1;
 
@@ -789,7 +788,7 @@ void CMenus::RenderSettingsTeecompMisc(CUIRect MainView)
 		Graphics()->MapScreen(screen.x, screen.y, screen.w, screen.h); 
 	}
 }
-/*
+
 void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 {
 	CUIRect Button;
@@ -798,61 +797,37 @@ void CMenus::RenderSettingsTeecompAbout(CUIRect MainView)
 	MainView.HSplitTop(52.0f, &Button, &MainView);
 	UI()->DoLabel(&Button, "TeeComp", 48.0f, CUI::ALIGN_CENTER);
 
-	NewLine(&Button, &MainView);
+	MainView.HSplitTop(12.0f, &Button, &MainView);
 	Button.VSplitRight(Button.w/3, 0, &Button);
 	str_format(aBuf, sizeof(aBuf), "%s %s", Localize("Version"), TEECOMP_VERSION);
-	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
+	UI()->DoLabel(&Button, aBuf, 12.0f, CUI::ALIGN_LEFT);
+	MainView.HSplitTop(12.0f, &Button, &MainView);
 	Button.VSplitRight(Button.w/3, 0, &Button);
-	str_format(aBuf, sizeof(aBuf), "%s %s", Localize("For Teeworlds"), GAME_VERSION);
-	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
+	str_format(aBuf, sizeof(aBuf), "%s %s", Localize("For Teeworlds"), GAME_RELEASE_VERSION);
+	UI()->DoLabel(&Button, aBuf, 12.0f, CUI::ALIGN_LEFT);
+	MainView.HSplitTop(12.0f, &Button, &MainView);
 	Button.VSplitRight(Button.w/3, 0, &Button);
 	str_format(aBuf, sizeof(aBuf), "%s %s %s", Localize("Compiled"), __DATE__, __TIME__);
-	UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabel(&Button, aBuf, 12.0f, CUI::ALIGN_LEFT);
 
-	NewLine();
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("By Alban 'spl0k' FERON"), 14.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, "http://spl0k.unreal-design.com/", 14.0f, CUI::ALIGN_CENTER);
-
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Special thanks to:"), 16.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, "Sd`", 14.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, "Tho", 14.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, "Eve", 14.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, Localize("some other MonkeyStyle members"), 14.0f, CUI::ALIGN_CENTER);
-	NewLine();
-	UI()->DoLabel(&Button, Localize("and the Teeworlds.com community"), 14.0f, CUI::ALIGN_CENTER);
-
-	MainView.HSplitBottom(10.0f, &MainView, &Button);
-	UI()->DoLabel(&Button, Localize("so you can set while u set while u set options"), 10.0f, CUI::ALIGN_LEFT);
-	MainView.HSplitBottom(10.0f, &MainView, &Button);
-	UI()->DoLabel(&Button, Localize("Yo dawg I herd you like tabs so we put tabs in yo tabs in yo tabs"), 10.0f, CUI::ALIGN_LEFT);
-	NewLine(NULL, NULL);
-}
-
-void CMenus::NewLine(CUIRect *pButton, CUIRect *pView)
-{
-	m_pNewLineButton = pButton;
-	m_pNewLineView = pView;
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	UI()->DoLabel(&Button, Localize("TeeComp 0.5 By Alban 'spl0k' FERON"), 14.0f, CUI::ALIGN_CENTER);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	UI()->DoLabel(&Button, Localize("Adapted to 0.6 By SushiTee"), 14.0f, CUI::ALIGN_CENTER);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	UI()->DoLabel(&Button, Localize("Adapted to 0.7 By Dune"), 14.0f, CUI::ALIGN_CENTER);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
 	
-	if(m_pNewLineButton == NULL || m_pNewLineView == NULL)
-		return;
-	NewLine();
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	UI()->DoLabel(&Button, Localize("Feedback, suggestions, bugs: https://discord.gg/teeworlds"), 14.0f, CUI::ALIGN_CENTER);
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+
+	MainView.HSplitBottom(8.0f, &MainView, &Button);
+	UI()->DoLabel(&Button, Localize("so you can set while u set while u set options"), 8.0f, CUI::ALIGN_LEFT);
+	MainView.HSplitBottom(8.0f, &MainView, &Button);
+	UI()->DoLabel(&Button, Localize("Yo dawg I herd you like tabs so we put tabs in yo tabs in yo tabs"), 8.0f, CUI::ALIGN_LEFT);
 }
 
-void CMenus::NewLine()
-{
-	if(m_pNewLineButton == NULL || m_pNewLineView == NULL)
-		return;
-	m_pNewLineView->HSplitTop(20.0f, m_pNewLineButton, m_pNewLineView);
-}
-*/

@@ -713,7 +713,7 @@ private:
 	void RenderSettingsTeecompSkins(CUIRect MainView);
 	void RenderSettingsTeecompStats(CUIRect MainView);
 	void RenderSettingsTeecompMisc(CUIRect MainView);
-	// void RenderSettingsTeecompAbout(CUIRect MainView);
+	void RenderSettingsTeecompAbout(CUIRect MainView);
 	void RenderLaser(const struct CNetObj_Laser *pCurrent);
 	void RenderSkinNameList(CUIRect View, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig);
 	
