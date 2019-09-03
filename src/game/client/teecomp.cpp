@@ -117,7 +117,7 @@ const char* CTeecompUtils::HslToName(int hsl, int Team)
 {
 	if(hsl == -1)
 		return Team == 0 ? "Red" : "Blue";
-	vec3 hsl_v(hsl>>16, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
+	vec3 hsl_v((hsl>>16)/255.0f*360, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
 	
 	// 0.7 teecomp: hack like this for now, no black anymore
 	// hsl_v.s = hsl_v.s + (1.0f-hsl_v.s)/2.0f;
@@ -137,6 +137,8 @@ const char* CTeecompUtils::HslToName(int hsl, int Team)
 		return "Yellow";
 	if(hsl_v.h < 155)
 		return "Green";
+	if(hsl_v.h < 200)
+		return "Teal";
 	if(hsl_v.h < 260)
 		return "Blue";
 	if(hsl_v.h < 335)
@@ -149,7 +151,7 @@ const char* CTeecompUtils::TeamColorToName(int hsl, int Team)
 {
 	if(hsl == -1)
 		return Team == 0 ? "red team" : "blue team";
-	vec3 hsl_v(hsl>>16, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
+	vec3 hsl_v((hsl>>16)/255.0f*360, ((hsl>>8)&0xff)/255.0f, (hsl&0xff)/255.0f);
 
 	if(hsl_v.l < 0.2f)
 		return "black team";
@@ -165,6 +167,8 @@ const char* CTeecompUtils::TeamColorToName(int hsl, int Team)
 		return "yellow team";
 	if(hsl_v.h < 155)
 		return "green team";
+	if(hsl_v.h < 200)
+		return "teal team";
 	if(hsl_v.h < 260)
 		return "blue team";
 	if(hsl_v.h < 335)
