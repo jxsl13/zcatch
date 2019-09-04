@@ -1666,31 +1666,33 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 					else
 						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
 				}
-				else 
+				else
 				{
-					m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
-					// teecomp colors
+					int SkinPartColors, UseCustomColors;
+					// teecomp skin texture
+					if(CTeecompUtils::GetForcedSkinName(m_Team, LocalTeam, pForcedSkin))
+					{
+						int Sid = max(0, pGameClient->m_pSkins->Find(pForcedSkin, false));
+						const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(Sid);
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+						SkinPartColors = pSkin->m_aPartColors[p];
+						UseCustomColors = pSkin->m_aUseCustomColors[p];
+					}
+					else
+					{
+						m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+						SkinPartColors = m_aSkinPartColors[p];
+						UseCustomColors = m_aUseCustomColors[p];
+					}
+
+					// teecomp skin colors
 					// This selects the right config
 					int TeamColorHSL = CTeecompUtils::GetTeamColorInt(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1Hsl,
 						g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
 					// This takes HSL as last parameter and returns a HSL mix with the part color
-					int MixedColor = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p, TeamColorHSL);
+					int MixedColor = pGameClient->m_pSkins->GetTeamColor(UseCustomColors, SkinPartColors, m_Team, p, TeamColorHSL);
 					// This takes HSL + A and returns RGBA
 					m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
-#ifdef TC_COLOR_DEBUGGING
-					// dbg_msg("teecomp", "gameclient: RGBA m_RenderInfo.m_aColors[%d]=%.2f %.2f %.2f %.2f", p, m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a);
-					static vec4 OldRGB[NUM_SKINPARTS];
-					if(m_RenderInfo.m_aColors[p] != OldRGB[p])
-					{
-						vec4 PartColors = vec4(
-							(m_aSkinPartColors[p]>>16)/255.0f,
-							((m_aSkinPartColors[p]>>8)&0xff)/255.0f,
-							(m_aSkinPartColors[p]&0xff)/255.0f, 1.0f);
-						OldRGB[p] = m_RenderInfo.m_aColors[p];
-						if(p == 0) dbg_msg("teecomp", "-------------------gameclient: RGBA m_RenderInfo.m_aColors = ");
-						dbg_msg("teecomp", "\t\t%.3f %.3f %.3f %.3f /// %d /// %.3f %.3f %.3f", m_RenderInfo.m_aColors[p].r, m_RenderInfo.m_aColors[p].g, m_RenderInfo.m_aColors[p].b, m_RenderInfo.m_aColors[p].a, MixedColor,  PartColors.r, PartColors.g, PartColors.b);	
-					}
-#endif
 				}
 			}
 			else

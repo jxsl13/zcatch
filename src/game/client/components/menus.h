@@ -227,10 +227,14 @@ private:
 		bool m_ListBoxItemActivated;
 		CScrollRegion m_ScrollRegion;
 		vec2 m_ScrollOffset;
+		// teecomp hotfixes (TODO port to vanilla?)
+		CUIRect s_RowView;
+		bool s_ItemClicked;
 
 		CListBoxState()
 		{
 			m_ScrollOffset = vec2(0,0);
+			s_ItemClicked = false;
 		}
 	};
 
@@ -715,7 +719,15 @@ private:
 	void RenderSettingsTeecompMisc(CUIRect MainView);
 	void RenderSettingsTeecompAbout(CUIRect MainView);
 	void RenderLaser(const struct CNetObj_Laser *pCurrent);
-	void RenderSkinNameList(CUIRect View, CListBoxState* pListBoxState, const CSkins::CSkin *pSelectedSkin, char* pSkinConfig, bool* pRefreshSkinSelector);
+	// Teecomp utils
+	struct SkinNameListState
+	{
+		CListBoxState ListBoxState;
+		const CSkins::CSkin *pSelectedSkin;
+		bool RefreshSkinSelector = true;
+		sorted_array<const CSkins::CSkin *> paSkinList;
+	};
+	bool RenderSkinNameList(CUIRect MainView, char* pSkinConfig, SkinNameListState* pState);
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);
