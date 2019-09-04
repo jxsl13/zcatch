@@ -903,6 +903,7 @@ public:
 					{
 						DrawX = pCursor->m_StartX;
 						DrawY += Size;
+						GotNewLine = 1;
 						DrawX = (int)(DrawX * FakeToScreenX) / FakeToScreenX; // realign
 						DrawY = (int)(DrawY * FakeToScreenY) / FakeToScreenY;
 						++LineCount;

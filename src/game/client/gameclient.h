@@ -56,6 +56,10 @@ class CGameClient : public IGameClient
 	int m_PredictedTick;
 	int m_LastNewPredictedTick;
 
+	int m_LastGameStartTick;
+	int m_LastFlagCarrierRed;
+	int m_LastFlagCarrierBlue;
+
 	static void ConTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConKill(IConsole::IResult *pResult, void *pUserData);
 	static void ConMinimap(IConsole::IResult *pResult, void *pUserData);
@@ -227,6 +231,7 @@ public:
 		int m_PlayerSlots;
 	} m_ServerSettings;
 	
+#ifndef GAMER_DELETE_PROBABLY_OUTDATED_STATS_CODE
 	// Teecomp stats
 	class CClientStats
 	{
@@ -257,6 +262,7 @@ public:
 		void Reset();
 	};
 	CClientStats m_aStats[MAX_CLIENTS];
+#endif
 
 	CRenderTools m_RenderTools;
 
@@ -291,11 +297,13 @@ public:
 
 	// stats hooks (Teecomp)
 	// int m_aLastFlagCarrier[2];
+#ifndef GAMER_DELETE_PROBABLY_OUTDATED_STATS_CODE
 	int m_LastGameOver;
 	int m_LastRoundStartTick;
 	void OnGameRestart();
 	void OnRoundStart();
 	void OnFlagGrab(int Id);
+#endif
 
 	virtual const char *GetItemName(int Type) const;
 	virtual const char *Version() const;

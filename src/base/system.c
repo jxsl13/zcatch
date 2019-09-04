@@ -94,7 +94,11 @@ void dbg_msg(const char *sys, const char *fmt, ...)
 	char *msg;
 	int i, len;
 
-	str_format(str, sizeof(str), "[%08x][%s]: ", (int)time(0), sys);
+	char timestr[80];
+	str_timestamp_format(timestr, sizeof(timestr), FORMAT_SPACE);
+
+	str_format(str, sizeof(str), "[%s][%s]: ", timestr, sys);
+
 	len = strlen(str);
 	msg = (char *)str + len;
 
@@ -2150,16 +2154,33 @@ void str_hex(char *dst, int dst_size, const void *data, int data_size)
 	}
 }
 
-void str_timestamp(char *buffer, int buffer_size)
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+void str_timestamp_ex(time_t time_data, char *buffer, int buffer_size, const char *format)
 {
-	time_t time_data;
 	struct tm *time_info;
-
-	time(&time_data);
 	time_info = localtime(&time_data);
-	strftime(buffer, buffer_size, "%Y-%m-%d_%H-%M-%S", time_info);
+	strftime(buffer, buffer_size, format, time_info);
 	buffer[buffer_size-1] = 0;	/* assure null termination */
 }
+
+void str_timestamp_format(char *buffer, int buffer_size, const char *format)
+{
+	time_t time_data;
+	time(&time_data);
+	str_timestamp_ex(time_data, buffer, buffer_size, format);
+}
+
+void str_timestamp(char *buffer, int buffer_size)
+{
+	str_timestamp_format(buffer, buffer_size, FORMAT_NOSPACE);
+}
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 
 int mem_comp(const void *a, const void *b, int size)
 {
@@ -2195,15 +2216,15 @@ int str_utf8_is_whitespace(int code)
 	return 1;
 }
 
-char *str_utf8_skip_whitespaces(char *str)
+const char *str_utf8_skip_whitespaces(const char *str)
 {
-	char *str_old;
+	const char *str_old;
 	int code;
 
 	while(*str)
 	{
 		str_old = str;
-		code = str_utf8_decode((const char **)&str);
+		code = str_utf8_decode(&str);
 
 		if(!str_utf8_is_whitespace(code))
 		{
@@ -2212,6 +2233,22 @@ char *str_utf8_skip_whitespaces(char *str)
 	}
 
 	return str;
+}
+
+void str_utf8_trim_whitespaces_right(char *str)
+{
+	int cursor = str_length(str);
+	const char *last = str + cursor;
+	while(str_utf8_is_whitespace(str_utf8_decode(&last)))
+	{
+		str[cursor] = 0;
+		cursor = str_utf8_rewind(str, cursor);
+		last = str + cursor;
+		if(cursor == 0)
+		{
+			break;
+		}
+	}
 }
 
 static int str_utf8_isstart(char c)
