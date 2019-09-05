@@ -1083,8 +1083,8 @@ void CGameClient::OnNewSnapshot()
 	// go trough all the items in the snapshot and gather the info we want
 	{
 		// TeeComp
-		for(int i = 0; i < MAX_CLIENTS; i++)
-			m_aStats[i].m_Active = false;
+		// for(int i = 0; i < MAX_CLIENTS; i++)
+		// 	m_aStats[i].m_Active = false;
 
 		int Num = Client()->SnapNumItems(IClient::SNAP_CURRENT);
 		for(int i = 0; i < Num; i++)
@@ -1249,6 +1249,7 @@ void CGameClient::OnNewSnapshot()
 		}
 
 		// TeeComp
+#ifdef GAMER_OUTDATED_STATS
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(m_aStats[i].m_Active && !m_aStats[i].m_WasActive)
@@ -1259,6 +1260,7 @@ void CGameClient::OnNewSnapshot()
 			}
 			m_aStats[i].m_WasActive = m_aStats[i].m_Active;
 		}
+#endif
 	}
 
 	// setup local pointers
@@ -1515,7 +1517,7 @@ void CGameClient::OnActivateEditor()
 	OnRelease();
 }
 
-#ifndef GAMER_DELETE_PROBABLY_OUTDATED_STATS_CODE
+#ifdef GAMER_OUTDATED_STATS
 void CGameClient::OnRoundStart()
 {
 	for(int i=0; i<MAX_CLIENTS; i++)

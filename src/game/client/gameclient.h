@@ -231,7 +231,7 @@ public:
 		int m_PlayerSlots;
 	} m_ServerSettings;
 	
-#ifndef GAMER_DELETE_PROBABLY_OUTDATED_STATS_CODE
+#ifdef GAMER_OUTDATED_STATS
 	// Teecomp stats
 	class CClientStats
 	{
@@ -261,7 +261,7 @@ public:
 
 		void Reset();
 	};
-	CClientStats m_aStats[MAX_CLIENTS];
+	CClientStats m_aStats[MAX_CLIENTS]; 
 #endif
 
 	CRenderTools m_RenderTools;
@@ -296,10 +296,7 @@ public:
 	// void RegisterStats();
 
 	// stats hooks (Teecomp)
-	// int m_aLastFlagCarrier[2];
-#ifndef GAMER_DELETE_PROBABLY_OUTDATED_STATS_CODE
-	int m_LastGameOver;
-	int m_LastRoundStartTick;
+#ifdef GAMER_OUTDATED_STATS
 	void OnGameRestart();
 	void OnRoundStart();
 	void OnFlagGrab(int Id);

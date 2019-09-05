@@ -35,6 +35,7 @@ void CStats::CPlayerStats::Reset()
 	m_CarriersKilled	= 0;
 	m_KillsCarrying		= 0;
 	m_DeathsCarrying	= 0;
+	m_CurrentHumiliation	= 0;
 	// m_StatsClientID = -1;
 }
 
@@ -93,7 +94,8 @@ void CStats::OnMessage(int MsgType, void *pRawMsg)
 	if(MsgType == NETMSGTYPE_SV_KILLMSG)
 	{
 		CNetMsg_Sv_KillMsg *pMsg = (CNetMsg_Sv_KillMsg *)pRawMsg;
-		CGameClient::CClientStats *pStats = m_pClient->m_aStats;
+		// CGameClient::CClientStats *pStats = m_pClient->m_aStats;
+		CPlayerStats *pStats = this->m_aStats;
 
 		// HolyShit sound
 		if(g_Config.m_ClGSound && m_pClient->m_LocalClientID == pMsg->m_Victim && pStats[pMsg->m_Victim].m_CurrentSpree >= 5)

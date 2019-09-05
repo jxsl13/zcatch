@@ -38,6 +38,9 @@ private:
 		int m_BestSpree;
 		int m_CurrentSpree;
 
+		// Gamer
+		int m_CurrentHumiliation;
+
 		int m_FlagGrabs;
 		int m_FlagCaptures;
 		int m_CarriersKilled;
