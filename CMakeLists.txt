@@ -1251,6 +1251,7 @@ set_src(GAME_SHARED GLOB src/game
   layers.cpp
   layers.h
   mapitems.h
+  teecomp_vars.h
   tuning.h
   variables.h
   version.h
@@ -1349,6 +1350,7 @@ if(CLIENT)
     components/menus_popups.cpp
     components/menus_settings.cpp
     components/menus_start.cpp
+    components/menus_teecomp.cpp
     components/motd.cpp
     components/motd.h
     components/nameplates.cpp
@@ -1380,6 +1382,8 @@ if(CLIENT)
     render.cpp
     render.h
     render_map.cpp
+    teecomp.cpp
+    teecomp.h
     ui.cpp
     ui.h
   )

@@ -267,7 +267,7 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	RenderFlag(TEAM_BLUE, vec2(Button.x+40.0f, Button.y-8.0f));
 
-	CUIRect SkinSelection, List;
+	CUIRect SkinSelection;
 
 	// Custom colors team 1
 	bool CustomColorsTeam1 = g_Config.m_TcColoredTeesTeam1Hsl != -1;
@@ -369,42 +369,6 @@ void CMenus::RenderSettingsTeecompSkins(CUIRect MainView)
 
 	RightView.Margin(10.0f, &SkinSelection);
 
-#ifdef OLD_HARDCODED_LISTBOX
-	SkinSelection.HSplitTop(20, &Button, &SkinSelection);
-	RenderTools()->DrawUIRect(&Button, vec4(1,1,1,0.25f), CUI::CORNER_T, 5.0f); 
-	UI()->DoLabel(&Button, Localize("Forced skin"), 14.0f, CUI::ALIGN_CENTER);
-
-	CUIRect List2 = SkinSelection;
-	// scroll
-	static CScrollRegion s_ScrollRegion2;
-	vec2 ScrollOffset2(0, 0);
-	BeginScrollRegion(&s_ScrollRegion2, &List2, &ScrollOffset2);
-	List2.y += ScrollOffset2.y;
-	
-	for(int i=0; i<m_pClient->m_pSkins->Num(); i++)
-	{
-		List2.HSplitTop(20.0f, &Button, &List2);
-		ScrollRegionAddRect(&s_ScrollRegion2, Button);
-		
-		const CSkins::CSkin *s = m_pClient->m_pSkins->Get(i);
-
-		str_format(aBuf, sizeof(aBuf), "%s", s->m_aName);
-		int Selected = 0;
-		if(str_comp(s->m_aName, g_Config.m_TcForcedSkin2) == 0)
-			Selected = 1;
-
-		if(DoButton_ListRow(s+m_pClient->m_pSkins->Num(), "", Selected, &Button))
-		{
-			TeesNeedUpdate = true;
-			str_copy(g_Config.m_TcForcedSkin2, s->m_aName, sizeof(g_Config.m_TcForcedSkin2));
-		}
-
-		Button.VMargin(5.0f, &Button);
-		Button.HSplitTop(1.0f, 0, &Button);
-		UI()->DoLabel(&Button, aBuf, 14.0f, CUI::ALIGN_LEFT);
-	}
-	EndScrollRegion(&s_ScrollRegion2);
-#endif
 	// skin list 2
 	{
 		static SkinNameListState s_State2;

@@ -684,7 +684,8 @@ private:
 	{
 		int m_HLPicker;
 		CMenus::CButtonContainer m_aButtons[12];
-		bool m_Enabled = true;
+		bool m_Enabled;
+		HSLPickerState() : m_Enabled(true) { }
 	};
 	void RenderFlag(int Team, vec2 Pos);
 	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified, HSLPickerState& State); // intermediary, used by teecomp
@@ -774,8 +775,9 @@ private:
 	{
 		CListBoxState ListBoxState;
 		const CSkins::CSkin *pSelectedSkin;
-		bool RefreshSkinSelector = true;
+		bool RefreshSkinSelector;
 		sorted_array<const CSkins::CSkin *> paSkinList;
+		SkinNameListState() : RefreshSkinSelector(true) { }
 	};
 	bool RenderSkinNameList(CUIRect MainView, char* pSkinConfig, SkinNameListState* pState);
 	
