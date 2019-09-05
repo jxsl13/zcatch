@@ -12,6 +12,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/localization.h>
 #include <game/client/render.h>
+#include <game/client/teecomp.h>
 #include <game/client/ui.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/components/motd.h>
@@ -217,10 +218,19 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 	// background
 	Graphics()->BlendNormal();
 	vec4 Color;
-	if(Team == TEAM_RED && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	if(g_Config.m_TcHudMatch && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	{
+		vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+		Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
+	}
+	else if(Team == TEAM_RED && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
+	{
 		Color = vec4(0.975f, 0.17f, 0.17f, 0.75f);
+	}
 	else if(Team == TEAM_BLUE)
+	{
 		Color = vec4(0.17f, 0.46f, 0.975f, 0.75f);
+	}
 	else
 		Color = vec4(0.0f, 0.0f, 0.0f, 0.5f);
 	CUIRect Rect = {x, y, w, HeadlineHeight};
@@ -512,10 +522,20 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 				m_pClient->m_Snap.m_pGameDataFlag->m_FlagCarrierBlue == pInfo->m_ClientID))
 			{
 				Graphics()->BlendNormal();
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+				if(g_Config.m_TcColoredFlags)
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+				else
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 				Graphics()->QuadsBegin();
 
 				RenderTools()->SelectSprite(m_pClient->m_aClients[pInfo->m_ClientID].m_Team==TEAM_RED ? SPRITE_FLAG_BLUE : SPRITE_FLAG_RED, SPRITE_FLAG_FLIP_X);
+			
+				if(g_Config.m_TcColoredFlags)
+				{
+					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(1-m_pClient->m_aClients[pInfo->m_ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team,
+						g_Config/* .m_TcColoredTeesTeam1, g_Config.m_TcColoredTeesTeam2, g_Config.m_TcColoredTeesMethod */);
+					Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+				}
 
 				float Size = LineHeight;
 				IGraphics::CQuadItem QuadItem(TeeOffset+4.0f, y-2.0f-Spacing/2.0f, Size/2.0f, Size);
@@ -694,8 +714,6 @@ void CScoreboard::OnRender()
 
 	const char* pCustomRedClanName = GetClanName(TEAM_RED);
 	const char* pCustomBlueClanName = GetClanName(TEAM_BLUE);
-	const char* pRedClanName = pCustomRedClanName ? pCustomRedClanName : Localize("Red team");
-	const char* pBlueClanName = pCustomBlueClanName ? pCustomBlueClanName : Localize("Blue team");
 
 	if(m_pClient->m_Snap.m_pGameData)
 	{
@@ -714,8 +732,31 @@ void CScoreboard::OnRender()
 		}
 		else if(m_pClient->m_Snap.m_pGameDataTeam)
 		{
-			float ScoreboardHeight = RenderScoreboard(Width/2-w-1.5f, y, w, TEAM_RED, pRedClanName, -1);
-			RenderScoreboard(Width/2+1.5f, y, w, TEAM_BLUE, pBlueClanName, 1);
+			char aText[64];
+			// red scoreboard header
+			if(g_Config.m_TcColoredTeesMethod == 1) // enemy based skin colors
+			{
+				if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE)
+					str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+				else
+					str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+			}
+			else
+				str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+			float ScoreboardHeight = 
+				RenderScoreboard(Width/2-w-1.5f, y, w, TEAM_RED, pCustomRedClanName ? pCustomRedClanName : Localize(aText), -1);
+
+			// blue scoreboard header
+			if(g_Config.m_TcColoredTeesMethod == 1) // enemy based skin colors
+			{
+				if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_RED)
+					str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+				else
+					str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+			}
+			else
+				str_format(aText, sizeof(aText), "%s team", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+			RenderScoreboard(Width/2+1.5f, y, w, TEAM_BLUE, pCustomBlueClanName ? pCustomBlueClanName : Localize(aText), 1);
 
 			float SpectatorHeight = RenderSpectators(Width/2-w-1.5f, y+3.0f+ScoreboardHeight, w*2.0f+3.0f);
 			RenderGoals(Width/2-w-1.5f, y+3.0f+ScoreboardHeight, w*2.0f+3.0f);
@@ -737,9 +778,24 @@ void CScoreboard::OnRender()
 			char aText[256];
 
 			if(m_pClient->m_Snap.m_pGameDataTeam->m_TeamscoreRed > m_pClient->m_Snap.m_pGameDataTeam->m_TeamscoreBlue)
-				str_format(aText, sizeof(aText), Localize("%s wins!"), pRedClanName);
+			{
+				if(pCustomRedClanName)
+					str_format(aText, sizeof(aText), Localize("%s wins!"), pCustomRedClanName);
+				else if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE && g_Config.m_TcColoredTeesMethod == 1)
+					str_format(aText, sizeof(aText), Localize("%s team wins!"), CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+				else
+					str_format(aText, sizeof(aText), Localize("%s team wins!"), CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+
+			}
 			else if(m_pClient->m_Snap.m_pGameDataTeam->m_TeamscoreBlue > m_pClient->m_Snap.m_pGameDataTeam->m_TeamscoreRed)
-				str_format(aText, sizeof(aText), Localize("%s wins!"), pBlueClanName);
+			{
+				if(pCustomBlueClanName)
+					str_format(aText, sizeof(aText), Localize("%s wins!"), pCustomBlueClanName);
+				else if(m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team == TEAM_BLUE && g_Config.m_TcColoredTeesMethod == 1)
+					str_format(aText, sizeof(aText), Localize("%s team wins!"), CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+				else
+					str_format(aText, sizeof(aText), Localize("%s team wins!"), CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+			}
 			else
 				str_copy(aText, Localize("Draw!"), sizeof(aText));
 

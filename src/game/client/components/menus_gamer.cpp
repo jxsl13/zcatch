@@ -384,7 +384,8 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		g_Config.m_GfxClearColor = (int(DefaultClearColor.x) << 16) + (int(DefaultClearColor.y) << 8) + int(DefaultClearColor.z);
 	}
 	bool Modified;
-	ivec4 Hsl = RenderHSLPicker(RightView, g_Config.m_GfxClearColor, false, Modified);
+	static HSLPickerState HSLState;
+	ivec4 Hsl = RenderHSLPicker(RightView, g_Config.m_GfxClearColor, false, Modified, HSLState);
 	if(Modified)
 		g_Config.m_GfxClearColor = (Hsl.x << 16) + (Hsl.y << 8) + Hsl.z;
 

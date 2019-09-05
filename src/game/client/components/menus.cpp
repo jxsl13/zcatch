@@ -973,14 +973,14 @@ void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowH
 
 CMenus::CListboxItem CMenus::UiDoListboxNextRow(CListBoxState* pState)
 {
-	static CUIRect s_RowView;
+	// static CUIRect s_RowView;
 	CListboxItem Item = {0};
 
 	if(pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow == 0)
-		pState->m_ListBoxView.HSplitTop(pState->m_ListBoxRowHeight /*-2.0f*/, &s_RowView, &pState->m_ListBoxView);
-	ScrollRegionAddRect(&pState->m_ScrollRegion, s_RowView);
+		pState->m_ListBoxView.HSplitTop(pState->m_ListBoxRowHeight /*-2.0f*/, &pState->s_RowView, &pState->m_ListBoxView);
+	ScrollRegionAddRect(&pState->m_ScrollRegion, pState->s_RowView);
 
-	s_RowView.VSplitLeft(s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, &s_RowView);
+	pState->s_RowView.VSplitLeft(pState->s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, &pState->s_RowView);
 
 	if(pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex)
 		Item.m_Selected = 1;
@@ -1002,17 +1002,17 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const vo
 	}
 
 	CListboxItem Item = UiDoListboxNextRow(pState);
-	static bool s_ItemClicked = false;
+	//static bool s_ItemClicked = false;
 
 	if(Item.m_Visible && UI()->DoButtonLogic(pId, "", pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex, &Item.m_Rect))
 	{
-		s_ItemClicked = true;
+		pState->s_ItemClicked = true;
 		pState->m_ListBoxNewSelected = ThisItemIndex;
 		if(pActive)
 			*pActive = true;
 	}
 	else
-		s_ItemClicked = false;
+		pState->s_ItemClicked = false;
 
 	const bool ProcessInput = !pActive || *pActive;
 
@@ -1023,7 +1023,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const vo
 		{
 			pState->m_ListBoxDoneEvents = 1;
 
-			if(m_EnterPressed || (s_ItemClicked && Input()->MouseDoubleClick()))
+			if(m_EnterPressed || (pState->s_ItemClicked && Input()->MouseDoubleClick()))
 			{
 				pState->m_ListBoxItemActivated = true;
 				UI()->SetActiveItem(0);
@@ -1289,6 +1289,14 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		{
 			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_SOUND);
 			g_Config.m_UiSettingsPage = SETTINGS_GAMER;
+		}
+		// TODO put this inside Gamer?
+		static CButtonContainer s_TeecompButton;
+		if(DoButton_MenuTabTop(&s_TeecompButton, Localize("Teecomp"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage==SETTINGS_TEECOMP, &Button,
+			g_Config.m_UiSettingsPage == SETTINGS_TEECOMP ? 1.0f : NotActiveAlpha, 1.0f, Corners))
+		{
+			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_TEECOMP);
+			g_Config.m_UiSettingsPage = SETTINGS_TEECOMP;
 		}
 	}
 	else if((Client()->State() == IClient::STATE_OFFLINE && m_MenuPage >= PAGE_INTERNET && m_MenuPage <= PAGE_LAN) || (Client()->State() == IClient::STATE_ONLINE && m_GamePage >= PAGE_INTERNET && m_GamePage <= PAGE_LAN))

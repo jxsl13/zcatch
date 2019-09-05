@@ -302,6 +302,13 @@ public:
 	void OnFlagGrab(int Id);
 #endif
 
+	// TeeComp hooks
+	int m_LastGameOver;
+	int m_LastRoundStartTick;
+	void OnGameRestart();
+	void OnRoundStart();
+	void OnFlagGrab(int Id);
+
 	virtual const char *GetItemName(int Type) const;
 	virtual const char *Version() const;
 	virtual const char *NetVersion() const;
@@ -347,6 +354,7 @@ public:
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;
 	class CStats *m_pStats;
+	class CTeecompUtils *m_pTeecomp;
 	class CItems *m_pItems;
 	class CMapLayers *m_pMapLayersBackGround;
 	class CMapLayers *m_pMapLayersForeGround;

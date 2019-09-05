@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/color.h>
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
@@ -8,6 +9,7 @@
 
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
+#include <game/client/teecomp.h>
 #include "killmessages.h"
 
 void CKillMessages::OnReset()
@@ -79,14 +81,26 @@ void CKillMessages::OnRender()
 		{
 			if(m_aKillmsgs[r].m_ModeSpecial&1)
 			{
+				int Team = m_aKillmsgs[r].m_VictimTeam;
+				bool UseColoredFlags = g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+
 				Graphics()->BlendNormal();
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+				if(UseColoredFlags)
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+				else
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 				Graphics()->QuadsBegin();
 
-				if(m_aKillmsgs[r].m_VictimTeam == TEAM_RED)
+				if(Team == TEAM_RED)
 					RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
 				else
 					RenderTools()->SelectSprite(SPRITE_FLAG_RED);
+
+				if(UseColoredFlags)
+				{
+					vec3 Col = HslToRgb(CTeecompUtils::GetTeamColorHSL(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config));
+					Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+				}
 
 				float Size = 56.0f;
 				IGraphics::CQuadItem QuadItem(x, y-16, Size/2, Size);
@@ -117,13 +131,23 @@ void CKillMessages::OnRender()
 				if(m_aKillmsgs[r].m_ModeSpecial&2)
 				{
 					Graphics()->BlendNormal();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+					if(g_Config.m_TcColoredFlags)
+						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+					else
+						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 					Graphics()->QuadsBegin();
 
-					if(m_aKillmsgs[r].m_KillerTeam == TEAM_RED)
+					int Team = m_aKillmsgs[r].m_KillerTeam;
+					if(Team == TEAM_RED)
 						RenderTools()->SelectSprite(SPRITE_FLAG_BLUE, SPRITE_FLAG_FLIP_X);
 					else
 						RenderTools()->SelectSprite(SPRITE_FLAG_RED, SPRITE_FLAG_FLIP_X);
+
+					if(g_Config.m_TcColoredFlags)
+					{
+						vec3 Col = HslToRgb(CTeecompUtils::GetTeamColorHSL(Team^1, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config));
+						Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+					}
 
 					float Size = 56.0f;
 					IGraphics::CQuadItem QuadItem(x-56, y-16, Size/2, Size);

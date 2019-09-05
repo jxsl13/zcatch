@@ -269,6 +269,7 @@ image_chatwhisper = Image("chatwhisper", "ui/icons/chat_whisper.png", 1)
 container.images.Add(image_null)
 container.images.Add(image_game)
 container.images.Add(image_shield)
+container.images.Add(Image("game_gray", "game.png")) # todo teecomp dune: just remove this and use image_game?
 container.images.Add(Image("deadtee", "deadtee.png"))
 container.images.Add(image_particles)
 container.images.Add(Image("cursor", "ui/gui_cursor.png"))

@@ -10,6 +10,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
 #include <game/client/render.h>
+#include <game/client/teecomp.h>
 
 #include "menus.h"
 #include "controls.h"
@@ -168,7 +169,20 @@ void CHud::RenderScoreHud()
 				// draw box
 				CUIRect Rect = {Whole-ScoreWidthMax-ImageSize-2*Split, StartY+t*20, ScoreWidthMax+ImageSize+2*Split, 18.0f};
 				Graphics()->BlendNormal();
-				RenderTools()->DrawUIRect(&Rect, t == 0 ? vec4(1.0f, 0.0f, 0.0f, 0.25f) : vec4(0.0f, 0.0f, 1.0f, 0.25f), CUI::CORNER_L, 5.0f);
+				vec4 Color;				
+				if(!g_Config.m_TcHudMatch || CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+				{
+					if(t == 0)
+						Color = vec4(1.0f, 0.0f, 0.0f, 0.25f);
+					else
+						Color = vec4(0.0f, 0.0f, 1.0f, 0.25f);
+				}
+				else
+				{
+					vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+					Color = vec4(Col.r, Col.g, Col.b, 0.50f); // doubled alpha for teecomp
+				}
+				RenderTools()->DrawUIRect(&Rect, Color, CUI::CORNER_L, 5.0f);
 
 				// draw score
 				TextRender()->Text(0, Whole-ScoreWidthMax+(ScoreWidthMax-aScoreTeamWidth[t])/2-Split, StartY+t*20, 14.0f, aScoreTeam[t], -1.0f);
@@ -198,9 +212,19 @@ void CHud::RenderScoreHud()
 					{
 						// draw flag
 						Graphics()->BlendNormal();
-						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+						if(g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id);
+						else
+							Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 						Graphics()->QuadsBegin();
 						RenderTools()->SelectSprite(t==0?SPRITE_FLAG_RED:SPRITE_FLAG_BLUE);
+						
+						if(g_Config.m_TcColoredFlags && !CTeecompUtils::UseDefaultTeamColor(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+						{
+							vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(t, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+							Graphics()->SetColor(Col.r, Col.g, Col.b, 1.0f);
+						}
+
 						IGraphics::CQuadItem QuadItem(Whole-ScoreWidthMax-ImageSize, StartY+1.0f+t*20, ImageSize/2, ImageSize);
 						Graphics()->QuadsDrawTL(&QuadItem, 1);
 						Graphics()->QuadsEnd();
@@ -796,6 +820,75 @@ void CHud::RenderSpectatorNotification()
 	}
 }
 
+void CHud::RenderSpeedmeter()
+{
+	if(!g_Config.m_TcSpeedmeter)
+		return;
+
+	// We calculate the speed instead of getting it from character.velocity cause it's buggy when
+	// walking in front of a wall or when using the ninja sword
+	static float Speed;
+	static vec2 OldPos;
+	static const int SMOOTH_TABLE_SIZE = 32; // 16
+	static const int ACCEL_THRESHOLD = 500; // 24
+	static float SmoothTable[SMOOTH_TABLE_SIZE];
+	static int SmoothIndex = 0;
+	static int CarryOverAccel = 0;
+
+	SmoothTable[SmoothIndex] = distance(m_pClient->m_LocalCharacterPos, OldPos)/Client()->RenderFrameTime();
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		float Mult = DemoPlayer()->BaseInfo()->m_Speed;
+		SmoothTable[SmoothIndex] /= Mult;
+	}
+	SmoothIndex = (SmoothIndex + 1) % SMOOTH_TABLE_SIZE;
+	OldPos = m_pClient->m_LocalCharacterPos;
+	Speed = 0;
+	for(int i = 0; i < SMOOTH_TABLE_SIZE; i++)
+		Speed += SmoothTable[i];
+	Speed /= SMOOTH_TABLE_SIZE;
+
+	int GameFlags = m_pClient->m_GameInfo.m_GameFlags;
+	const int t = -1;
+	int LastIndex = SmoothIndex - 1;
+	if(LastIndex < 0)
+		LastIndex = SMOOTH_TABLE_SIZE - 1;
+
+	vec4 Color;
+	if(g_Config.m_TcSpeedmeterAccel && Speed - SmoothTable[LastIndex] > ACCEL_THRESHOLD)
+	{
+		CarryOverAccel = 50;
+	}
+	else if(g_Config.m_TcSpeedmeterAccel && Speed - SmoothTable[LastIndex] < -ACCEL_THRESHOLD)
+	{
+		CarryOverAccel = -50;
+	}
+	if(CarryOverAccel > 0)
+	{
+		CarryOverAccel--;
+		Color = vec4(0.6f, 0.1f, 0.1f, 0.25f);
+	}
+	else if(CarryOverAccel < 0)
+	{
+		CarryOverAccel++;
+		Color = vec4(0.1f, 0.6f, 0.1f, 0.25f);
+	}
+	else
+		Color = vec4(0.1, 0.1, 0.1, 0.25);
+	
+	{
+		float ScoreWidthMax = TextRender()->TextWidth(0, 14.0f, "100", -1, -1.0f);
+		float Split = 3.0f;
+		float ImageSize = GameFlags&GAMEFLAG_FLAGS ? 16.0f : Split;
+		CUIRect Rect = {m_Width-ScoreWidthMax-ImageSize-2*Split, 220.0f+t*20, ScoreWidthMax+ImageSize+2*Split, 18.0f};
+		RenderTools()->DrawRoundRect(&Rect, Color,/* 5.0f, */ CUI::CORNER_L);
+	}
+
+	char aBuf[16];
+	str_format(aBuf, sizeof(aBuf), Speed/100 ? "%.0f0" : "%.0f", Speed/100);
+	TextRender()->Text(0, m_Width-5-TextRender()->TextWidth(0,12,aBuf,-1, -1.0f), 221+t*20, 12, aBuf, -1);
+}
+
 void CHud::RenderReadyUpNotification()
 {
 	if(!(m_pClient->m_Snap.m_paPlayerInfos[m_pClient->m_LocalClientID]->m_PlayerFlags&PLAYERFLAG_READY))
@@ -825,7 +918,10 @@ void CHud::OnRender()
 	if(g_Config.m_ClShowhud)
 	{
 		if(m_pClient->m_Snap.m_pLocalCharacter && !(m_pClient->m_Snap.m_pGameData->m_GameStateFlags&(GAMESTATEFLAG_ROUNDOVER|GAMESTATEFLAG_GAMEOVER)))
+		{
+			RenderSpeedmeter();
 			RenderHealthAndAmmo(m_pClient->m_Snap.m_pLocalCharacter);
+		}
 		else if(m_pClient->m_Snap.m_SpecInfo.m_Active)
 		{
 			if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorID != -1)

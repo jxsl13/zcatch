@@ -18,6 +18,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/teecomp.h>
 
 #include "menus.h"
 #include "motd.h"
@@ -132,12 +133,24 @@ void CMenus::RenderGame(CUIRect MainView)
 					str_copy(aBuf, Localize("locked"), sizeof(aBuf));
 			}
 			else
-				str_copy(aBuf, Localize(Team != TEAM_RED ? "Join red" : "Joined red"), sizeof(aBuf)); // Localize("Join red");Localize("Joined red");
+				//str_copy(aBuf, Localize(Team != TEAM_RED ? "Join red" : "Joined red"), sizeof(aBuf)); // Localize("Join red");Localize("Joined red");
+			{
+				if(Team == TEAM_SPECTATORS || g_Config.m_TcColoredTeesMethod == 0)
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED));
+				else
+					str_format(aBuf, sizeof(aBuf), Team != TEAM_RED ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);
 			static CButtonContainer s_RedButton;
-			if(DoButton_Menu(&s_RedButton, aBuf, Team == TEAM_RED, &Button, 0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(0.975f, 0.17f, 0.17f, 0.75f), false) && Team != TEAM_RED && !(Info.m_aNotification[0]) && !BlockRed)
+			vec4 Color = vec4(0.975f, 0.17f, 0.17f, 0.75f);
+			if(g_Config.m_TcHudMatch && !CTeecompUtils::UseDefaultTeamColor(TEAM_RED, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+			{
+				vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(TEAM_RED, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+				Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
+			}
+			if(DoButton_Menu(&s_RedButton, aBuf, Team == TEAM_RED, &Button, 0, CUI::CORNER_ALL, 5.0f, 0.0f, Color, false) && Team != TEAM_RED && !(Info.m_aNotification[0]) && !BlockRed)
 			{
 				m_pClient->SendSwitchTeam(TEAM_RED);
 				SetActive(false);
@@ -158,12 +171,21 @@ void CMenus::RenderGame(CUIRect MainView)
 					str_copy(aBuf, Localize("locked"), sizeof(aBuf));
 			}
 			else
-				str_copy(aBuf, Localize(Team != TEAM_BLUE ? "Join blue" : "Joined blue"), sizeof(aBuf)); // Localize("Join blue");Localize("Joined blue");
+				//str_copy(aBuf, Localize(Team != TEAM_BLUE ? "Join blue" : "Joined blue"), sizeof(aBuf)); // Localize("Join blue");Localize("Joined blue");
+			{
+				str_format(aBuf, sizeof(aBuf), Team != TEAM_BLUE ? "Join %s" : "Joined %s", CTeecompUtils::HslToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE));
+			}
 
 			ButtonRow.VSplitLeft(ButtonWidth, &Button, &ButtonRow);
 			ButtonRow.VSplitLeft(Spacing, 0, &ButtonRow);
 			static CButtonContainer s_BlueButton;
-			if(DoButton_Menu(&s_BlueButton, aBuf, Team == TEAM_BLUE, &Button, 0, CUI::CORNER_ALL, 5.0f, 0.0f, vec4(0.17f, 0.46f, 0.975f, 0.75f), false) && Team != TEAM_BLUE && !(Info.m_aNotification[0]) && !BlockBlue)
+			Color = vec4(0.17f, 0.46f, 0.975f, 0.75f);
+			if(g_Config.m_TcHudMatch && !CTeecompUtils::UseDefaultTeamColor(TEAM_BLUE, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+			{
+				vec3 RGBCol = CTeecompUtils::GetTeamColorSaturatedRGB(TEAM_BLUE, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+				Color = vec4(RGBCol.r, RGBCol.g, RGBCol.b, 0.75f);
+			}
+			if(DoButton_Menu(&s_BlueButton, aBuf, Team == TEAM_BLUE, &Button, 0, CUI::CORNER_ALL, 5.0f, 0.0f, Color, false) && Team != TEAM_BLUE && !(Info.m_aNotification[0]) && !BlockBlue)
 			{
 				m_pClient->SendSwitchTeam(TEAM_BLUE);
 				SetActive(false);

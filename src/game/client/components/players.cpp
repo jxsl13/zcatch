@@ -12,6 +12,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/ui.h>
 #include <game/client/render.h>
+#include <game/client/teecomp.h>
 
 #include <game/client/components/flow.h>
 #include <game/client/components/skins.h>
@@ -701,7 +702,12 @@ void CPlayers::OnRender()
 					if(IsTeamplay)
 					{
 						m_aRenderInfo[i].m_aTextures[p] = pNinja->m_apParts[p]->m_ColorTexture;
-						int ColorVal = m_pClient->m_pSkins->GetTeamColor(true, pNinja->m_aPartColors[p], m_pClient->m_aClients[i].m_Team, p);
+						// int ColorVal = m_pClient->m_pSkins->GetTeamColor(true, pNinja->m_aPartColors[p], m_pClient->m_aClients[i].m_Team, p);
+						// teecomp
+						const int Team = m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team;
+						int TeamColorHSL = CTeecompUtils::GetTeamColorInt(Team, m_pClient->m_aClients[i].m_Team, g_Config.m_TcColoredTeesTeam1Hsl,
+							g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
+						int ColorVal = m_pClient->m_pSkins->GetTeamColor(pNinja->m_aUseCustomColors[p], pNinja->m_aPartColors[p], Team, p, TeamColorHSL);
 						m_aRenderInfo[i].m_aColors[p] = m_pClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
 					}
 					else if(pNinja->m_aUseCustomColors[p])

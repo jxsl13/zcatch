@@ -5,16 +5,7 @@
 #include "binds.h"
 #include "menus.h"
 
-typedef struct
-{
-	CLocConstString m_Name;
-	const char *m_pCommand;
-	int m_KeyId;
-	int m_Modifier;
-	CMenus::CButtonContainer m_BC;
-} CKeyInfo;
-
-static CKeyInfo gs_aKeys[] =
+static CMenus::CKeyInfo gs_aKeys[] =
 {
 	{ "Move left", "+left", 0, 0},		// Localize - these strings are localized within CLocConstString
 	{ "Move right", "+right", 0, 0},
@@ -58,7 +49,7 @@ static CKeyInfo gs_aKeys[] =
 	Localize("Screenshot");Localize("Scoreboard");Localize("Statboard");Localize("Respawn");Localize("Ready");Localize("Add demo marker");
 */
 
-const int g_KeyCount = sizeof(gs_aKeys) / sizeof(CKeyInfo);
+const int g_KeyCount = sizeof(gs_aKeys) / sizeof(CMenus::CKeyInfo);
 
 void CMenus::UiDoGetButtons(int Start, int Stop, CUIRect View, float ButtonHeight, float Spaceing)
 {

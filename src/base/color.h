@@ -149,4 +149,75 @@ inline vec3 RgbToHsv(vec3 rgb)
 	return vec3(hue, s, v);
 }
 
+inline vec3 HsvToHsl(vec3 hsv)
+{
+	const double h = hsv.h, s = hsv.s, v = hsv.v;
+	double hh, ss, ll;
+    hh = h;
+    ll = (2 - s) * v;
+    ss = s * v;
+    ss /= (ll <= 1) ? (ll) : 2 - (ll);
+    ll /= 2;
+	return vec3(hh, ss, ll);
+}
+
+inline vec3 HslToHsv(vec3 hsl)
+{
+	double hh = hsl.h, ss = hsl.s, ll = hsl.l;
+	double h, s, v;
+    h = hh;
+    ll *= 2;
+    ss *= (ll <= 1) ? ll : 2 - ll;
+    v = (ll + ss) / 2;
+    s = (2 * ss) / (ll + ss);
+	return vec3(h, s, v);
+}
+
+// from teecomp
+inline vec3 RgbToHsl(vec3 rgb)
+{
+	float r = rgb.r;
+	float g = rgb.g;
+	float b = rgb.b;
+
+	float vMin = min(min(r, g), b);
+	float vMax = max(max(r, g), b);
+	float dMax = vMax - vMin;
+
+	float h = 0.0f;
+	float s = 0.0f;
+	float l = (vMax + vMin) / 2.0f;
+
+	if(dMax == 0.0f)
+	{
+		h = 0.0f;
+		s = 0.0f;
+	}
+	else
+	{
+		if(l < 0.5f)
+			s = dMax / (vMax + vMin);
+		else
+			s = dMax / (2 - vMax - vMin);
+
+		float dR = (((vMax - r) / 6.0f) + (dMax / 2.0f)) / dMax;
+		float dG = (((vMax - g) / 6.0f) + (dMax / 2.0f)) / dMax;
+		float dB = (((vMax - b) / 6.0f) + (dMax / 2.0f)) / dMax;
+
+		if(r == vMax)
+			h = dB - dG;
+		else if(g == vMax)
+			h = (1.0f/3.0f) + dR - dB;
+		else if(b == vMax)
+			h = (2.0f/3.0f) + dG - dR;
+
+		if(h < 0.0f)
+			h += 1.0f;
+		if(h > 1.0f)
+			h -= 1.0f;
+	}
+
+	return vec3(h*360, s, l);
+}
+
 #endif

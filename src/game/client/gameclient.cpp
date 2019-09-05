@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <base/color.h>
 #include <engine/editor.h>
 #include <engine/engine.h>
 #include <engine/friends.h>
@@ -17,6 +18,7 @@
 #include <generated/client_data.h>
 
 #include <game/version.h>
+#include <game/client/teecomp.h>
 #include "localization.h"
 #include "render.h"
 #include "teecomp.h"
@@ -110,19 +112,19 @@ enum
 	STR_TEAM_SPECTATORS,
 };
 
-static int GetStrTeam(int Team, bool Teamplay)
+const char* GetStrTeam(int Team, bool Teamplay)
 {
 	if(Teamplay)
 	{
 		if(Team == TEAM_RED)
-			return STR_TEAM_RED;
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam1Hsl, TEAM_RED)); // todo teecomp fix for tccoloredteesmethod
 		else if(Team == TEAM_BLUE)
-			return STR_TEAM_BLUE;
+			return Localize(CTeecompUtils::TeamColorToName(g_Config.m_TcColoredTeesTeam2Hsl, TEAM_BLUE)); // todo teecomp fix for tccoloredteesmethod
 	}
 	else if(Team == 0)
-		return STR_TEAM_GAME;
+		return "game";
 
-	return STR_TEAM_SPECTATORS;
+	return "spectators";
 }
 
 void CGameClient::GetPlayerLabel(char* aBuf, int BufferSize, int ClientID, const char* ClientName)
@@ -356,6 +358,8 @@ void CGameClient::OnInit()
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
+
+	CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics());
 
 	m_IsXmasDay = time_isxmasday();
 	m_IsEasterDay = time_iseasterday();
@@ -622,26 +626,23 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 				break;
 			case GAMEMSG_TEAM_ALL:
 				{
-					const char *pMsg;
-					switch(GetStrTeam(aParaI[0], TeamPlay))
-					{
-					case STR_TEAM_GAME: pMsg = Localize("All players were moved to the game"); break;
-					case STR_TEAM_RED: pMsg = Localize("All players were moved to the red team"); break;
-					case STR_TEAM_BLUE: pMsg = Localize("All players were moved to the blue team"); break;
-					case STR_TEAM_SPECTATORS: pMsg = Localize("All players were moved to the spectators"); break;
-					}
-					m_pBroadcast->DoBroadcast(pMsg);
+					char aMsg[512];
+					str_format(aMsg, sizeof(aMsg), "All players were moved to the %s", GetStrTeam(aParaI[0], TeamPlay));
+					// switch(GetStrTeam(aParaI[0], TeamPlay))
+					// {
+					// case STR_TEAM_GAME: pMsg = Localize("All players were moved to the game"); break;
+					// case STR_TEAM_RED: pMsg = Localize("All players were moved to the red team"); break;
+					// case STR_TEAM_BLUE: pMsg = Localize("All players were moved to the blue team"); break;
+					// case STR_TEAM_SPECTATORS: pMsg = Localize("All players were moved to the spectators"); break;
+					// }
+					m_pBroadcast->DoBroadcast(aMsg);
 				}
 				break;
 			case GAMEMSG_TEAM_BALANCE_VICTIM:
 				{
-					const char *pMsg = "";
-					switch(GetStrTeam(aParaI[0], TeamPlay))
-					{
-					case STR_TEAM_RED: pMsg = Localize("You were moved to the red team due to team balancing"); break;
-					case STR_TEAM_BLUE: pMsg = Localize("You were moved to the blue team due to team balancing"); break;
-					}
-					m_pBroadcast->DoBroadcast(pMsg);
+					char aMsg[512];
+					str_format(aMsg, sizeof(aMsg), "You were moved to the %s due to team balancing", GetStrTeam(aParaI[0], TeamPlay));
+					m_pBroadcast->DoBroadcast(aMsg);
 				}
 				break;
 			case GAMEMSG_CTF_GRAB:
@@ -1511,13 +1512,69 @@ void CGameClient::OnPredict()
 
 	m_PredictedTick = Client()->PredGameTick();
 }
-
+	
 void CGameClient::OnActivateEditor()
 {
 	OnRelease();
 }
 
 #ifdef GAMER_OUTDATED_STATS
+void CGameClient::OnRoundStart()
+{
+	for(int i=0; i<MAX_CLIENTS; i++)
+		m_aStats[i].Reset();
+}
+
+void CGameClient::OnFlagGrab(int ID)
+{
+	if(ID == TEAM_RED)
+		m_aStats[m_Snap.m_pGameDataFlag->m_FlagCarrierRed].m_FlagGrabs++;
+	else
+		m_aStats[m_Snap.m_pGameDataFlag->m_FlagCarrierBlue].m_FlagGrabs++;
+}
+
+CGameClient::CClientStats::CClientStats()
+{
+	m_JoinDate  = 0;
+	m_Active    = false;
+	m_WasActive = false;
+	m_Frags     = 0;
+	m_Deaths    = 0;
+	m_Suicides  = 0;
+	for(int j = 0; j < NUM_WEAPONS; j++)
+	{
+		m_aFragsWith[j]  = 0;
+		m_aDeathsFrom[j] = 0;
+	}
+	m_FlagGrabs      = 0;
+	m_FlagCaptures   = 0;
+	m_CarriersKilled = 0;
+	m_KillsCarrying  = 0;
+	m_DeathsCarrying = 0;
+}
+
+void CGameClient::CClientStats::Reset()
+{
+	m_JoinDate  = 0;
+	m_Active    = false;
+	m_WasActive = false;
+	m_Frags     = 0;
+	m_Deaths    = 0;
+	m_Suicides  = 0;
+	m_BestSpree = 0;
+	m_CurrentSpree = 0;
+	for(int j = 0; j < NUM_WEAPONS; j++)
+	{
+		m_aFragsWith[j]  = 0;
+		m_aDeathsFrom[j] = 0;
+	}
+	m_FlagGrabs      = 0;
+	m_FlagCaptures   = 0;
+	m_CarriersKilled = 0;
+	m_KillsCarrying  = 0;
+	m_DeathsCarrying = 0;
+}
+
 void CGameClient::OnRoundStart()
 {
 	for(int i=0; i<MAX_CLIENTS; i++)
@@ -1667,14 +1724,80 @@ void CGameClient::CClientData::UpdateRenderInfo(CGameClient *pGameClient, int Cl
 
 	m_RenderInfo = m_SkinInfo;
 
+
 	// force team colors
 	if(pGameClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
 	{
-		for(int p = 0; p < NUM_SKINPARTS; p++)
+		/* for(int p = 0; p < NUM_SKINPARTS; p++)
 		{
+			// old code: 
 			m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
 			int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
 			m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+		} */
+		for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			if(m_Team != TEAM_SPECTATORS && !CTeecompUtils::UseDefaultTeamColor(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config))
+			{
+				int LocalTeam = pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team;
+				const char* pForcedSkin;
+
+				if(CTeecompUtils::GetForceDmColors(m_Team, LocalTeam) && ClientID != pGameClient->m_LocalClientID && CTeecompUtils::GetForcedSkinName(m_Team, LocalTeam, pForcedSkin))
+				{
+					int Sid = max(0, pGameClient->m_pSkins->Find(pForcedSkin, false));
+					const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(Sid);
+					if(pSkin->m_aUseCustomColors[p])
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+					else
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
+				}
+				else
+				{
+					int SkinPartColors, UseCustomColors;
+					// teecomp skin texture
+					if(CTeecompUtils::GetForcedSkinName(m_Team, LocalTeam, pForcedSkin))
+					{
+						int Sid = max(0, pGameClient->m_pSkins->Find(pForcedSkin, false));
+						const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(Sid);
+						m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+						SkinPartColors = pSkin->m_aPartColors[p];
+						UseCustomColors = pSkin->m_aUseCustomColors[p];
+					}
+					else
+					{
+						m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+						SkinPartColors = m_aSkinPartColors[p];
+						UseCustomColors = m_aUseCustomColors[p];
+					}
+
+					// teecomp skin colors
+					// This selects the right config
+					int TeamColorHSL = CTeecompUtils::GetTeamColorInt(m_Team, pGameClient->m_aClients[pGameClient->m_LocalClientID].m_Team, g_Config.m_TcColoredTeesTeam1Hsl,
+						g_Config.m_TcColoredTeesTeam2Hsl, g_Config.m_TcColoredTeesMethod);
+					// This takes HSL as last parameter and returns a HSL mix with the part color
+					int MixedColor = pGameClient->m_pSkins->GetTeamColor(UseCustomColors, SkinPartColors, m_Team, p, TeamColorHSL);
+					// This takes HSL + A and returns RGBA
+					m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(MixedColor, p==SKINPART_MARKING);
+				}
+			}
+			else
+			{
+				// classic specs
+				m_RenderInfo.m_aTextures[p] = pGameClient->m_pSkins->GetSkinPart(p, m_SkinPartIDs[p])->m_ColorTexture;
+				int ColorVal = pGameClient->m_pSkins->GetTeamColor(m_aUseCustomColors[p], m_aSkinPartColors[p], m_Team, p);
+				m_RenderInfo.m_aColors[p] = pGameClient->m_pSkins->GetColorV4(ColorVal, p==SKINPART_MARKING);
+			}
+		}
+	}
+	else if(g_Config.m_TcForceSkinTeam2 && ClientID != pGameClient->m_LocalClientID) // Force DM skin
+	{
+		const CSkins::CSkin* pSkin = pGameClient->m_pSkins->Get(max(0, pGameClient->m_pSkins->Find(g_Config.m_TcForcedSkin2, false)));
+		for(int p = 0; p < NUM_SKINPARTS; p++)
+		{
+			if(pSkin->m_aUseCustomColors[p])
+				m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_ColorTexture;
+			else
+				m_RenderInfo.m_aTextures[p] = pSkin->m_apParts[p]->m_OrgTexture;
 		}
 	}
 }
@@ -1704,13 +1827,7 @@ void CGameClient::DoEnterMessage(const char *pName, int ClientID, int Team)
 {
 	char aBuf[128], aLabel[64];
 	GetPlayerLabel(aLabel, sizeof(aLabel), ClientID, pName);
-	switch(GetStrTeam(Team, m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS))
-	{
-	case STR_TEAM_GAME: str_format(aBuf, sizeof(aBuf), Localize("'%s' entered and joined the game"), aLabel); break;
-	case STR_TEAM_RED: str_format(aBuf, sizeof(aBuf), Localize("'%s' entered and joined the red team"), aLabel); break;
-	case STR_TEAM_BLUE: str_format(aBuf, sizeof(aBuf), Localize("'%s' entered and joined the blue team"), aLabel); break;
-	case STR_TEAM_SPECTATORS: str_format(aBuf, sizeof(aBuf), Localize("'%s' entered and joined the spectators"), aLabel); break;
-	}
+	str_format(aBuf, sizeof(aBuf), Localize("'%s' entered and joined the %s"), aLabel, GetStrTeam(Team, m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS));
 	m_pChat->AddLine(-1, 0, aBuf);
 }
 
@@ -1730,13 +1847,7 @@ void CGameClient::DoTeamChangeMessage(const char *pName, int ClientID, int Team)
 	char aBuf[128];
 	char aLabel[64];
 	GetPlayerLabel(aLabel, sizeof(aLabel), ClientID, pName);
-	switch(GetStrTeam(Team, m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS))
-	{
-	case STR_TEAM_GAME: str_format(aBuf, sizeof(aBuf), Localize("'%s' joined the game"), aLabel); break;
-	case STR_TEAM_RED: str_format(aBuf, sizeof(aBuf), Localize("'%s' joined the red team"), aLabel); break;
-	case STR_TEAM_BLUE: str_format(aBuf, sizeof(aBuf), Localize("'%s' joined the blue team"), aLabel); break;
-	case STR_TEAM_SPECTATORS: str_format(aBuf, sizeof(aBuf), Localize("'%s' joined the spectators"), aLabel); break;
-	}
+	str_format(aBuf, sizeof(aBuf), Localize("'%s' joined the %s"), aLabel, GetStrTeam(Team, m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS));
 	m_pChat->AddLine(-1, 0, aBuf);
 }
 

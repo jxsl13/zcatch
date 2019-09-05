@@ -41,6 +41,15 @@ public:
 		const void *GetID() const { return &m_FadeStartTime; }
 	};
 
+	typedef struct
+	{
+		CLocConstString m_Name;
+		const char *m_pCommand;
+		int m_KeyId;
+		int m_Modifier;
+		CMenus::CButtonContainer m_BC;
+	} CKeyInfo;
+
 private:
 	typedef float (*FDropdownCallback)(CUIRect View, void *pUser);
 
@@ -220,10 +229,14 @@ private:
 		bool m_ListBoxItemActivated;
 		CScrollRegion m_ScrollRegion;
 		vec2 m_ScrollOffset;
+		// teecomp hotfixes (TODO port to vanilla?)
+		CUIRect s_RowView;
+		bool s_ItemClicked;
 
 		CListBoxState()
 		{
 			m_ScrollOffset = vec2(0,0);
+			s_ItemClicked = false;
 		}
 	};
 
@@ -277,6 +290,7 @@ private:
 		SETTINGS_GRAPHICS,
 		SETTINGS_SOUND,
 		SETTINGS_GAMER,
+		SETTINGS_TEECOMP,
 
 		ACTLB_NONE=0,
 		ACTLB_LANG,
@@ -664,12 +678,22 @@ private:
 	void SetOverlay(int Type, float x, float y, const void *pData);
 	void UpdateFriendCounter(const CServerInfo *pEntry);
 	void UpdateFriends();
+	
+	// teecomp utils
+	struct HSLPickerState
+	{
+		int m_HLPicker;
+		CMenus::CButtonContainer m_aButtons[12];
+		bool m_Enabled = true;
+	};
+	void RenderFlag(int Team, vec2 Pos);
+	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified, HSLPickerState& State); // intermediary, used by teecomp
 
 	// found in menus_settings.cpp
 	void RenderLanguageSelection(CUIRect MainView, bool Header=true);
 	void RenderThemeSelection(CUIRect MainView, bool Header=true);
 	void RenderSkinHSLPicker(CUIRect Picker);
-	ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified);
+	//ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified); // TODO remove useless gamer/teecomp merge?
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
 	void RenderSettingsGeneral(CUIRect MainView);
@@ -722,8 +746,8 @@ private:
 	};
 	// end Gamer
 
-	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
-						  const sorted_array<CVideoMode>& lModes);
+	// bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
+						//   const sorted_array<CVideoMode>& lModes);
 
 	// found in menu_callback.cpp
 	static float RenderSettingsControlsMovement(CUIRect View, void *pUser);
@@ -733,6 +757,30 @@ private:
 	static float RenderSettingsControlsScoreboard(CUIRect View, void *pUser);
 	static float RenderSettingsControlsStats(CUIRect View, void *pUser);
 	static float RenderSettingsControlsMisc(CUIRect View, void *pUser);
+
+	// TeeComp related (TODO port)
+	int DoButton_ListRow(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
+	void UiDoKeybinder(CKeyInfo& pKey, CUIRect* r);
+	// TeeComp related
+	void RenderRgbSliders(CUIRect* pMainView, CUIRect* pButton, int &r, int &g, int &b, bool Enabled);
+	void RenderSettingsTeecomp(CUIRect MainView);
+	void RenderSettingsTeecompSkins(CUIRect MainView);
+	void RenderSettingsTeecompStats(CUIRect MainView);
+	void RenderSettingsTeecompMisc(CUIRect MainView);
+	void RenderSettingsTeecompAbout(CUIRect MainView);
+	void RenderLaser(const struct CNetObj_Laser *pCurrent);
+	// Teecomp utils
+	struct SkinNameListState
+	{
+		CListBoxState ListBoxState;
+		const CSkins::CSkin *pSelectedSkin;
+		bool RefreshSkinSelector = true;
+		sorted_array<const CSkins::CSkin *> paSkinList;
+	};
+	bool RenderSkinNameList(CUIRect MainView, char* pSkinConfig, SkinNameListState* pState);
+	
+	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
+						  const sorted_array<CVideoMode>& lModes);
 
 	void SetActive(bool Active);
 
@@ -747,6 +795,7 @@ private:
 
 	bool CheckHotKey(int Key);
 public:
+
 	struct CSwitchTeamInfo
 	{
 		char m_aNotification[128];

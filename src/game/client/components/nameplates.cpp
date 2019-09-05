@@ -4,6 +4,7 @@
 #include <engine/shared/config.h>
 #include <generated/protocol.h>
 #include <generated/client_data.h>
+#include <game/client/teecomp.h>
 
 #include <game/client/gameclient.h>
 #include <game/client/animstate.h>
@@ -32,7 +33,11 @@ void CNamePlates::RenderNameplate(
 
 
 		char aName[64];
-		str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "");
+		if(!g_Config.m_TcNameplateScore)
+			str_format(aName, sizeof(aName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "");
+		else
+			str_format(aName, sizeof(aName), "%s (%d)", g_Config.m_ClShowsocial ? m_pClient->m_aClients[ClientID].m_aName: "",
+				pPlayerInfo->m_Score);
 
 		CTextCursor Cursor;
 		float tw = TextRender()->TextWidth(0, FontSize, aName, -1, -1.0f) + RenderTools()->GetClientIdRectSize(FontSize);
@@ -42,10 +47,20 @@ void CNamePlates::RenderNameplate(
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, a);
 		if(g_Config.m_ClNameplatesTeamcolors && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
 		{
-			if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
-				TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
-			else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
-				TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
+			if(CTeecompUtils::UseDefaultTeamColor(m_pClient->m_aClients[ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config))
+			{
+				// non-teecomp
+				if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
+					TextRender()->TextColor(1.0f, 0.5f, 0.5f, a);
+				else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
+					TextRender()->TextColor(0.7f, 0.7f, 1.0f, a);
+			}
+			else
+			{
+				// teecomp
+				vec3 Col = CTeecompUtils::GetTeamColorSaturatedRGB(m_pClient->m_aClients[ClientID].m_Team, m_pClient->m_aClients[m_pClient->m_LocalClientID].m_Team, g_Config);
+				TextRender()->TextColor(Col.r, Col.g, Col.b, a);
+			}
 		}
 
 		const vec4 IdTextColor(0.1f, 0.1f, 0.1f, a);
