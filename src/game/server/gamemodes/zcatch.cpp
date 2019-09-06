@@ -817,6 +817,24 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 
 void CGameControllerZCATCH::Tick()
 {
+
+	// debugging stuff to find the reason, why people get stuck in the twilight zone :D
+	for (int ID : GameServer()->PlayerIDs())
+	{
+		if (GameServer()->m_apPlayers[ID]->IsCaught())
+		{
+			int KillerID = GameServer()->m_apPlayers[ID]->GetIDCaughtBy();
+			bool validID = 0 <= KillerID  && KillerID < MAX_PLAYERS;
+			bool RespawnTickNotInFuture = GameServer()->m_apPlayers[ID]->m_RespawnTick < Server()->Tick();
+			if(!validID && RespawnTickNotInFuture)
+			{
+				dbg_msg("ABORT_DEBUG", "validID: victim_id: %d killer id: %d", ID, KillerID);
+				dbg_msg("ABORT_DEBUG", "RespawnTickNotInFuture: Current tick: %d respawntick: %d", Server()->Tick(), GameServer()->m_apPlayers[ID]->m_RespawnTick);
+			}
+		}
+	}
+	
+
 	// Broadcast Refresh is only needed for solely 
 	// keeping the broadcast visible, but not to push
 	// actual updates.
