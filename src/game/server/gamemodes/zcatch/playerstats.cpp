@@ -65,6 +65,7 @@ std::vector<int> CPlayerStats::values() const
 
     for (auto& [key, value] : m_Data)
     {
+        (void)key;
         v.push_back(value);      
     }
     return v;
