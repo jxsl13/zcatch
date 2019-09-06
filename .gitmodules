@@ -2,10 +2,6 @@
 	path = datasrc/languages
 	url = git://github.com/teeworlds/teeworlds-translation.git
 	branch = master
-[submodule "datasrc/maps"]
-	path = datasrc/maps
-	url = git://github.com/teeworlds/teeworlds-maps.git
-	branch = master
 [submodule "src/engine/external/cpp_redis"]
 	path = src/engine/external/cpp_redis
 	url = https://github.com/cpp-redis/cpp_redis.git
