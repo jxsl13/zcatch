@@ -1007,7 +1007,7 @@ set(EXPECTED_DATA
   maps/lms1.map
   maps/maps.cfg
   maps/openfng5.map
-  maps/readme.txt
+  maps/README.md
   particles.png
   skins/bluekitty.json
   skins/bluestripe.json
