@@ -1004,6 +1004,7 @@ set(EXPECTED_DATA
   maps/dm7.map
   maps/dm8.map
   maps/dm9.map
+  maps/LICENSE.md
   maps/lms1.map
   maps/maps.cfg
   maps/openfng5.map
