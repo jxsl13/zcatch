@@ -68,11 +68,11 @@ void CGameControllerZCATCH::InitExtendedVoteOptionServer()
 		{
 			if(Description == "Enable all server messages. Currently disabled.")
 			{
-				Description = {"Disable all server messages. Currently enabled."};
+				Description = "Disable all server messages. Currently enabled.";
 			}
 			else
 			{
-				Description = {"Enable all server messages. Currently disabled."};
+				Description = "Enable all server messages. Currently disabled.";
 			}
 
 			// do the same as the chat command
