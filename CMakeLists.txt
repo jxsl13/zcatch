@@ -985,7 +985,15 @@ set(EXPECTED_DATA
   maps/ctf2.map
   maps/ctf3.map
   maps/ctf4.map
+  maps/ctf4_classic.map
+  maps/ctf4_old.map
   maps/ctf5.map
+  maps/ctf5_carribbean.map
+  maps/ctf5_dark_candys.map
+  maps/ctf5_light_candys.map
+  maps/ctf5_midnight.map
+  maps/ctf5_mystic.map
+  maps/ctf5_space.map
   maps/ctf6.map
   maps/ctf7.map
   maps/ctf8.map
@@ -996,8 +1004,9 @@ set(EXPECTED_DATA
   maps/dm7.map
   maps/dm8.map
   maps/dm9.map
-  maps/license.txt
   maps/lms1.map
+  maps/maps.cfg
+  maps/openfng5.map
   maps/readme.txt
   particles.png
   skins/bluekitty.json
@@ -1103,7 +1112,7 @@ if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/maps/dm1.map)
   endforeach()
 endif()
 
-set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
+set_glob(DATA GLOB_RECURSE "cfg;json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
 
 ########################################################################
 # COPY DATA AND DLLS
@@ -1806,7 +1815,7 @@ set(CPACK_SOURCE_FILES
   cmake/
   configure.lua
   datasrc/
-  license.txt
+  LICENSE
   other/
   readme.md
   scripts/
