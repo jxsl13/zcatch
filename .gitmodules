@@ -8,3 +8,6 @@
 [submodule "src/engine/external/SQLiteCpp"]
 	path = src/engine/external/SQLiteCpp
 	url = https://github.com/SRombauts/SQLiteCpp.git
+[submodule "datasrc/maps"]
+	path = datasrc/maps
+	url = https://github.com/jxsl13/zcatch-maps.git
