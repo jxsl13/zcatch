@@ -1112,7 +1112,7 @@ if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/maps/dm1.map)
   endforeach()
 endif()
 
-set_glob(DATA GLOB_RECURSE "cfg;json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
+set_glob(DATA GLOB_RECURSE "cfg;json;map;md;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
 
 ########################################################################
 # COPY DATA AND DLLS
