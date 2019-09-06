@@ -22,14 +22,14 @@ void CVoteOptionServerExtended::SendClearVoteOptions(int ofID)
 
 void CVoteOptionServerExtended::SendDefaultVoteOptions(int toID)
 {
-	class CVoteOptionServer *pCurrent = GameServer()->m_pVoteOptionFirst;
+	struct CVoteOptionServer *pCurrent = GameServer()->m_pVoteOptionFirst;
 
 	while(pCurrent)
 	{
 
 		// count options for actual packet
 		int NumOptions = 0;
-		for(CVoteOptionServer *p = pCurrent; p && NumOptions < MAX_VOTE_OPTION_ADD; p = p->m_pNext, ++NumOptions);
+		for(struct CVoteOptionServer *p = pCurrent; p && NumOptions < MAX_VOTE_OPTION_ADD; p = p->m_pNext, ++NumOptions);
 
 		// pack and add vote list packet
 		CMsgPacker Msg(NETMSGTYPE_SV_VOTEOPTIONLISTADD);
