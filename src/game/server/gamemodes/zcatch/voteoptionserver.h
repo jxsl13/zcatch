@@ -1,13 +1,13 @@
 #pragma once
 #include <game/server/gamecontext.h>
 
+#include <string>
 #include <tuple>
 #include <vector>
 #include <functional>
 
 #include "engine/message.h"
 
-using std::string;
 
 class CVoteOptionServerExtended
 {
