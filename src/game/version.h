@@ -3,7 +3,7 @@
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
 #include <generated/nethash.cpp>
-#define GAME_VERSION "0.7.3 - Gamer 5.4"
+#define GAME_VERSION "0.7.3.1 - Gamer 5.4"
 #define GAME_NETVERSION_HASH_FORCED "802f1be60a05665f"
 #define GAME_NETVERSION "0.7 " GAME_NETVERSION_HASH_FORCED
 #define CLIENT_VERSION 0x0703
