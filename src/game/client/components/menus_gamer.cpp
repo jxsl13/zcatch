@@ -200,94 +200,9 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	NewLine();
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClClientRecognition, "Enable gamer client recognition", &Button);
-	
-
-	/*
-	NewLine();
-	if(g_Config.m_GfxGameTiles)
-	{
-		// LeftView.HSplitTop(Spacing, 0, &LeftView);
-		Button.VSplitLeft(20.f, 0, &Button);
-		static int s_ShowMapOnTop = 0;
-		if(DoButton_CheckBox(&s_ShowMapOnTop, Localize("Show the map on top"), g_Config.m_GfxGameTiles == 1, &Button))
-		{
-			if(g_Config.m_GfxGameTiles == 2)
-				g_Config.m_GfxGameTiles = 1;
-			else
-				g_Config.m_GfxGameTiles = 2;
-		}
-	}*/
-
-	// NewLine();
-	// NewLine();
-	// UI()->DoLabel(&Button, Localize("Browser"), 14.0f, CUI::ALIGN_LEFT);
-	// NewLine();
-	// DoButton_BinaryCheckBox(&g_Config.m_ClColorfulBrowser, "Use colored icons", &Button);
-
-
-	// char aBuf[32];
-	// str_format(aBuf, sizeof(aBuf), Localize("Show the game tiles:"));
-	// Text.y += 2.0f;
-	// UI()->DoLabel(&Text, aBuf, Text.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
-
-	// Button.VSplitLeft(160.0f, &Button, 0);
-	// if(g_Config.m_GfxGameTiles == 0)
-	// 	str_format(aBuf, sizeof(aBuf), Localize("no"));
-	// else if(g_Config.m_GfxGameTiles == 1)
-	// 	str_format(aBuf, sizeof(aBuf), Localize("yes, on top of the world"));
-	// else if(g_Config.m_GfxGameTiles == 2)
-	// 	str_format(aBuf, sizeof(aBuf), Localize("yes, only them"));
-	// static CButtonContainer s_ButtonGfxGameTiles;
-	// if(DoButton_Menu(&s_ButtonGfxGameTiles, aBuf, 0, &Button))
-	// 	g_Config.m_GfxGameTiles = (g_Config.m_GfxGameTiles + 1) % 3;
-
-	/*
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShowapm, "Show ingame APM counter", &Button);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShowLanTest, "Show the LAN test button", &Button);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_UiHighlighGametype, "Color gametypes in the server browser", &Button);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_UiGrayServers, "Gray empty servers in the server browser", &Button);
-	*/
-	
-	// Right View	
-	// RightView.HSplitTop(20.0f, &Button, &RightView);
+		
 	NewLine(&Button, &RightView);
 	
-	/*UI()->DoLabel(&Button, Localize("Fake"), 14.0f, -1);
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_UiFakeOption, "Display one-click fake button in server browser", &Button);
-	
-	NewLine();
-	if(DoButton_CheckBox(&g_Config.m_ClFake, Localize("Use fake"), g_Config.m_ClFake, &Button))
-	{
-		char name[32];
-
-		g_Config.m_ClFake ^= 1;
-		str_copy(name, g_Config.m_PlayerName, sizeof(name));
-		str_copy(g_Config.m_PlayerName, g_Config.m_PlayerSecondName, sizeof(g_Config.m_PlayerName));
-		str_copy(g_Config.m_PlayerSecondName, name, sizeof(g_Config.m_PlayerSecondName));
-		
-		str_copy(name, g_Config.m_PlayerSkin, sizeof(name));
-		str_copy(g_Config.m_PlayerSkin, g_Config.m_PlayerSecondSkin, sizeof(g_Config.m_PlayerSkin));
-		str_copy(g_Config.m_PlayerSecondSkin, name, sizeof(g_Config.m_PlayerSecondSkin));
-		
-		str_copy(name, g_Config.m_PlayerClan, sizeof(name));
-		str_copy(g_Config.m_PlayerClan, g_Config.m_PlayerSecondClan, sizeof(g_Config.m_PlayerClan));
-		str_copy(g_Config.m_PlayerSecondClan, name, sizeof(g_Config.m_PlayerSecondClan));
-	}
-	char str[50];
-	str_format(str, sizeof(str), "(Used: %s|%s)", g_Config.m_PlayerClan, g_Config.m_PlayerName);
-	Button.x += 120.0f;
-	UI()->DoLabel(&Button, str, 12.0f, -1);
-	*/
-	// NewLine();
-	// NewLine();
 	UI()->DoLabel(&Button, Localize("Chat"), 14.0f, CUI::ALIGN_LEFT);
 	
 	NewLine();
@@ -340,19 +255,6 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 			g_Config.m_ClTextSize -= 10;
 	}
 	
-	/*
-	NewLine();
-	NewLine();
-
-	UI()->DoLabel(&Button, Localize("Scoreboard"), 14.0f, CUI::ALIGN_LEFT);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShowId, "Show IDs", &Button);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShowSkins, "Show skin names", &Button);
-	*/
-
 	NewLine();
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Sounds"), 14.0f, CUI::ALIGN_LEFT);
@@ -607,48 +509,4 @@ void CMenus::RenderSettingsGamerStats(CUIRect MainView)
 	}
 }
 
-#define CREDITS_HEADER(s) 	MainView.HSplitTop(10.0f, &Button, &MainView);\
-	MainView.HSplitTop(20.0f, &Button, &MainView);\
-	UI()->DoLabel(&Button, Localize(s), 14.0f, 0);
-	
-#define CREDITS_LINE(s)MainView.HSplitTop(20.0f, &Button, &MainView);\
-	UI()->DoLabel(&Button, Localize(s), 12.0f, 0);
-
-/*
-void CMenus::RenderSettingsGamerCredits(CUIRect MainView)
-{
-	CUIRect Button;
-	
-	MainView.HSplitTop(52.0f, &Button, &MainView);
-	UI()->DoLabel(&Button, "Gamer", 38.0f, 0);
-	
-	CREDITS_HEADER("Programmation")
-	CREDITS_LINE("Dunedune")
-
-	CREDITS_HEADER("Patched separated projects")
-	CREDITS_LINE("Spl0k (Teecomp)")
-	CREDITS_LINE("Sushi Tee (Race)")
-	CREDITS_LINE("EdgeCruSher (Teecomp++)")
-	
-	CREDITS_HEADER("Graphics")
-	CREDITS_LINE("Landil (arrows and entities)")
-	CREDITS_LINE("Apmox (logo and icon)")
-	CREDITS_LINE("Bee (icons)")
-	CREDITS_LINE("Sheep (entities)")
-	CREDITS_LINE("Puch (clock)")
-	
-	CREDITS_HEADER("Sounds")
-	CREDITS_LINE("Unreal Tournament")
-	
-	
-		CREDITS_HEADER("Programmation support")
-		CREDITS_LINE("LordSkelethom")
-		CREDITS_LINE("heinrich5991")
-		CREDITS_LINE("Vijfhoek")
-	
-	
-	CREDITS_HEADER("Thanks to")
-	CREDITS_LINE("The Teeworlds developers for 0.6.0")
-	CREDITS_LINE("The whole community for their feedback and encouragements")	
-}*/
 #endif
