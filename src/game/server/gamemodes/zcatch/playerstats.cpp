@@ -45,6 +45,7 @@ std::vector<std::string> CPlayerStats::keys(std::string prefix) const
 
     for (auto& [key, value] : m_Data)
     {
+        (void)value;
         if(prefix.size() > 0)
         {
             v.push_back(prefix + key);
