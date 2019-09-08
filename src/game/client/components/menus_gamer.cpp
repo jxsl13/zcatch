@@ -128,13 +128,13 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	// NewLine();
 	// DoButton_BinaryCheckBox(&g_Config.m_ClGcolor, "Use Gamer colors", &Button);
 	
-	/*
 	NewLine();
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Announcers"), 14.0f, CUI::ALIGN_LEFT);
 	
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncers, "Visual announcers", &Button);
+	/*
 	
 	if(g_Config.m_ClAnnouncers)
 	{
