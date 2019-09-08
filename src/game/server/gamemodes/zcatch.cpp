@@ -23,6 +23,8 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 
 	m_PreviousIngamePlayerCount = 0;
 	m_IngamePlayerCount = 0;
+	m_PreviousAlivePlayersCount = 0;
+	m_AlivePlayersCount = 0;
 
 	// refresh broadcast every 9 seconds.
 	m_BroadcastRefreshTime = Server()->TickSpeed() * 9;
@@ -503,14 +505,16 @@ void CGameControllerZCATCH::DoWincheckRound()
 	else
 	{
 		// check for survival win
-		CPlayer *pAlivePlayer = 0;
+		CPlayer *pAlivePlayer = nullptr;
 		
-		int alivePlayerCount = 0;
-
 
 		// keeping track of any change of ingame players.		
 		m_PreviousIngamePlayerCount = m_IngamePlayerCount;
 		m_IngamePlayerCount = 0;
+
+		// keep track of change of player's being caught
+		m_PreviousAlivePlayersCount = m_AlivePlayersCount;
+		m_AlivePlayersCount = 0;
 
 		for (int i : GameServer()->PlayerIDs())
 		{
@@ -518,7 +522,7 @@ void CGameControllerZCATCH::DoWincheckRound()
 			{
 				if (GameServer()->m_apPlayers[i]->IsNotCaught())
 				{
-					alivePlayerCount++;
+					m_AlivePlayersCount++;
 					pAlivePlayer = GameServer()->m_apPlayers[i];
 				}
 
@@ -530,14 +534,14 @@ void CGameControllerZCATCH::DoWincheckRound()
 			}
 		}
 
-		if(m_IngamePlayerCount == 1 && alivePlayerCount == 0)
+		if(m_IngamePlayerCount == 1 && m_AlivePlayersCount == 0)
 		{
 			// this is needed if exactly one player joins the game
 			// the ound is being restarted in order for that player to join the game
 			// and walk around
 			EndRound();
 		}	
-		else if(m_IngamePlayerCount > 1 && alivePlayerCount == 1)	// 1 winner
+		else if(m_IngamePlayerCount > 1 && m_AlivePlayersCount == 1)	// 1 winner
 		{
 			// player that is alive is the winnner
 			int ScorePointsEarned = CalculateScore(pAlivePlayer->GetNumTotalCaughtPlayers());
@@ -849,7 +853,7 @@ void CGameControllerZCATCH::Tick()
 	// we have a change of ingame players.
 	// either someone left or joined the spectators or joined the game(from lobby or from spec).
 	// these two values are updated in DoWincheckRound()
-	if(m_PreviousIngamePlayerCount != m_IngamePlayerCount)
+	if(m_PreviousIngamePlayerCount != m_IngamePlayerCount || m_PreviousAlivePlayersCount != m_AlivePlayersCount)
 		UpdateBroadcastOfEverybody();
 
 
@@ -909,7 +913,7 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	}
 	else if(player.GetTeam() == TEAM_SPECTATORS && Team != TEAM_SPECTATORS)
 	{
-		// players joins the game after being in spec
+		// player joins the game after being in spec
 
 		// do vanilla respawn stuff
 		IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
@@ -1372,7 +1376,7 @@ void CGameControllerZCATCH::ProcessMessageQueue()
 {
 
 	// if we successfully lock the mutex, process all pending messages
-	// if the mutex cannot be aquired,we skip this in order not to block the
+	// if the mutex cannot be aquired, we skip this in order not to block the
 	// main thread.
 	if (m_MessageQueueMutex.try_lock())
 	{

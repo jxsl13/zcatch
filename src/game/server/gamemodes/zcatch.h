@@ -102,6 +102,8 @@ private:
 	 */
 	int m_PreviousIngamePlayerCount;
 	int m_IngamePlayerCount;
+	int m_PreviousAlivePlayersCount;
+	int m_AlivePlayersCount;
 
 
 	// refresh time in ticks, after how many ticks 
