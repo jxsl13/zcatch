@@ -86,10 +86,19 @@ std::vector<std::pair<std::string, std::string>> CPlayerStats::GetStringPairs(st
 
 CPlayerStats& CPlayerStats::operator+=(const CPlayerStats& rhs)
 {
-    for (auto&& [key, value] : m_Data)
+    // rhs not valid -> do nothing
+    if(!rhs.IsValid())
+        return (*this);    
+
+    for (auto& [key, value] : m_Data)
     {
         value += rhs.m_Data.at(key);
     }   
+    
+    if(0 <= rhs.m_Rank && rhs.m_Rank < m_Rank)
+        m_Rank = rhs.m_Rank;
+
+
     return (*this);
 }
 

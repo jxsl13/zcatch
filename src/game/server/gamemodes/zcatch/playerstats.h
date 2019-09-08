@@ -13,21 +13,32 @@ struct CPlayerStats
      * and the stats fields that are pushed in the constructor into m_Data.
      */
    private:
+    // invalidate stats in order to signal, that there is no such data available.
     bool m_IsValid;
 
+    // specifically set value, that needs to be calculated by the database.
     long m_Rank;
 
-   public:
+    // map containing
     std::map<std::string, int> m_Data;
-    void Invalidate();
-    bool IsValid() { return m_IsValid; };
 
-    void Reset();
+
+   public:
+   
     CPlayerStats();
     CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots);
 
+    // make stats invalid.
+    void Invalidate();
+    bool IsValid() const { return m_IsValid; };
+
+    // reset to default/0/empty values.
+    void Reset();
+
+
     void SetRank(long rank) { m_Rank = rank; };
-    long GetRank() { return m_Rank;};
+    long GetRank() const { return m_Rank;};
+
 
     CPlayerStats& operator+=(const CPlayerStats& rhs);
 

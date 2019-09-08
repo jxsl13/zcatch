@@ -1216,7 +1216,7 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 	if(pPlayer == nullptr)
 		return;
 	
-	m_pRankingServer->SetRanking({Server()->ClientName(ofID)}, {
+	m_pRankingServer->UpdateRanking({Server()->ClientName(ofID)}, {
 		pPlayer->m_Kills,
 		pPlayer->m_Deaths,
 		pPlayer->m_TicksCaught,
@@ -1226,6 +1226,12 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 		pPlayer->m_Wins,
 		pPlayer->m_Fails,
 		pPlayer->m_Shots,
+	}, [](CPlayerStats& DatabaseValues, CPlayerStats& NewValues) -> CPlayerStats
+	{
+		// basically we retrieve values from the database
+		// can look at them, and return the CPlayerStats that we want to 
+		// be saved in the database.
+		return NewValues;
 	}, GetDatabasePrefix());
 }
 

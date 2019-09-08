@@ -22,7 +22,6 @@ IRankingServer::IRankingServer()
         m_InvalidNicknames.push_back("(" + std::to_string(i) + ")");
     }
 
-    
 }
 
 IRankingServer::~IRankingServer()
@@ -147,7 +146,7 @@ bool IRankingServer::DeleteRanking(std::string nickname, std::string prefix)
                     // failed to delete ranking
                     // adding to backlog
                     std::lock_guard<std::mutex> lock(m_BacklogMutex);
-                    m_Backlog.push_back({"delete", nick, CPlayerStats(), pref});
+                    m_Backlog.push_back({"delete", nick, CPlayerStats(), nullptr, pref});
                 }
             },
             nickname, prefix));
@@ -188,35 +187,35 @@ bool IRankingServer::GetTopRanking(int topNumber, std::string key, IRankingServe
     return true;
 }
 
-bool IRankingServer::UpdateRanking(std::string nickname, CPlayerStats stats, std::string prefix)
+bool IRankingServer::UpdateRanking(std::string nickname, CPlayerStats stats, IRankingServer::fn_stats_stats_ret_stats_t updateFunction, std::string prefix)
 {
     CleanupFutures();
 
     trim(nickname);
 
-    if (m_DefaultConstructed || !IsValidNickname(nickname, prefix))
+    if (m_DefaultConstructed || !IsValidNickname(nickname, prefix) || !updateFunction)
         return false;
 
     m_Futures.push_back(std::async(
         std::launch::async,
-        [this](std::string nick, CPlayerStats stat, std::string pref) {
+        [this](std::string nick, CPlayerStats stat, IRankingServer::fn_stats_stats_ret_stats_t UpdateFunc, std::string pref) {
             try
             {
                 // lock mutex for multi threaded access
                 std::lock_guard<std::mutex> lock(m_DatabaseMutex);
 
                 // if this somehow fails and throws an error, handle backlogging
-                this->UpdateRankingSync(nick, stat, pref);
+                this->UpdateRankingSync(nick, stat, UpdateFunc, pref);
             }
             catch (const std::exception& e)
             {
                 dbg_msg("IRankingServer", "%s", e.what());
 
                 std::lock_guard<std::mutex> lock(m_BacklogMutex);
-                m_Backlog.push_back({"update", nick, stat, pref});
+                m_Backlog.push_back({"update", nick, stat, UpdateFunc, pref});
             }
         },
-        nickname, stats, prefix));
+        nickname, stats, updateFunction, prefix));
 
     return true;
 }
@@ -246,7 +245,7 @@ bool IRankingServer::SetRanking(std::string nickname, CPlayerStats stats, std::s
                 dbg_msg("IRankingServer", "%s", e.what());
 
                 std::lock_guard<std::mutex> lock(m_BacklogMutex);
-                m_Backlog.push_back({"set", nick, stat, pref});
+                m_Backlog.push_back({"set", nick, stat, nullptr, pref});
             }
         },
         nickname, stats, prefix));
@@ -269,12 +268,12 @@ void IRankingServer::CleanupBacklog()
         int counter = 0;
         for (size_t i = 0; i < m_Backlog.size(); i++)
         {
-            auto [action, nickname, stats, prefix] = m_Backlog.back();
+            auto [action, nickname, stats, function, prefix] = m_Backlog.back();
             m_Backlog.pop_back();
 
             if (action == "update")
             {
-                UpdateRanking(nickname, stats, prefix);
+                UpdateRanking(nickname, stats, function, prefix);
                 counter++;
             }
             else if (action == "delete")
@@ -624,7 +623,7 @@ IRankingServer::key_stats_vec_t CRedisRankingServer::GetTopRankingSync(int topNu
     }
 }
 
-void CRedisRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix)
+void CRedisRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats stats, IRankingServer::fn_stats_stats_ret_stats_t updateFunction, std::string prefix)
 {
     try
     {
@@ -637,19 +636,19 @@ void CRedisRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats s
         if (!dbStats.IsValid())
             dbStats.Reset();
 
-        dbStats += stats;
+        CPlayerStats updatedStats = updateFunction(dbStats, stats);
 
-        std::future<cpp_redis::reply> setFuture = m_Client.hmset(nickname, dbStats.GetStringPairs(prefix));
+        std::future<cpp_redis::reply> setFuture = m_Client.hmset(nickname, updatedStats.GetStringPairs(prefix));
 
         // create/update index for every key
         std::vector<std::string> options = {};
         std::vector<std::future<cpp_redis::reply> > indexFutures;
-        for (auto& key : dbStats.keys())
+        for (auto& key : updatedStats.keys())
         {
             indexFutures.push_back(
                 m_Client.zadd(prefix + key,
                               options,
-                              {{std::to_string(dbStats[key]), nickname}}));
+                              {{std::to_string(updatedStats[key]), nickname}}));
         }
 
         m_Client.sync_commit();
@@ -1154,7 +1153,7 @@ void CSQLiteRankingServer::SetRankingSync(std::string nickname, CPlayerStats sta
     }
 }
 
-void CSQLiteRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix)
+void CSQLiteRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats stats, IRankingServer::fn_stats_stats_ret_stats_t updateFunction, std::string prefix)
 {
     FixPrefix(prefix);
 
@@ -1220,7 +1219,7 @@ void CSQLiteRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats 
         }
 
         // savedStats is either empty or has the needed data stored.
-        savedStats += stats;
+        CPlayerStats updatedStats = updateFunction(savedStats, stats);
 
         // construct query in order to insert tha updated player data
         ss << "INSERT OR REPLACE INTO " << TableName << " ( ";
@@ -1262,7 +1261,7 @@ void CSQLiteRankingServer::UpdateRankingSync(std::string nickname, CPlayerStats 
         for (size_t i = 0; i < ColumnsSize; i++)
         {
             // column position offset
-            stmt2.bind(i + 2, savedStats[Columns[i]]);
+            stmt2.bind(i + 2, updatedStats[Columns[i]]);
         }
 
         // update player data.

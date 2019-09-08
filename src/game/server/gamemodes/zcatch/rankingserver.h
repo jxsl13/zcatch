@@ -22,11 +22,23 @@ class IRankingServer
     using cb_stats_t = std::function<void(CPlayerStats&)>;
     using cb_key_stats_vec_t = std::function<void(std::vector<std::pair<std::string, CPlayerStats> >&)>;
 
-    // list of [key, stats] pairs
+    // Return type: list of [key, stats] pairs
     using key_stats_vec_t = std::vector<std::pair<std::string, CPlayerStats> >;
 
+    // this function is used in order to update the stats that are in the database.
+    // the first argument passed is the data that is currently in the databse,
+    // the second argument is the new data, that might have been aquired during the current 
+    // playing sesion.
+    using fn_stats_stats_ret_stats_t = std::function<CPlayerStats(CPlayerStats&, CPlayerStats&)>;
+
     // initializes invalid nicknames
+    // backlog entries are handled, when the database has downtimes
+    // updates are executed, when the server reconnects to the database again
+    // depending on the BacklogUpdateFunction, a player stat is passed to be saved in the
+    // database. E.g. the function returns the sum of both values, maybe the smaller value
+    // for race based mods etc. etc.
     IRankingServer();
+
 
     // cleans up futures and waits for them.
     virtual ~IRankingServer();
@@ -64,10 +76,11 @@ class IRankingServer
     // when we get a disconnect, we safe out db changing actions in a backlog.
     std::mutex m_BacklogMutex;
     // action, nickname, stats data, prefix
-    std::vector<std::tuple<std::string, std::string, CPlayerStats, std::string> > m_Backlog;
+    std::vector<std::tuple<std::string, std::string, CPlayerStats, fn_stats_stats_ret_stats_t, std::string> > m_Backlog;
 
     // cleanup backlog, when the conection has been established again.
     void CleanupBacklog();
+
 
     // ############################################################################################################
     // Interface that needs to be implemented
@@ -79,7 +92,7 @@ class IRankingServer
     virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix) = 0;
 
     // synchronous execution of ranking update
-    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix) = 0;
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, fn_stats_stats_ret_stats_t updateFunction, std::string prefix) = 0;
 
     // delete player's ranking synchronously
     virtual void DeleteRankingSync(std::string nickname, std::string prefix) = 0;
@@ -113,7 +126,10 @@ class IRankingServer
     // starts async execution of if nickname is valid
     // returns true if an async task has been started successfulls, 
     // returns false if the provided nickname is invalid or the stats are invalid.
-    bool UpdateRanking(std::string nickname, CPlayerStats stats, std::string prefix = "");
+    // updateFunction: Takes two arguments, the first one being the currently saved statistics in the database
+    //                  and the second one being the currently passed new player stats.
+    //                  This function needs to return the player stats that are to be saved in the databse.
+    bool UpdateRanking(std::string nickname, CPlayerStats stats, fn_stats_stats_ret_stats_t updateFunction, std::string prefix = "");
 
 
     // if prefix is empty, the whole player is deleted.
@@ -156,7 +172,7 @@ class CRedisRankingServer : public IRankingServer
     virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
 
     // synchronous execution of ranking update
-    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, IRankingServer::fn_stats_stats_ret_stats_t updateFunction, std::string prefix = "");
 
     // delete player's ranking
     virtual void DeleteRankingSync(std::string nickname, std::string prefix = "");
@@ -203,7 +219,7 @@ class CSQLiteRankingServer : public IRankingServer
     virtual void SetRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
 
     // synchronous execution of ranking update
-    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, std::string prefix = "");
+    virtual void UpdateRankingSync(std::string nickname, CPlayerStats stats, IRankingServer::fn_stats_stats_ret_stats_t updateFunction, std::string prefix = "");
 
     // delete player's ranking
     virtual void DeleteRankingSync(std::string nickname, std::string prefix = "");
