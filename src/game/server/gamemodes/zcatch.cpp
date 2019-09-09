@@ -83,29 +83,78 @@ void CGameControllerZCATCH::InitExtendedVoteOptionServer()
 		}
 	);
 
-	m_VoteOptionServer.AddVoteOptionHandler(
-		"Show my statistics.", 
-		"/rank",
-		[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool
-		{
-			// do the same as the chat command
-			OnChatMessage(ofID, 0, ofID, Command.c_str());
-			return false;
-		}
-	);
+	if (m_pRankingServer)
+	{
+		m_VoteOptionServer.AddVoteOptionHandler(
+			"Show my statistics.",
+			"/rank",
+			[this](int ofID, std::string &Description, std::string &Command, std::string &Reason) -> bool {
+				// do the same as the chat command
+				OnChatMessage(ofID, 0, ofID, Command.c_str());
+				return false;
+			});
 
-	m_VoteOptionServer.AddVoteOptionHandler(
-		"Show top 5 players.", 
-		"/top",
-		[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool
-		{
-			// do the same as the chat command
-			OnChatMessage(ofID, 0, ofID, Command.c_str());
-			return false;
-		}
-	);
+		m_VoteOptionServer.AddVoteOptionHandler(
+			"Show top 5 players.",
+			"/top",
+			[this](int ofID, std::string &Description, std::string &Command, std::string &Reason) -> bool {
+				// do the same as the chat command
+				OnChatMessage(ofID, 0, ofID, Command.c_str());
+				return false;
+			});
 
+					/*"Showing statistics of " + ofNickname,
+					"  Rank:   " + (stats["Score"] > 0 ? std::to_string(stats.GetRank()) : "Not ranked, yet."),
+					"  Score:  " + std::to_string(stats["Score"]),
+					"  Wins:   " + std::to_string(stats["Wins"]),
+					"  Kills:  " + std::to_string(stats["Kills"]),
+					"  Deaths: " + std::to_string(stats["Deaths"]),
+					"  Ingame: " + ssIngameTime.str(), 
+					"  Caught: " + ssCaughtTime.str(), 
+					"  Warmup: " + ssWarmupTime.str(), 
+					"  Fails:  " + std::to_string(stats["Fails"]),
+					"  Shots:  " + std::to_string(stats["Shots"]),*/
 
+		// commands starting with # will be executed, when the player join the game.
+		m_VoteOptionServer.AddVoteOptionHandler("========== Statistics ==========", "", none);
+		m_VoteOptionServer.AddVoteOptionHandler(
+			"Showing statistics of " ,
+			"#",
+			[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool {
+				// do the same as the chat command
+				std::string Nickname(Server()->ClientName(ofID));
+				Description = "Showing statistics of " + Nickname;
+				return true;
+			});
+		
+		m_VoteOptionServer.AddVoteOptionHandler(
+			"  Rank:   ",
+			"#",
+			[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool {
+				// do the same as the chat command
+				std::string Nickname(Server()->ClientName(ofID));
+
+				m_pRankingServer->GetRanking(Nickname, [&Description, this](CPlayerStats& stats){
+					Description = "  Rank:   " + (stats["Score"] > 0 ? std::to_string(stats.GetRank()) : std::string("Not ranked, yet."));
+					dbg_msg("DEBUG", "GOT RANK: %s", Description.c_str());
+				}, GetDatabasePrefix());
+				return true;
+			});
+
+		m_VoteOptionServer.AddVoteOptionHandler(
+			"  Score:  ",
+			"#",
+			[this](int ofID, std::string& Description, std::string& Command, std::string& Reason) -> bool {
+				// do the same as the chat command
+				std::string Nickname(Server()->ClientName(ofID));
+
+				m_pRankingServer->GetRanking(Nickname, [&Description, this](CPlayerStats& stats){
+					dbg_msg("DEBUG", "GOT SCORE: %d", stats["Score"]);
+					Description = "  Score:  " + std::to_string(stats["Score"]);
+				}, GetDatabasePrefix());
+				return true;
+			});
+	}
 }
 
 CGameControllerZCATCH::~CGameControllerZCATCH()
@@ -370,7 +419,6 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 	{
 		dbg_msg("DEBUG", "Player %d called CUSTOM option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
 		m_VoteOptionServer.ExecuteVoteOption(ClientID, {pDescription}, {pReason});
-		//ExecuteCustomVoteOptionCommand(ClientID, {pDescription}, {pReason});
 		return true;
 	}
 	else
@@ -861,6 +909,10 @@ void CGameControllerZCATCH::Tick()
 	// and sends those messages if needed to the requesting
 	// player.
 	ProcessMessageQueue();
+
+
+	// if there are any changed vote option, send the updates to the users.
+	m_VoteOptionServer.ProcessVoteOptionUpdates();
 
 
 	// we do not want WeaponModes to be changed mid game, as it is not supported

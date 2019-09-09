@@ -101,8 +101,8 @@ class IRankingServer
     virtual key_stats_vec_t GetTopRankingSync(int topNumber, std::string key, std::string prefix, bool biggestFirst) = 0;
     // ############################################################################################################
 
-   public:
-    
+   public: 
+   
     bool IsValidNickname(const std::string& nickname, const std::string& prefix = "") const;
 
     // gets data and does stuff that's defined in callback with it.

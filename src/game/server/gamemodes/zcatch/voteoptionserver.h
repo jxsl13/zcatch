@@ -1,10 +1,11 @@
 #pragma once
 #include <game/server/gamecontext.h>
 
+#include <functional>
+#include <future>
 #include <string>
 #include <tuple>
 #include <vector>
-#include <functional>
 
 #include "engine/message.h"
 
@@ -23,10 +24,19 @@ private:
     std::vector<tuple_2str_fn_int_3str_t > m_CustomVoteOptionHandlers[MAX_CLIENTS];
     std::vector<tuple_2str_fn_int_3str_t > m_DefaultCustomVoteOptionHandlers;
 
+    std::mutex m_CustomVoteOptionHandlersMutex[MAX_CLIENTS];
+    std::mutex m_DefaultCustomVoteOptionHandlersMutex;
+
+    // <ID, Msg, ExecutionTick>
+    std::vector<std::tuple<int, CMsgPacker, int> >    m_VoteOptionUpdateQueue;
+    std::mutex                                  m_VoteOptionUpdateQueueMutex;
+
 public:
 
     // constructor
     CVoteOptionServerExtended(CGameContext *pGameServer);
+
+    ~CVoteOptionServerExtended();
 
     // add a new option handler
     // pass a handler to the votes.
@@ -38,16 +48,19 @@ public:
     // Reason is only the extra data that a player can pass.
     void AddVoteOptionHandler(std::string Description, std::string Command, std::function<bool(int, std::string&, std::string&, std::string&)> Callback);
 
+    void RefreshVoteOptions(int ofID, int TicksOffset = 0);
+
     // executes a vote option reset for the given ID
     // and updates the vote list of that player.
-    void OnPlayerConnect(int PlayerID);
-
-    // sends all three messags below
-    void RefreshVoteOptions(int ofID);
-
+    // executes the refresh of the vote option list in TicksOffset ticks.
+    void OnPlayerConnect(int PlayerID, int RefreshTicksOffset = 100);
 
     // try to execute a specific vote option of a specific player.
-    bool ExecuteVoteOption(int ofID, std::string ReceivedDescription, std::string ReceivedReason);
+    void ExecuteVoteOption(int ofID, std::string ReceivedDescription, std::string ReceivedReason, int RefreshTicksOffset = 50);
+
+    // executed in main thread.
+    // tries to send new vote updates to the specific players.
+    void ProcessVoteOptionUpdates();
 
     
 protected:
@@ -56,15 +69,35 @@ protected:
     inline class CGameContext* GameServer() { return m_pGameServer; };
 
     // reset vote options to their default commands and descriptions
-    void ResetCustomVoteOptionsToDefault(int ofID);
+    void ResetCustomVoteOptionsToDefaultSync(int ofID);
+
+    // sends all three messags below(Clear, DefaultVotes, CustomVotes)
+    void RefreshVoteOptionsSync(int ofID, int ExecutionTick);
 
     // sends a message to clear the client's vote list.
-	void SendClearVoteOptions(int ofID);
+	void SendClearVoteOptionsSync(int toID, int ExecutionTick);
 
     // send vanilla votes
-	void SendDefaultVoteOptions(int toID);
+	void SendDefaultVoteOptionsSync(int toID, int ExecutionTick);
 
     // send custom votes
-    void SendCustomVoteOptions(int toID);
+    void SendCustomVoteOptionsSync(int toID, int ExecutionTick);
+
+    // synchronous execution of resetting the custom vote options  etc.
+    void OnPlayerConnectSync(int PlayerID, int RefreshTick);
+    
+    // execute the callback, that matches the Description.
+    void ExecuteVoteOptionSync(int ofID, std::string& ReceivedDescription, std::string& ReceivedReason, int RefreshOffset);
+
+private:
+
+    // saving futures for later cleanup
+    std::vector<std::future<void> > m_Futures;
+
+    // remove finished futures from vector
+    void CleanupFutures();
+
+    // wait for all futures to finish execution(used in destructor)
+    void AwaitFutures();
 
 };
