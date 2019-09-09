@@ -352,7 +352,7 @@ function BuildClient(settings, family, platform)
 	local game_client = Compile(settings, CollectRecursive("src/game/client/*.cpp"), SharedClientFiles())
 	local game_editor = Compile(settings, Collect("src/game/editor/*.cpp"))
 	
-	Link(settings, "teeworlds", libs["zlib"], libs["md5"], libs["wavpack"], libs["png"], libs["json"], client, game_client, game_editor)
+	Link(settings, "teeworlds_gamer", libs["zlib"], libs["md5"], libs["wavpack"], libs["png"], libs["json"], client, game_client, game_editor)
 end
 
 function BuildServer(settings, family, platform)
@@ -512,7 +512,7 @@ if ScriptArgs['builddir'] then
 	builddir = ScriptArgs['builddir']
 end
 
-targets = {client="teeworlds", server="teeworlds_srv",
+targets = {client="teeworlds_gamer", server="teeworlds_srv",
            versionserver="versionsrv", masterserver="mastersrv",
            tools="pseudo_tools", content="content"}
 
