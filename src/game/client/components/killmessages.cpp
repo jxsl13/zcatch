@@ -31,13 +31,17 @@ void CKillMessages::OnMessage(int MsgType, void *pRawMsg)
 		Kill.m_VictimTeam = m_pClient->m_aClients[Kill.m_VictimID].m_Team;
 		str_format(Kill.m_aVictimName, sizeof(Kill.m_aVictimName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[Kill.m_VictimID].m_aName : "");
 		Kill.m_VictimRenderInfo = m_pClient->m_aClients[Kill.m_VictimID].m_RenderInfo;
+
 		Kill.m_KillerID = pMsg->m_Killer;
 		Kill.m_KillerTeam = m_pClient->m_aClients[Kill.m_KillerID].m_Team;
 		str_format(Kill.m_aKillerName, sizeof(Kill.m_aKillerName), "%s", g_Config.m_ClShowsocial ? m_pClient->m_aClients[Kill.m_KillerID].m_aName : "");
 		Kill.m_KillerRenderInfo = m_pClient->m_aClients[Kill.m_KillerID].m_RenderInfo;
+
 		Kill.m_Weapon = pMsg->m_Weapon;
 		Kill.m_ModeSpecial = pMsg->m_ModeSpecial;
 		Kill.m_Tick = Client()->GameTick();
+
+		Kill.m_FlagCarrierBlue = m_pClient->m_Snap.m_pGameDataFlag ? m_pClient->m_Snap.m_pGameDataFlag->m_FlagCarrierBlue : -1;
 
 		// add the message
 		m_KillmsgCurrent = (m_KillmsgCurrent+1)%MAX_KILLMSGS;
@@ -91,7 +95,7 @@ void CKillMessages::OnRender()
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
 				Graphics()->QuadsBegin();
 
-				if(Team == TEAM_RED)
+				if(m_aKillmsgs[r].m_VictimID == m_aKillmsgs[r].m_FlagCarrierBlue)
 					RenderTools()->SelectSprite(SPRITE_FLAG_BLUE);
 				else
 					RenderTools()->SelectSprite(SPRITE_FLAG_RED);
@@ -138,7 +142,7 @@ void CKillMessages::OnRender()
 					Graphics()->QuadsBegin();
 
 					int Team = m_aKillmsgs[r].m_KillerTeam;
-					if(Team == TEAM_RED)
+					if(m_aKillmsgs[r].m_KillerID == m_aKillmsgs[r].m_FlagCarrierBlue)
 						RenderTools()->SelectSprite(SPRITE_FLAG_BLUE, SPRITE_FLAG_FLIP_X);
 					else
 						RenderTools()->SelectSprite(SPRITE_FLAG_RED, SPRITE_FLAG_FLIP_X);

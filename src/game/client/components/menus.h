@@ -103,6 +103,7 @@ private:
 
 	float DoScrollbarV(const void *pID, const CUIRect *pRect, float Current);
 	float DoScrollbarH(const void *pID, const CUIRect *pRect, float Current);
+	void DoJoystickBar(const CUIRect *pRect, float Current, float Tolerance, bool Active);
 	void DoButton_KeySelect(CButtonContainer *pBC, const char *pText, int Checked, const CUIRect *pRect);
 	int DoKeyReader(CButtonContainer *pPC, const CUIRect *pRect, int Key, int Modifier, int* NewModifier);
 
@@ -415,6 +416,7 @@ private:
 	// for call vote
 	int m_CallvoteSelectedOption;
 	int m_CallvoteSelectedPlayer;
+	char m_aFilterString[VOTE_REASON_LENGTH];
 	char m_aCallvoteReason[VOTE_REASON_LENGTH];
 
 	// for callbacks
@@ -697,6 +699,7 @@ private:
 	//ivec4 RenderHSLPicker(CUIRect MainView, int Color, bool UseAlpha, bool& Modified); // TODO remove useless gamer/teecomp merge?
 	void RenderSkinSelection(CUIRect MainView);
 	void RenderSkinPartSelection(CUIRect MainView);
+	void RenderSkinPartPalette(CUIRect MainView);
 	void RenderSettingsGeneral(CUIRect MainView);
 	void RenderSettingsPlayer(CUIRect MainView);
 	void RenderSettingsTee(CUIRect MainView);
@@ -751,6 +754,8 @@ private:
 						//   const sorted_array<CVideoMode>& lModes);
 
 	// found in menu_callback.cpp
+	static float RenderSettingsControlsMouse(CUIRect View, void *pUser);
+	static float RenderSettingsControlsJoystick(CUIRect View, void *pUser);
 	static float RenderSettingsControlsMovement(CUIRect View, void *pUser);
 	static float RenderSettingsControlsWeapon(CUIRect View, void *pUser);
 	static float RenderSettingsControlsVoting(CUIRect View, void *pUser);
@@ -783,6 +788,7 @@ private:
 	
 	bool DoResolutionList(CUIRect* pRect, CListBoxState* pListBoxState,
 						  const sorted_array<CVideoMode>& lModes);
+	void DoJoystickAxisPicker(CUIRect View);
 
 	void SetActive(bool Active);
 

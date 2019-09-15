@@ -120,12 +120,13 @@ void CStats::OnMessage(int MsgType, void *pRawMsg)
 			}
 		}
 		
-		pStats[pMsg->m_Victim].m_Deaths++;
-		pStats[pMsg->m_Victim].m_CurrentSpree = 0;
+		if(pMsg->m_Weapon != -3)	// team switch
+			m_aStats[pMsg->m_Victim].m_Deaths++;
+		m_aStats[pMsg->m_Victim].m_CurrentSpree = 0;
 		if(pMsg->m_Weapon >= 0)
-			pStats[pMsg->m_Victim].m_aDeathsFrom[pMsg->m_Weapon]++;
-		if(pMsg->m_ModeSpecial & 1)
-			pStats[pMsg->m_Victim].m_DeathsCarrying++;
+			m_aStats[pMsg->m_Victim].m_aDeathsFrom[pMsg->m_Weapon]++;
+		if((pMsg->m_ModeSpecial & 1) && (pMsg->m_Weapon != -3))
+			m_aStats[pMsg->m_Victim].m_DeathsCarrying++;
 		if(pMsg->m_Victim != pMsg->m_Killer)
 		{
 			pStats[pMsg->m_Killer].m_Frags++;
@@ -174,8 +175,8 @@ void CStats::OnMessage(int MsgType, void *pRawMsg)
 			if(pMsg->m_ModeSpecial & 2)
 				pStats[pMsg->m_Killer].m_KillsCarrying++;
 		}
-		else
-			pStats[pMsg->m_Victim].m_Suicides++;
+		else if(pMsg->m_Weapon != -3)
+			m_aStats[pMsg->m_Victim].m_Suicides++;
 	}
 /*	if(MsgType == NETMSGTYPE_SV_KILLMSG)
 	{
