@@ -320,9 +320,9 @@ public:
 	bool IsEaster() const;
 
 	//
-	void DoEnterMessage(const char *pName, int ClientID, int Team);
-	void DoLeaveMessage(const char *pName, int ClientID, const char *pReason);
-	void DoTeamChangeMessage(const char *pName, int ClientID, int Team);
+	void DoEnterMessage(const char *pName, int ClientID, int Team, bool Silent = false);
+	void DoLeaveMessage(const char *pName, int ClientID, const char *pReason, bool Silent = false);
+	void DoTeamChangeMessage(const char *pName, int ClientID, int Team, bool Silent = false);
 
 	// actions
 	// TODO: move these
