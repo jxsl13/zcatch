@@ -631,7 +631,6 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	
 	CPlayer& victim = (*pVictim->GetPlayer());
 	CPlayer& killer = (*pKiller);
-	dbg_assert(victim.IsNotCaught(), "victim is caught even tho it should not be caught.");
 
 	// warmup
 	if (IsGameWarmup())
@@ -679,6 +678,10 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		// killer is still ingame
 		if (killer.IsNotCaught())
 		{
+			// handles catching of players properly
+			// if the player is already caught, the player won't get caught again.
+			// meaning if the player is caught by two different players within the exact same tick, 
+			// the player with the lower ID will get the kill.
 			killer.CatchPlayer(victim.GetCID());
 		}
 		else
@@ -749,6 +752,20 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 
 void CGameControllerZCATCH::Tick()
 {
+
+	for (int i : GameServer()->PlayerIDs())
+	{
+		CPlayer* pPlayer = GameServer()->m_apPlayers[i];
+		if (pPlayer && pPlayer->IsCaught())
+		{
+			int caughtMe = pPlayer->GetIDCaughtBy();
+			CPlayer* pCaughtMe = GameServer()->m_apPlayers[caughtMe];
+			dbg_assert(pCaughtMe->IsNotCaught(),"Player is still in spec, even tho the killer has been caught.");
+		}
+		
+	}
+	
+
 	// Broadcast Refresh is only needed for solely 
 	// keeping the broadcast visible, but not to push
 	// actual updates.
