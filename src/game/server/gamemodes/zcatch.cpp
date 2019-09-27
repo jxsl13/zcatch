@@ -543,6 +543,14 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
+	else if(m_IngamePlayerCount >= MAX_CLIENTS)
+	{
+		// if the server is full, we do not want the 
+		// joining player to be caught by anyone, 
+		// but just join the spectators instead.
+		IGameController::OnPlayerConnect(pPlayer);
+		return;
+	}
 
 	// add tocaught players of dominatig player.
 	class CPlayer *pDominatingPlayer = ChooseDominatingPlayer(ID);
