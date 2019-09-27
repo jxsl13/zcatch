@@ -588,17 +588,14 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	// if player was ingame and not in spec when leaving
 	if (player.GetTeam() != TEAM_SPECTATORS)
 	{
-		if (player.IsNotCaught())
-		{
-			// release caught players
-			player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
-
-		}
-		else if (player.IsCaught())
+		if (player.IsCaught())
 		{
 			// remove leaving player from caught list 
 			player.BeSetFree(CPlayer::REASON_PLAYER_LEFT);
 		}
+
+		// release caught players in any case!
+		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
 	}
 	else
 	{
@@ -684,12 +681,14 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			// the player with the lower ID will get the kill.
 			killer.CatchPlayer(victim.GetCID());
 		}
-		else
-		{
+
+		// Test victim releases in any case
+		//else
+		//{
 			// if the killer was caught before he killed someone
 			// victim is not being caught, but must release everyone caught.
 			victim.ReleaseAllCaughtPlayers();
-		}		
+		//}		
 	}
 	else if(Weapon < 0 && victim.GetCID() == killer.GetCID())
 	{
@@ -760,7 +759,14 @@ void CGameControllerZCATCH::Tick()
 		{
 			int caughtMe = pPlayer->GetIDCaughtBy();
 			CPlayer* pCaughtMe = GameServer()->m_apPlayers[caughtMe];
-			dbg_assert(pCaughtMe->IsNotCaught(),"Player is still in spec, even tho the killer has been caught.");
+			if (pCaughtMe && pCaughtMe->IsCaught())
+			{
+				dbg_msg("DEBUG_CAUGHT", "Player %d is still caught(REASON: %d) even tho his killer %d is caught!", i, pPlayer->GetCaughtReason(), caughtMe);
+			}
+			else if(!pCaughtMe)
+			{
+				dbg_msg("DEBUG_CAUGHT", "Player %d is still caught(REASON: %d) even tho his killer %d does not exist anymore!", i, pPlayer->GetCaughtReason(), caughtMe);
+			}
 		}
 		
 	}
