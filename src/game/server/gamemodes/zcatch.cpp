@@ -340,6 +340,7 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 {
 	// check voteban
 	int TimeLeft = Server()->ClientVotebannedTime(ClientID);
+
 	if (TimeLeft > 0)
 	{
 		char aChatmsg[128];
@@ -351,6 +352,7 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 	{
 		CPlayer& votingPlayer = *(GameServer()->m_apPlayers[ClientID]);
 		CPlayer& votedPlayer = *(GameServer()->m_apPlayers[KickID]);
+		std::string Reason{pReason};
 
 		if(votingPlayer.GetTeam() == TEAM_SPECTATORS)
 		{
@@ -362,6 +364,26 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to ban you. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
 			GameServer()->SendServerMessage(KickID, aBuf);
+		}
+		else if(Reason == "No reason given")
+		{
+			// inform everyone except the voting player.
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s' tried to funvote '%s", Server()->ClientName(ClientID),Server()->ClientName(KickID));
+
+			for(int ID: GameServer()->PlayerIDs())
+			{
+				if(ID == ClientID)
+					continue;
+				
+				GameServer()->SendServerMessage(ID, aBuf);
+			}
+
+			// Tell the voting player that these votes ate not allowed.
+			GameServer()->SendServerMessage(ClientID, "Could not start the kickvote because no reason was given.");
+
+			
+			return false;
 		}
 		else
 		{
@@ -391,6 +413,7 @@ bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, con
 	{
 		CPlayer& votingPlayer = *(GameServer()->m_apPlayers[ClientID]);
 		CPlayer& votedPlayer = *(GameServer()->m_apPlayers[SpectateID]);
+		std::string Reason{pReason};
 
 		if(votingPlayer.GetTeam() == TEAM_SPECTATORS)
 		{
@@ -402,6 +425,11 @@ bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, con
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to move you to the spectators. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
 			GameServer()->SendServerMessage(SpectateID, aBuf);
+		}
+		else if(Reason == "No reason given")
+		{
+			GameServer()->SendServerMessage(ClientID, "Please specify a reason.");
+			return false;
 		}
 		else
 		{
