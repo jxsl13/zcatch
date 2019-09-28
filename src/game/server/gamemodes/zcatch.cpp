@@ -320,7 +320,9 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 		if(pDominatingPlayer)
 		{
 			int NumCaughtPlayers = pDominatingPlayer->GetNumCurrentlyCaughtPlayers();
-			if(m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound && NumCaughtPlayers >= ((m_IngamePlayerCount - 1) / 2))
+			
+			// can only change map if less than 75% are caught.
+			if(m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound && NumCaughtPlayers >= (int)(((m_IngamePlayerCount - 1) * 0.75))
 			{
 				GameServer()->SendServerMessage(ClientID, "You cannot change the map, while someone is currently on a winning streak.");
 				return false;
