@@ -310,6 +310,29 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 		return false;
 	}
 
+	// convert to c++ string
+	std::string Command(pCommand);
+
+
+	if(Command.find("sv_map") != std::string::npos || Command.find("change_map") != std::string::npos)
+	{
+		CPlayer* pDominatingPlayer = ChooseDominatingPlayer();
+		if(pDominatingPlayer)
+		{
+			int NumCaughtPlayers = pDominatingPlayer->GetNumCurrentlyCaughtPlayers();
+			if(m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound && NumCaughtPlayers >= ((m_IngamePlayerCount - 1) / 2))
+			{
+				GameServer()->SendServerMessage(ClientID, "You cannot change the map, while someone is currently on a winning streak.");
+				return false;
+			}
+
+		}
+	}
+
+	// find dominating player without the currently voting player.
+	
+	
+
 	dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);
 	return true;
 }
