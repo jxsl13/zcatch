@@ -371,7 +371,7 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 		{
 			// inform everyone except the voting player.
 			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "'%s' tried to funvote '%s", Server()->ClientName(ClientID),Server()->ClientName(KickID));
+			str_format(aBuf, sizeof(aBuf), "'%s' tried to funvote '%s'", Server()->ClientName(ClientID),Server()->ClientName(KickID));
 
 			for(int ID: GameServer()->PlayerIDs())
 			{
