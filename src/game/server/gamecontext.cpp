@@ -936,8 +936,14 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					return;
 
 				int KickID = str_toint(pMsg->m_Value);
-				if(KickID < 0 || KickID >= MAX_CLIENTS || !m_apPlayers[KickID] || KickID == ClientID || Server()->IsAuthed(KickID))
+				if(KickID < 0 || KickID >= MAX_CLIENTS || !m_apPlayers[KickID] || KickID == ClientID)
 					return;
+				else if(Server()->IsAuthed(KickID))
+				{
+					// ignore return value and abort vote.
+					m_pController->OnCallvoteBan(ClientID, KickID, pReason);
+					return;
+				}
 
 				str_format(aDesc, sizeof(aDesc), "%2d: %s", KickID, Server()->ClientName(KickID));
 				if (!g_Config.m_SvVoteKickBantime)

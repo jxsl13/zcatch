@@ -378,13 +378,6 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 		{
 			GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
 		}
-		else if(votedPlayer.IsAuthed())
-		{
-			GameServer()->SendServerMessage(ClientID, "An internal error occurred, please try again.");
-			char aBuf[256];
-			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to ban you. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
-			GameServer()->SendServerMessage(KickID, aBuf);
-		}
 		else if(Reason == "No reason given")
 		{
 			// inform everyone except the voting player.
@@ -404,6 +397,13 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 
 			
 			return false;
+		}
+		else if(votedPlayer.IsAuthed())
+		{
+			GameServer()->SendServerMessage(ClientID, "An internal error occurred, please try again.");
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to ban you. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
+			GameServer()->SendServerMessage(KickID, aBuf);
 		}
 		else
 		{
@@ -439,17 +439,17 @@ bool CGameControllerZCATCH::OnCallvoteSpectate(int ClientID, int SpectateID, con
 		{
 			GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
 		}
+		else if(Reason == "No reason given")
+		{
+			GameServer()->SendServerMessage(ClientID, "Please specify a reason.");
+			return false;
+		}
 		else if(votedPlayer.IsAuthed())
 		{
 			GameServer()->SendServerMessage(ClientID, "An internal error occurred, please try again.");
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to move you to the spectators. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
 			GameServer()->SendServerMessage(SpectateID, aBuf);
-		}
-		else if(Reason == "No reason given")
-		{
-			GameServer()->SendServerMessage(ClientID, "Please specify a reason.");
-			return false;
 		}
 		else
 		{

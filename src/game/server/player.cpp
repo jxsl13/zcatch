@@ -194,7 +194,7 @@ void CPlayer::Snap(int SnappingClient)
 		return;
 
 	pPlayerInfo->m_PlayerFlags = m_PlayerFlags&PLAYERFLAG_CHATTING;
-	if(Server()->IsAuthed(m_ClientID))
+	if(Server()->IsAuthed(m_ClientID) && g_Config.m_SvHideAdmins == 0)
 		pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_ADMIN;
 	if(!GameServer()->m_pController->IsPlayerReadyMode() || m_IsReadyToPlay)
 		pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_READY;
