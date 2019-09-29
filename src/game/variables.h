@@ -148,6 +148,9 @@ MACRO_CONFIG_INT(SvAnticamperFreeze, sv_anticamper_freeze, 7, 0, 15, CFGFLAG_SER
 MACRO_CONFIG_INT(SvAnticamperTime, sv_anticamper_time, 10, 5, 120, CFGFLAG_SERVER, "How many seconds to wait till the player dies/freezes")
 MACRO_CONFIG_INT(SvAnticamperRange, sv_anticamper_range, 200, 0, 1000, CFGFLAG_SERVER, "Distance how far away the player must move to escape anticamper")
 
+MACRO_CONFIG_INT(SvMapChangeCooldown, sv_map_change_cooldown, 5, 0, 1440, CFGFLAG_SERVER, "How many minutes to wait before one can change the map again.")
+
+
 MACRO_CONFIG_INT(SvWarmupAutostart, sv_warmup_autostart, 1, 0, 1, CFGFLAG_SERVER, "Whether warmup should automatically start if there are not enough players to end a round.")
 
 MACRO_CONFIG_INT(SvChatValue, sv_chat_value, 250, 100, 1000, CFGFLAG_SERVER, "A value which is added on each message and decreased on each tick by one(50 ticks/seconds)")

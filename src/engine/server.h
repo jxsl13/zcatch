@@ -71,6 +71,9 @@ public:
 
 	virtual void DemoRecorder_HandleAutoStart() = 0;
 	virtual bool DemoRecorder_IsRecording() = 0;
+
+	// zCatch keep track of last map change;
+	int m_LastMapChangeTick;
 };
 
 class IGameServer : public IInterface

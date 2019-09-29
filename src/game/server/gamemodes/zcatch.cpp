@@ -28,7 +28,6 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	m_BroadcastRefreshTime = Server()->TickSpeed() * 9;
 
 	m_pRankingServer = nullptr;
-
 	InitRankingServer();		
 }
 
@@ -314,25 +313,44 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 	std::string Command(pCommand);
 
 
-	if(Command.find("sv_map") != std::string::npos || Command.find("change_map") != std::string::npos)
+	// expect the command to start at position 0.
+	if(Command.find("change_map") == 0 || Command.find("sv_map") == 0)
 	{
-		CPlayer* pDominatingPlayer = ChooseDominatingPlayer();
+		CPlayer* pDominatingPlayer = ChooseDominatingPlayer();		
+
 		if(pDominatingPlayer)
 		{
 			int NumCaughtPlayers = pDominatingPlayer->GetNumCurrentlyCaughtPlayers();
 
+			
 			// can only change map if less than 75% are caught.
 			if(m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound && NumCaughtPlayers >= (int)(((m_IngamePlayerCount - 1) * 0.75)))
 			{
 				GameServer()->SendServerMessage(ClientID, "You cannot change the map, while someone is currently on a winning streak.");
 				return false;
 			}
+		}
+		else
+		{
+			// map change cooldown
+			int CooldownInSeconds = g_Config.m_SvMapChangeCooldown * 60;
+			int SecondsPassedAfterLastMapChange = (Server()->Tick() - Server()->m_LastMapChangeTick) / Server()->TickSpeed();
+			
+			if(SecondsPassedAfterLastMapChange <= CooldownInSeconds)
+			{
+				
+				int totalSecondsLeftToWait = CooldownInSeconds - SecondsPassedAfterLastMapChange;
+				int minsLeftToWait = totalSecondsLeftToWait / 60;
+				int secondsLeftToWait = totalSecondsLeftToWait % 60;
 
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "Please wait for another %d:%02d mins before trying to change the map.", minsLeftToWait, secondsLeftToWait);
+				GameServer()->SendServerMessage(ClientID, aBuf);
+				
+				return false;
+			}
 		}
 	}
-
-	// find dominating player without the currently voting player.
-	
 	
 
 	dbg_msg("DEBUG", "Player %d called option '%s' with command '%s' and reason '%s'", ClientID, pDescription, pCommand, pReason);

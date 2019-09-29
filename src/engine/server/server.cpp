@@ -285,7 +285,8 @@ CServer::CServer() : m_DemoRecorder(&m_SnapshotDelta)
 	m_pLastMapEntry = 0;
 
 	m_MapReload = 0;
-
+	m_LastMapChangeTick = 0;
+	
 	m_RconClientID = IServer::RCON_CID_SERV;
 	m_RconAuthLevel = AUTHED_ADMIN;
 
@@ -1366,6 +1367,9 @@ int CServer::Run()
 	}
 	m_MapChunksPerRequest = g_Config.m_SvMapDownloadSpeed;
 
+	// zCatch - makes it possible to directly start a map vote after a server restart.
+	m_LastMapChangeTick = -g_Config.m_SvMapChangeCooldown * 60 * TickSpeed();
+
 	// start server
 	NETADDR BindAddr;
 	if(g_Config.m_Bindaddr[0] && net_host_lookup(g_Config.m_Bindaddr, &BindAddr, NETTYPE_ALL) == 0)
@@ -1454,6 +1458,11 @@ int CServer::Run()
 					m_GameStartTime = time_get();
 					AdjustVotebanTime(m_CurrentGameTick);
 					m_CurrentGameTick = 0;
+
+					// zCatch - update map change tick.
+					// because the gametick resets after a map change
+					m_LastMapChangeTick = 0;
+
 					Kernel()->ReregisterInterface(GameServer());
 					GameServer()->OnInit();
 				}
