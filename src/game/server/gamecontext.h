@@ -70,8 +70,7 @@ class CGameContext : public IGameServer
 
 	// mutes
 	static void ConMute(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnmuteID(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnmuteIP(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnmute(IConsole::IResult *pResult, void *pUserData);
 	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 
 	CGameContext(int Resetting);
@@ -211,17 +210,23 @@ public:
 	// mutes
 	struct CMute
 	{
-		CMute(const char* pIP, int ExpirationTick) : m_ExpiresTick{ExpirationTick}{
-			str_copy(m_aIP, pIP, sizeof(m_aIP));
+		CMute(const char* pIP, int ExpirationTick, std::string Nickname = {}, std::string Reason = {}) : 
+			m_IP{pIP}, m_ExpiresTick{ExpirationTick}, m_Nickname{Nickname}, m_Reason{Reason}
+		{
 		};
-		char m_aIP[NETADDR_MAXSTRSIZE];
+		std::string m_IP;
 		int m_ExpiresTick;
+		std::string m_Nickname;
+		std::string m_Reason;
 	};
 
 	std::vector<CMute> m_Mutes;
-	void AddMute(const char* pIP, int Secs);
-	void AddMute(int ClientID, int Secs, bool Auto = false);
-	
+	void AddMute(const char* pIP, int Secs, std::string Nickname, std::string Reason, bool Auto = false);
+	void AddMute(int ClientID, int Secs, std::string Nickname, std::string Reason, bool Auto = false);
+
+	bool UnmuteIndex(int Index);
+	bool UnmuteID(int ClientID);
+
 	// returns -1 if is not mutes, otherwise returns the 
 	// index of position, at which to find the mute
 	int IsMuted(const char *pIP);
