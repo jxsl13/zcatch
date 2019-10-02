@@ -98,6 +98,12 @@ private:
 	int m_PreviousIngamePlayerCount;
 	int m_IngamePlayerCount;
 
+	/**
+	 * Count the currently playing players that are ingame and 
+	 * not in spectator mode and updates the m_IngamePlayerCount
+	 * and the m_PreviousIngamePlayerCount member variables.
+	 */
+	void UpdateIngamePlayerCount();
 
 	// refresh time in ticks, after how many ticks 
 	// the broadcast refresh is being resent.

@@ -950,6 +950,22 @@ void CGameControllerZCATCH::OnPlayerInfoChange(class CPlayer *pPlayer)
 	}
 }
 
+void CGameControllerZCATCH::UpdateIngamePlayerCount()
+{
+	CPlayer* pTmpPlayer = nullptr;
+	
+	m_PreviousIngamePlayerCount = m_IngamePlayerCount;
+	m_IngamePlayerCount = 0;
+
+	for(int ClientID : GameServer()->PlayerIDs())
+	{
+		pTmpPlayer = GameServer()->m_apPlayers[ClientID];
+		if(pTmpPlayer && pTmpPlayer->GetTeam() != TEAM_SPECTATORS)
+			++m_IngamePlayerCount;
+		pTmpPlayer = nullptr;
+	}
+}
+
 void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 {
 	if(IsGameWarmup())
@@ -958,6 +974,8 @@ void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 	CPlayer *pTmpPlayer = nullptr;
 	char aBuf[32];
 	int enemiesLeft = 0;
+
+	UpdateIngamePlayerCount();
 
 	for (int ID : IDs)
 	{
@@ -999,6 +1017,8 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 	CPlayer *pTmpPlayer = nullptr;
 	char aBuf[32];
 	int enemiesLeft = 0;
+
+	UpdateIngamePlayerCount();
 
 	for (int i : GameServer()->PlayerIDs())
 	{
