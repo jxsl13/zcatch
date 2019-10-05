@@ -975,8 +975,6 @@ void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 	char aBuf[32];
 	int enemiesLeft = 0;
 
-	UpdateIngamePlayerCount();
-
 	for (int ID : IDs)
 	{
 		pTmpPlayer = GameServer()->m_apPlayers[ID];
@@ -1018,7 +1016,6 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 	char aBuf[32];
 	int enemiesLeft = 0;
 
-	UpdateIngamePlayerCount();
 
 	for (int i : GameServer()->PlayerIDs())
 	{

@@ -947,12 +947,37 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 
 void CPlayer::SetPlayersLeftToCatch(int leftToCatch)
 {
-	dbg_assert(leftToCatch >= -1 && leftToCatch <= MAX_PLAYERS - 1, "invalid players left to catch counter");
 	if(leftToCatch < 0)
+	{
 		m_PlayersLeftToCatch = 0; // case when nobody is ingame oher than you
+		dbg_msg("DEBUG", "player %d has %d players left to catch.", m_ClientID, leftToCatch);
+		dbg_msg("DEBUG", "PLAYER: %s", str().c_str());
+		dbg_msg("DEBUG", "INGAME PLAYERS: %lu", GameServer()->PlayerIDs().size());
+		for(const int ID : GameServer()->PlayerIDs())
+		{
+			if(GameServer()->m_apPlayers[ID])
+				dbg_msg("DEBUG", "%s", GameServer()->m_apPlayers[ID]->str().c_str());
+			else{
+				dbg_msg("DEBUG", "INVALID ID IN playerIDs(): %d", ID);
+			}
+		}
+
+		dbg_msg("DEBUG", "CAUGHT PLAYERs: %d", GetNumCurrentlyCaughtPlayers());
+
+		for(const int ID : m_CaughtPlayers)
+		{
+			if(GameServer()->m_apPlayers[ID])
+				dbg_msg("DEBUG", "%s", GameServer()->m_apPlayers[ID]->str().c_str());
+			else{
+				dbg_msg("DEBUG", "INVALID ID IN m_CaughtPlayers: %d", ID);
+			}
+		}
+
+	}
 	else 
+	{
 		m_PlayersLeftToCatch = leftToCatch;
-		
+	}
 }
 
 int CPlayer::GetPlayersLeftToCatch()
@@ -1113,5 +1138,20 @@ int CPlayer::Anticamper()
 		return 1;
 	}
 	return 0;
+}
+
+std::string CPlayer::str()
+{
+	std::stringstream ss;
+	ss << Server()->ClientName(m_ClientID) << "\n{\n";
+	ss << "Caught by: " << m_CaughtBy << "\n";
+	ss << "IsCaught: " << IsCaught() << "\n";
+	ss << "IsNotCaught: " << IsNotCaught() << "\n";
+	ss << "CaughtReason: " << GetCaughtReason() << "\n";
+	ss << "NumCurrentlyCaughtPlayers: " << GetNumCurrentlyCaughtPlayers() << "\n";
+	ss << "NumTotalCaughtPlayers: " << GetNumTotalCaughtPlayers() << "\n";
+	ss << "NumCaughtPlayersWhoLeft: " << GetNumCaughtPlayersWhoLeft() << "\n";
+	ss << "NumReleasedPlayers: " << GetNumReleasedPlayers() << "\n}\n";
+	return ss.str();
 }
 

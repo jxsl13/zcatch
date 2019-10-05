@@ -7,6 +7,8 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <sstream>
+
 
 enum
 {
@@ -221,6 +223,9 @@ public:
 		int m_Min;
 		int m_Max;
 	} m_Latency;
+
+	// for printing purposes
+	std::string str();
 
 private:
 	CCharacter *m_pCharacter;
