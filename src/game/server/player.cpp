@@ -1000,6 +1000,11 @@ int CPlayer::GetNumCaughtPlayersWhoLeft()
 	return m_NumCaughtPlayersWhoLeft;
 }
 
+int CPlayer::GetNumCaughtPlayersWhoJoined()
+{
+	return m_NumCaughtPlayersWhoJoined;
+}
+
 int CPlayer::GetNumReleasedPlayers()
 {
 	return m_NumWillinglyReleasedPlayers;
@@ -1143,7 +1148,7 @@ int CPlayer::Anticamper()
 std::string CPlayer::str()
 {
 	std::stringstream ss;
-	ss << Server()->ClientName(m_ClientID) << "\n{\n";
+	ss << "\n" << Server()->ClientName(m_ClientID) << "\n{\n";
 	ss << "Caught by: " << m_CaughtBy << "\n";
 	ss << "IsCaught: " << IsCaught() << "\n";
 	ss << "IsNotCaught: " << IsNotCaught() << "\n";
@@ -1151,6 +1156,7 @@ std::string CPlayer::str()
 	ss << "NumCurrentlyCaughtPlayers: " << GetNumCurrentlyCaughtPlayers() << "\n";
 	ss << "NumTotalCaughtPlayers: " << GetNumTotalCaughtPlayers() << "\n";
 	ss << "NumCaughtPlayersWhoLeft: " << GetNumCaughtPlayersWhoLeft() << "\n";
+	ss << "NumCaughtPlayersWhoJoined" << GetNumCaughtPlayersWhoJoined() << "\n";
 	ss << "NumReleasedPlayers: " << GetNumReleasedPlayers() << "\n}\n";
 	return ss.str();
 }

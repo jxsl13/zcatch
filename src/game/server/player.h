@@ -130,6 +130,9 @@ public:
 	// how many of my caught player did leave the game
 	int GetNumCaughtPlayersWhoLeft();
 
+	// get the number of player sthat joine dthe game and were caught then
+	int GetNumCaughtPlayersWhoJoined();
+
 	// how many players were released by the players willingly
 	int GetNumReleasedPlayers();
 
