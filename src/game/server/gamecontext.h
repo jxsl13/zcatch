@@ -13,6 +13,7 @@
 #include "gamecontroller.h"
 #include "gameworld.h"
 
+#include <string>
 #include <vector>
 #include <set>
 
