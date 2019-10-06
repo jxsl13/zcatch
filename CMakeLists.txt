@@ -1585,12 +1585,11 @@ endif()
 
 # Libraries
 set(LIBS_SERVER 
-  ${LIBS}
   cpp_redis
   SQLiteCpp
   sqlite3
-  pthread
-  dl
+  ${CMAKE_DL_LIBS}
+  ${LIBS}
 )
 
 # Target
