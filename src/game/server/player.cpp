@@ -656,12 +656,22 @@ bool CPlayer::BeCaught(int byID, int reason)
 // only affects oneself
 bool CPlayer::BeReleased(int reason)
 {
+	// BeReleased() acts as a actual reset function, that allows players
+	// to join the game, independent of whether they were caught before or not.
+	// If a player joins the game and nobody has anybody caught, the player is set
+	// into a state of being released.
+	// the other case is that a player is reset into the released state, when rejoining the game
+	// after being in the spectators team
+
 	// can be released if caught
 	// or if not caught and either joined the server
 	// or rejoined the game after being in spec
 	if (m_CaughtBy >= 0 || 
 		(m_CaughtBy == NOT_CAUGHT && 
-			(reason == REASON_PLAYER_JOINED || reason == REASON_PLAYER_JOINED_GAME_AGAIN)
+			(
+				reason == REASON_PLAYER_JOINED || 
+				reason == REASON_PLAYER_JOINED_GAME_AGAIN
+			)
 		)
 	)
 	{
@@ -799,7 +809,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 		}
 		else
 		{
-			// player that need sto be released does not exist anymore
+			// player that needs to be released does not exist anymore
 			// but is still popped from the vector
 			m_CaughtPlayers.pop_back();
 
@@ -818,7 +828,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 bool CPlayer::RemoveFromCaughtPlayers(int ID, int reason)
 {
 	// removes elements, but leaves garbage at the end of the vector
-	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [&](int lookAtID) {
+	auto it = std::remove_if(m_CaughtPlayers.begin(), m_CaughtPlayers.end(), [this, ID, reason](int lookAtID) {
 		if (lookAtID == ID)
 		{
 			// remove from my caught players & release at the same time.
@@ -862,13 +872,12 @@ bool CPlayer::BeSetFree(int reason)
 		if(GameServer()->m_apPlayers[m_CaughtBy])
 		{
 			// if my killer still exists, remove from his caught players
-			return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(GetCID(), reason);
+			return GameServer()->m_apPlayers[m_CaughtBy]->RemoveFromCaughtPlayers(m_ClientID, reason);
 		}
 		else
 		{
 			// my killer doesn't exist, just release me.
-			BeReleased(reason);
-			return true;
+			return BeReleased(reason);
 		}
 		
 	}
@@ -905,10 +914,10 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 		switch(reason)
 		{
 		case REASON_PLAYER_DIED:
-			str_format(aBuf, sizeof(aBuf), "Your death caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() > 1 ? "s" : "");
+			str_format(aBuf, sizeof(aBuf), "Your death caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() != 1 ? "s" : "");
 			break;
 		case REASON_PLAYER_FAILED:
-			str_format(aBuf, sizeof(aBuf), "Your failure caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() > 1 ? "s" : "");
+			str_format(aBuf, sizeof(aBuf), "Your failure caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() != 1 ? "s" : "");
 			break;
 		case REASON_PLAYER_LEFT:
 			// no message, because the player leaves.
@@ -919,7 +928,7 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 			hasReasonMessage = false;
 			break;
 		case REASON_PLAYER_JOINED_SPEC:
-			str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() > 1 ? "s" : "");
+			str_format(aBuf, sizeof(aBuf), "Your cowardly escape caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() != 1 ? "s" : "");
 			break;
 		default:
 			hasReasonMessage = false;
