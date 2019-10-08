@@ -1,0 +1,59 @@
+name: macOS
+on:
+  push:
+    branches: 
+      - zCatch-0.7.x
+jobs:
+  build_mac:
+    name: Build MacOS
+    runs-on: macOS-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          ref: zCatch-0.7.x
+      - name: Prepare
+        run: |
+          brew install cmake freetype sdl2
+          git submodule update --init --recursive
+
+      - name: Create Debug Build Files with CMake
+        run: |
+          mkdir debug
+          cd debug
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DCLIENT=OFF -DDEV=ON ..
+          cd ..
+
+      - name: Create Release Build Files with CMake
+        run: |
+          mkdir release
+          cd release
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cd ..
+
+      - name: Build Debug
+        run: |
+          cd debug
+          make -j4 zcatch_srv
+          cd ..
+
+      - name: Build Release
+        run: |
+          cd release
+          make -j4 zcatch_srv
+          cd ..
+
+      - name: Test Debug
+        run: |
+          cd debug
+          make run_tests
+          ./zcatch_srv shutdown
+          cd ..
+
+      - name: Test Release
+        run: |
+          cd release
+          make run_tests
+          ./zcatch_srv shutdown
+          cd ..
+
+          

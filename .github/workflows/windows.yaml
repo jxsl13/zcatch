@@ -1,0 +1,70 @@
+name: Windows
+on:
+  push:
+    branches: 
+      - zCatch-0.7.x
+jobs:
+  build_windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          ref: zCatch-0.7.x
+
+      - name: Prepare
+        run: |
+          git submodule update --init --recursive
+
+      - name: Create Debug Build Files with CMake x86
+        run: |
+          md build32_debug
+          cd build32_debug
+          cmake -Wno-error=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" ..
+          cd ..
+
+      - name: Create Debug Build Files with CMake x64
+        run: |
+          md build64_debug
+          cd build64_debug
+          cmake -Wno-error=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" -A x64 ..
+          cd ..
+
+      - name: Create Release Build Files with CMake x86
+        run: |
+          md build32
+          cd build32
+          cmake -Wno-error=dev -DCLIENT=OFF -G "Visual Studio 16 2019" ..
+          cd ..     
+    
+      - name: Create Release Build Files with CMake x64
+        run: |
+          md build64
+          cd build64
+          cmake -Wno-error=dev -DCLIENT=OFF -G "Visual Studio 16 2019" -A x64 ..
+          cd ..
+
+      - name: Build Debug x86
+        run: |
+          cmake --build build32_debug --config Release --target zcatch_srv
+
+      - name: Build Debug x64
+        run: |
+          cmake --build build64_debug --config Release --target zcatch_srv
+
+      - name: Build Release x86
+        run: |
+          cmake --build build32 --config Release --target zcatch_srv
+
+      - name: Build Release x64
+        run: |
+          cmake --build build64 --config Release --target zcatch_srv
+        
+      - name: Test
+        run: |
+          cd build32
+          Release\zcatch_srv shutdown
+          cd ..
+          cd build64
+          Release\zcatch_srv shutdown
+          cd ..

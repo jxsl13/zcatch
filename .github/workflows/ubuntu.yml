@@ -1,0 +1,59 @@
+name: Ubuntu
+on:
+  push:
+    branches: 
+      - zCatch-0.7.x
+jobs:
+  build_ubuntu:
+    name: Build Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+        with:
+          ref: zCatch-0.7.x
+      - name: Prepare
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install cmake libfreetype6-dev libsdl2-dev -y
+          git submodule update --init --recursive
+
+      - name: Create Debug Build Files with CMake
+        run: |
+          mkdir debug
+          cd debug
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
+          cd ..
+
+      - name: Create Release Build Files with CMake
+        run: |
+          mkdir release
+          cd release
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cd ..
+
+      - name: Build zCatch Debug
+        run: |
+          cd debug
+          make -j4 zcatch_srv
+          ./zcatch_srv shutdown
+          cd ..
+
+      - name: Build zCatch Release
+        run: |
+          cd release
+          make -j4 zcatch_srv
+          ./zcatch_srv shutdown
+          cd ..
+      
+      - name: Test zCatch Debug
+        run: |
+          cd debug
+          ./zcatch_srv shutdown
+          cd ..
+        
+      - name: Test zCatch Rellease
+        run: |
+          cd release
+          ./zcatch_srv shutdown
+          cd .. 
+ 
