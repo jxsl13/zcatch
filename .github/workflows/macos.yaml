@@ -22,14 +22,14 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -DCLIENT=OFF -DDEV=ON ..
+          cmake -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          cmake -DCLIENT=OFF ..
+          cmake -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
           cd ..
 
       - name: Build Debug
