@@ -575,23 +575,24 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 
 	// Gets weapons in Character::Spawn
 
-	// gets health here.
+	// Gets health here.
 	character.IncreaseHealth(10);
 
-	// if we spawn, we should not have anyone caught from previous rounds.
-	// or weird post mortem kills.
+	// if we spawn, we should not have anyone caught 
+	// from previous rounds or weird post mortem kills.
 	player.ReleaseAllCaughtPlayers();
 
-	// spawns -> joins spec
+	// Reset joining player's skin color
+	UpdateSkinsOf({player.GetCID()});
+
+	// If the player wanted to join the spectators, 
+	// let them join the spectators
 	if (player.GetWantsToJoinSpectators())
 	{
 		DoTeamChange(pChr->GetPlayer(), TEAM_SPECTATORS);
 		player.ResetWantsToJoinSpectators();
 		return;
 	}
-
-	// set the joining player's skin color
-	UpdateSkinsOf({player.GetCID()});
 }
 
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
@@ -608,17 +609,17 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// warmup
 	if (IsGameWarmup())
 	{	
-		UpdateSkinsOf({ID});
 
 		// simply allow that player to join.
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
-	else if(m_IngamePlayerCount >= MAX_CLIENTS)
+	else if(m_IngamePlayerCount >= MAX_PLAYERS)
 	{
 		// if the server is full, we do not want the 
 		// joining player to be caught by anyone, 
 		// but just join the spectators instead.
+		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -661,41 +662,28 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
 
-	// save player's statistics to the database
-	SaveRankingData(ID);
-	
-	// if player was ingame and not in spec when leaving
-	if (player.GetTeam() != TEAM_SPECTATORS)
-	{
-		if (player.IsCaught())
-		{
-			// remove leaving player from caught list 
-			player.BeSetFree(CPlayer::REASON_PLAYER_LEFT);
-		}
 
-		// release caught players in any case!
-		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
-	}
-	else
-	{
-		// player was in spectator mode, nothing to do.
-	}
+	// if the player is caught, he will be released
+	player.BeSetFree(CPlayer::REASON_PLAYER_LEFT);
+
+	// release caught players in any case!
+	player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
+
 
 	// if player voted something/someone and it did not pass
     // before leaving the server, voteban him for the remaining time.
-	if(GameServer()->m_apPlayers[ID])
-	{
-		int Now = Server()->Tick();
-    	int Timeleft = (GameServer()->m_apPlayers[ID]->m_LastVoteCall - Now) + Server()->TickSpeed() * 60 ;
-    	// convert to seconds
-    	Timeleft = Timeleft / Server()->TickSpeed();
+	int Now = Server()->Tick();
+    int Timeleft = (player.m_LastVoteCall - Now) + Server()->TickSpeed() * 60 ;
+    // convert to seconds
+    Timeleft = Timeleft / Server()->TickSpeed();
 
-    	if (GameServer()->m_apPlayers[ID]->m_LastVoteCall && Timeleft > 0)
-    	{
-        	Server()->AddVoteban(ID, Timeleft);
-		}
+    if (player.m_LastVoteCall && Timeleft > 0)
+    {
+        Server()->AddVoteban(ID, Timeleft);
 	}
 	
+	// save player's statistics to the database
+	SaveRankingData(ID);
 
 	// needed to do the disconnect handling.
 	IGameController::OnPlayerDisconnect(pPlayer);
@@ -728,12 +716,15 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			{
 				// nothing todo here
 			}
+
+			// no need to release anyone, as nobody is being caught in warmup
 		}
 		else
 		{
 			// killed by enemy:
 			killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
-			killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, true);
+			bool updateSkinColors = true;
+			killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, updateSkinColors);
 		}
 
 		return 0;
@@ -761,13 +752,10 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			killer.CatchPlayer(victim.GetCID());
 		}
 
-		// Test victim releases in any case
-		//else
-		//{
-			// if the killer was caught before he killed someone
-			// victim is not being caught, but must release everyone caught.
-			victim.ReleaseAllCaughtPlayers();
-		//}		
+
+		// if the killer was caught before he killed someone
+		// victim is not being caught, but must release everyone caught.
+		victim.ReleaseAllCaughtPlayers();
 	}
 	else if(Weapon < 0 && victim.GetCID() == killer.GetCID())
 	{
@@ -776,7 +764,6 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		case WEAPON_WORLD: // death tiles etc.
 			// needs to be handled in here, as WEAPON_WORLD deaths are not passed to the player::KillCharacter()
 			victim.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_FAILED);
-			victim.m_Fails++;
 			break;
 		case WEAPON_SELF: // suicide
 			// here we catch literally the suicides, not the releases
@@ -831,6 +818,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 void CGameControllerZCATCH::Tick()
 {
 
+	// debugging code
 	for (int i : GameServer()->PlayerIDs())
 	{
 		CPlayer* pPlayer = GameServer()->m_apPlayers[i];
@@ -887,6 +875,19 @@ void CGameControllerZCATCH::Tick()
 	{
 		g_Config.m_SvSkillLevel = m_SkillLevel;
 		GameServer()->SendServerMessage(-1, "If you want to change the skill level, please update your configuration file and restart the server.");
+	}
+
+
+	// if  there is no ranking, we want the current killing spree
+	// to be the score
+	if(!m_pRankingServer)
+	{
+		for (int ID : GameServer()->PlayerIDs())
+		{
+			if(GameServer()->m_apPlayers[ID])
+				GameServer()->m_apPlayers[ID]->m_Score = GameServer()->m_apPlayers[ID]->GetNumCaughtPlayersInARow();
+		}
+		
 	}
 	
 	

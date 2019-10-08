@@ -1,13 +1,32 @@
  Teeworlds zCatch [![CircleCI](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x.svg?style=svg)](https://circleci.com/gh/jxsl13/zcatch/tree/zCatch-0.7.x) [![Build status](https://ci.appveyor.com/api/projects/status/103160wvp3gs1tj8/branch/zCatch-0.7.x?svg=true)](https://ci.appveyor.com/project/jxsl13/zcatch/branch/zCatch-0.7.x) [![Build Status](https://travis-ci.com/jxsl13/zcatch.svg?branch=zCatch-0.7.x)](https://travis-ci.com/jxsl13/zcatch)
 =========
 
-A retro multiplayer shooter
----------------------------
+Description
+===========
+
+zCatch is a game server modification for the retro-multiplayergame Teeworlds. It is written for Teeworlds 0.7. If you hit someone, the player is caught and will be spectating you, until you die or win the round. The last player standing will win the game and might earn some score points in the rankings.
+
+Introduced new server commands
+------------------------------
+| Command                        | Description                                                                                     |
+|--------------------------------|-------------------------------------------------------------------------------------------------|
+| sv_weapon_mode <0..6>          |  0: Hammer 1: Gun 2: Shotgun 3: Grenade Launcher(default) 4: Laser Rifle 5: Ninja 6: Everything |
+| sv_db_type ""                  | ""(no ranking), "redis" or "sqlite"(default)                                                    |
+| sv_db_sqlite_file "ranking.db" | Relative path to the sqlite3 database file.                                                     |
+| sv_warmup_autostart <0/1>      | Whether warmup should automatically start if there are not enough players to end a round.       |
+  
+More commands can be found in the example configuration file in the **[wiki](https://github.com/jxsl13/zcatch/wiki/Server-configuration-example)**.
+
+Teeworlds
+=========
 
 Teeworlds is a free online multiplayer game, available for all major
 operating systems. Battle with up to 16 players in a variety of game
 modes, including Team Deathmatch and Capture The Flag. You can even
 design your own maps!
+
+License
+=======
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -17,18 +36,27 @@ text including copyright information.
 Please visit https://www.teeworlds.com/ for up-to-date information about
 the game, including new versions, custom maps and much more.
 
-Originally written by Magnus Auvinen.
+Originally written by Magnus Auvinen. 
+
+
+This modification has been created by jxsl13.  
+Please provide the apropriate credits if you want to modify this source code.
 
 
 Building on Linux or macOS
 ==========================
 
-Installing dependencies
------------------------
-    ## Requirements: gcc >= 8.10 (supporting C++17) / macOS usually ships with the latest clang version.
-    ## It might also be necessary to add these two lines to your .bashrc/.zshrc etc.
+Requirements:
+-------------
+
+    gcc >= 8.10 (supporting C++17) / macOS usually ships with the latest clang version.  
+It might also be necessary to add these two lines to your `.bashrc/.zshrc` etc.
+
     export PATH=/usr/local/gcc-8.10/bin:$PATH
     export LD_LIBRARY_PATH=/usr/local/gcc-8.10/lib64:$LD_LIBRARY_PATH
+
+Installing dependencies
+-----------------------
 
     # Debian/Ubuntu
     sudo apt install build-essential cmake git libfreetype6-dev libsdl2-dev libpnglite-dev libwavpack-dev python3
@@ -46,7 +74,7 @@ Installing dependencies
 Downloading repository
 ----------------------
 
-    git clone https://github.com/jxsl13/zcatch
+    git clone https://github.com/jxsl13/zcatch.git
     cd zcatch
 
     # Checkout the 0.7.x branch with:
@@ -143,3 +171,5 @@ click "Finish". Wait a bit (until the progress bar is full). Then click
 "Generate".
 
 You can now build Teeworlds by executing `mingw32-make` in the build directory.
+
+
