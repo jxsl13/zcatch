@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -DPREFER_BUNDLED_LIBS=ON -DDEV=ON ..
+          cmake -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
@@ -35,13 +35,13 @@ jobs:
       - name: Build Debug
         run: |
           cd debug
-          make -j4 everything
+          make zcatch_srv
           cd ..
 
       - name: Build Release
         run: |
           cd release
-          make -j4 everything
+          make zcatch_srv
           cd ..
 
       - name: Test Debug

@@ -23,28 +23,26 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
+          cmake -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cmake -DCLIENT=OFF ..
           cd ..
 
       - name: Build zCatch Debug
         run: |
           cd debug
-          make -j4 zcatch_srv
-          ./zcatch_srv shutdown
+          make zcatch_srv
           cd ..
 
       - name: Build zCatch Release
         run: |
           cd release
-          make -j4 zcatch_srv
-          ./zcatch_srv shutdown
+          make zcatch_srv
           cd ..
       
       - name: Test zCatch Debug
