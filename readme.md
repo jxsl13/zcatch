@@ -8,12 +8,12 @@ zCatch is a game server modification for the retro-multiplayergame Teeworlds. It
 
 Introduced new server commands
 ------------------------------
-| Command                        | Description                                                                                     |
-|--------------------------------|-------------------------------------------------------------------------------------------------|
-| sv_weapon_mode <0..6>          |  0: Hammer 1: Gun 2: Shotgun 3: Grenade Launcher(default) 4: Laser Rifle 5: Ninja 6: Everything |
-| sv_db_type ""                  | ""(no ranking), "redis" or "sqlite"(default)                                                    |
-| sv_db_sqlite_file "ranking.db" | Relative path to the sqlite3 database file.                                                     |
-| sv_warmup_autostart <0/1>      | Whether warmup should automatically start if there are not enough players to end a round.       |
+| Command             | default      | min | max | Description                                                                                    |
+|---------------------|--------------|-----|-----|------------------------------------------------------------------------------------------------|
+| sv_weapon_mode      | 3            | 0   | 6   | 0: Hammer 1: Gun 2: Shotgun 3: Grenade Launcher(default) 4: Laser Rifle 5: Ninja 6: Everything |
+| sv_db_type          | ""           |     |     | ""(no ranking), "redis" or "sqlite"(default)                                                   |
+| sv_db_sqlite_file   | "ranking.db" |     |     | Relative path to the sqlite3 database file.                                                    |
+| sv_warmup_autostart | 1            | 0   | 1   | Whether warmup should automatically start if there are not enough players to end a round.      |
   
 More commands can be found in the example configuration file in the **[wiki](https://github.com/jxsl13/zcatch/wiki/Server-configuration-example)**.
 
