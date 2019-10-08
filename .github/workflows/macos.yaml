@@ -68,8 +68,8 @@ jobs:
           zip -r zCatch_macOS.zip zCatch
 
       - name: Release macOS
-        uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
         with:
           files: zCatch_macOS.zip
         env:
