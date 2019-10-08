@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DCLIENT=OFF -DDEV=ON ..
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
