@@ -24,20 +24,20 @@ set(CMAKE_FIND_FRAMEWORK FIRST)
 set_extra_dirs_include(SDL2 sdl "${SDL2_LIBRARY}")
 # Looking for 'SDL.h' directly might accidentally find a SDL 1 instead of SDL 2
 # installation. Look for a header file only present in SDL 2 instead.
-find_path(SDL2_INCLUDEDIR SDL_assert.h
+find_path(SDL2_INCLUDE_DIR SDL_assert.h
   PATH_SUFFIXES SDL
-  HINTS ${HINTS_SDL2_INCLUDEDIR} ${PC_SDL2_INCLUDEDIR} ${PC_SDL2_INCLUDE_DIRS}
-  PATHS ${PATHS_SDL2_INCLUDEDIR}
+  HINTS ${HINTS_SDL2_INCLUDE_DIR} ${PC_SDL2_INCLUDE_DIR} ${PC_SDL2_INCLUDE_DIRS}
+  PATHS ${PATHS_SDL2_INCLUDE_DIR}
 )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(SDL2 DEFAULT_MSG SDL2_LIBRARY SDL2_INCLUDEDIR)
+find_package_handle_standard_args(SDL2 DEFAULT_MSG SDL2_LIBRARY SDL2_INCLUDE_DIR)
 
-mark_as_advanced(SDL2_LIBRARY SDL2_INCLUDEDIR)
+mark_as_advanced(SDL2_LIBRARY SDL2_INCLUDE_DIR)
 
 if(SDL2_FOUND)
   set(SDL2_LIBRARIES ${SDL2_LIBRARY})
-  set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDEDIR})
+  set(SDL2_INCLUDE_DIRS ${SDL2_INCLUDE_DIR})
 
   is_bundled(SDL2_BUNDLED "${SDL2_LIBRARY}")
   if(SDL2_BUNDLED AND TARGET_OS STREQUAL "windows")
