@@ -14,6 +14,7 @@ Introduced new server commands
 | sv_db_type ""                  | ""(no ranking), "redis" or "sqlite"(default)                                                    |
 | sv_db_sqlite_file "ranking.db" | Relative path to the sqlite3 database file.                                                     |
 | sv_warmup_autostart <0/1>      | Whether warmup should automatically start if there are not enough players to end a round.       |
+  
 More commands can be found in the example configuration file in the **[wiki](https://github.com/jxsl13/zcatch/wiki/Server-configuration-example)**.
 
 Teeworlds
