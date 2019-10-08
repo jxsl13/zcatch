@@ -62,10 +62,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd release
-          mkdir -p zCatch/data
+          mkdir -p zCatch
           cp zcatch_srv zCatch/.
           cp ../storage.cfg zCatch/.
-          cp -R data/maps zCatch/data/.
+          cp -R data/maps zCatch/.
           touch zCatch/autoexec.cfg
           zip -r zCatch_macOS.zip zCatch
 
