@@ -547,16 +547,26 @@ void CGameControllerZCATCH::DoWincheckRound()
 		}	
 		else if(m_IngamePlayerCount > 1 && alivePlayerCount == 1)	// 1 winner
 		{
-			// player that is alive is the winnner
-			int ScorePointsEarned = CalculateScore(pAlivePlayer->GetNumTotalCaughtPlayers());
 
-			pAlivePlayer->m_Score += ScorePointsEarned;
-			pAlivePlayer->m_Wins++;
+			char aBuf[128];
 
-			
-			// Inform everyone about the winner.
-			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "'%s' won the round and earned %d score point%s!", Server()->ClientName(pAlivePlayer->GetCID()), ScorePointsEarned, (ScorePointsEarned == 1 ? "" : "s"));
+			if(m_pRankingServer)
+			{
+				// player that is alive is the winnner
+				int ScorePointsEarned = CalculateScore(pAlivePlayer->GetNumTotalCaughtPlayers());
+
+				pAlivePlayer->m_Score += ScorePointsEarned;
+				pAlivePlayer->m_Wins++;
+
+				
+				// Inform everyone about the winner.
+				str_format(aBuf, sizeof(aBuf), "'%s' won the round and earned %d score point%s!", Server()->ClientName(pAlivePlayer->GetCID()), ScorePointsEarned, (ScorePointsEarned == 1 ? "" : "s"));
+			}
+			else
+			{
+				str_format(aBuf, sizeof(aBuf), "'%s' won the round!", Server()->ClientName(pAlivePlayer->GetCID()));
+			}
+
 			GameServer()->SendServerMessage(-1, aBuf);
 			EndRound();
 		}
