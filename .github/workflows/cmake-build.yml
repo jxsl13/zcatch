@@ -21,14 +21,14 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
           cd ..
 
       - name: Build zCatch Debug
