@@ -3,6 +3,8 @@ on:
   push:
     branches: 
       - zCatch-0.7.x
+    tags:
+      - v*
 jobs:
   build_mac:
     name: Build MacOS
