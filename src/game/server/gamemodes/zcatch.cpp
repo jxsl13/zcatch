@@ -609,12 +609,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// warmup
 	if (IsGameWarmup())
 	{	
-		// TODO: check if this is neccessary
-		// as a player gets his color when the character joines
-		// might be necessary for scoreboard skin color
-		// ####################
-		UpdateSkinsOf({ID});
-		// ####################
 
 		// simply allow that player to join.
 		IGameController::OnPlayerConnect(pPlayer);
