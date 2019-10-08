@@ -879,6 +879,19 @@ void CGameControllerZCATCH::Tick()
 	}
 	
 	
+	// if  there is no ranking, we want the current killing spree
+	// to be the score
+	if(!m_pRankingServer)
+	{
+		for (int ID : GameServer()->PlayerIDs())
+		{
+			if(GameServer()->m_apPlayers[ID])
+				GameServer()->m_apPlayers[ID]->m_Score = GameServer()->m_apPlayers[ID]->GetNumCaughtPlayersInARow();
+		}
+		
+	}
+	
+	
 	IGameController::Tick();
 }
 
