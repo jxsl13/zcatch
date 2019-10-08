@@ -10,8 +10,8 @@ Introduced new server commands
 ------------------------------
 | Command             | default      | min | max | Description                                                                                    |
 |---------------------|--------------|-----|-----|------------------------------------------------------------------------------------------------|
-| sv_weapon_mode      | 3            | 0   | 6   | 0: Hammer 1: Gun 2: Shotgun 3: Grenade Launcher(default) 4: Laser Rifle 5: Ninja 6: Everything |
-| sv_db_type          | ""           |     |     | ""(no ranking), "redis" or "sqlite"(default)                                                   |
+| sv_weapon_mode      | 3            | 0   | 6   | 0: Hammer 1: Gun 2: Shotgun 3: Grenade Launcher 4: Laser Rifle 5: Ninja 6: Everything          |
+| sv_db_type          | ""           |     |     | ""(no ranking), "redis" or "sqlite"                                                            |
 | sv_db_sqlite_file   | "ranking.db" |     |     | Relative path to the sqlite3 database file.                                                    |
 | sv_warmup_autostart | 1            | 0   | 1   | Whether warmup should automatically start if there are not enough players to end a round.      |
   
