@@ -57,19 +57,19 @@ jobs:
           ./zcatch_srv shutdown
           cd .. 
       
-      - name: Release Linux
-        uses: softprops/action-gh-release@v1
+      - name: Package Release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd release
           mkdir -p zCatch/data
-
           cp zcatch_srv zCatch/.
           cp ../storage.cfg zCatch/.
           cp -R data/maps zCatch/data/.
           touch zCatch/autoexec.cfg
-
           tar -zcvf zCatch_Linux.tar.gz zCatch
+
+      - name: Release Linux
+        uses: softprops/action-gh-release@v1
         with:
           files: zCatch_Linux.tar.gz
         env:
