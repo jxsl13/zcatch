@@ -240,12 +240,18 @@ void dbg_logger_stdout()
 void dbg_logger_debugger() { dbg_logger(logger_debugger); }
 void dbg_logger_file(const char *filename)
 {
-	logfile = io_open(filename, IOFLAG_WRITE);
-	if(logfile)
-		dbg_logger(logger_file);
+	IOHANDLE handle = io_open(filename, IOFLAG_WRITE);
+	if(handle)
+		dbg_logger_filehandle(handle);
 	else
 		dbg_msg("dbg/logger", "failed to open '%s' for logging", filename);
+}
 
+void dbg_logger_filehandle(IOHANDLE handle)
+{
+	logfile = handle;
+	if(logfile)
+		dbg_logger(logger_file);
 }
 
 #if defined(CONF_FAMILY_WINDOWS)
@@ -2235,31 +2241,21 @@ const char *str_utf8_skip_whitespaces(const char *str)
 	return str;
 }
 
-void str_utf8_trim_right(char *param)
+void str_utf8_trim_whitespaces_right(char *str)
 {
-	const char *str = param;
-	char *end = 0;
-	while(*str)
+	int cursor = str_length(str);
+	const char *last = str + cursor;
+	while(str_utf8_is_whitespace(str_utf8_decode(&last)))
 	{
-		char *str_old = (char *)str;
-		int code = str_utf8_decode(&str);
-
-		// check if unicode is not empty
-		if(!str_utf8_is_whitespace(code))
+		str[cursor] = 0;
+		cursor = str_utf8_rewind(str, cursor);
+		last = str + cursor;
+		if(cursor == 0)
 		{
-			end = 0;
+			break;
 		}
-		else if(!end)
-		{
-			end = str_old;
-		}
-	}
-	if(end)
-	{
-		*end = 0;
 	}
 }
-
 
 static int str_utf8_isstart(char c)
 {

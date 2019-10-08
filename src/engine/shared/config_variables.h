@@ -43,6 +43,7 @@ MACRO_CONFIG_INT(SndInit, snd_init, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Initi
 MACRO_CONFIG_INT(SndMusic, snd_enable_music, 1, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Play background music")
 MACRO_CONFIG_INT(SndVolume, snd_volume, 100, 0, 100, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Sound volume")
 MACRO_CONFIG_INT(SndNonactiveMute, snd_nonactive_mute, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Mute the application when not active")
+MACRO_CONFIG_INT(SndAsyncLoading, snd_async_loading, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Load sound files threaded")
 
 MACRO_CONFIG_INT(GfxScreen, gfx_screen, 0, 0, 0, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Screen index")
 MACRO_CONFIG_INT(GfxScreenWidth, gfx_screen_width, 0, 0, 0, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Screen resolution width")
@@ -67,8 +68,10 @@ MACRO_CONFIG_INT(GfxUseX11XRandRWM, gfx_use_x11xrandr_wm, 1, 0, 1, CFGFLAG_SAVE|
 MACRO_CONFIG_INT(InpGrab, inp_grab, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Disable OS mouse settings such as mouse acceleration, use raw mouse input mode")
 MACRO_CONFIG_INT(InpMousesens, inp_mousesens, 100, 1, 100000, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Ingame mouse sensitivity")
 
-MACRO_CONFIG_INT(JoystickX, joystick_x, 0, 0, 6, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick Axis that controls X axis of mouse")
-MACRO_CONFIG_INT(JoystickY, joystick_y, 1, 0, 6, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick Axis that controls Y axis of mouse")
+MACRO_CONFIG_INT(JoystickEnable , joystick_enable, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Enable joystick")
+MACRO_CONFIG_INT(JoystickSens, joystick_sens, 100, 1, 100000, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick sensitivity")
+MACRO_CONFIG_INT(JoystickX, joystick_x, 0, 0, 6, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick axis that controls X axis of cursor")
+MACRO_CONFIG_INT(JoystickY, joystick_y, 1, 0, 6, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick axis that controls Y axis of cursor")
 MACRO_CONFIG_INT(JoystickTolerance, joystick_tolerance, 5, 0, 50, CFGFLAG_SAVE|CFGFLAG_CLIENT, "Joystick Axis tolerance to account for jitter")
 
 MACRO_CONFIG_STR(SvName, sv_name, 128, "unnamed server", CFGFLAG_SAVE|CFGFLAG_SERVER, "Server name")

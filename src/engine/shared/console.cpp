@@ -155,7 +155,10 @@ int CConsole::ParseArgs(CResult *pResult, const char *pFormat)
 				pResult->AddArgument(pStr);
 
 				if(Command == 'r') // rest of the string
+				{
+					str_utf8_trim_whitespaces_right(pStr);
 					break;
+				}
 				else if(Command == 'i') // validate int
 					pStr = str_skip_to_whitespace(pStr);
 				else if(Command == 'f') // validate float
@@ -777,7 +780,7 @@ void CConsole::Register(const char *pName, const char *pParams,
 	bool DoAdd = false;
 	if(pCommand == 0)
 	{
-		pCommand = new(mem_alloc(sizeof(CCommand), sizeof(void*))) CCommand;
+		pCommand = new(mem_alloc(sizeof(CCommand), sizeof(void*))) CCommand(Flags&CFGFLAG_BASICACCESS);
 		DoAdd = true;
 	}
 	pCommand->m_pfnCallback = pfnFunc;
@@ -808,7 +811,7 @@ void CConsole::RegisterTemp(const char *pName, const char *pParams,	int Flags, c
 	}
 	else
 	{
-		pCommand = new(m_TempCommands.Allocate(sizeof(CCommand))) CCommand;
+		pCommand = new(m_TempCommands.Allocate(sizeof(CCommand))) CCommand(false);
 		char *pMem = static_cast<char *>(m_TempCommands.Allocate(TEMPCMD_NAME_LENGTH));
 		str_copy(pMem, pName, TEMPCMD_NAME_LENGTH);
 		pCommand->m_pName = pMem;

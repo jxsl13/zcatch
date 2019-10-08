@@ -3,6 +3,7 @@
 #ifndef ENGINE_SHARED_CONSOLE_H
 #define ENGINE_SHARED_CONSOLE_H
 
+#include <new>
 #include <engine/console.h>
 #include "memheap.h"
 
@@ -11,6 +12,7 @@ class CConsole : public IConsole
 	class CCommand : public CCommandInfo
 	{
 	public:
+		CCommand(bool BasicAccess) : CCommandInfo(BasicAccess) {};
 		CCommand *m_pNext;
 		int m_Flags;
 		bool m_Temp;

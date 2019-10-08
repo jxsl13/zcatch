@@ -1354,6 +1354,7 @@ void dbg_logger(DBG_LOGGER logger);
 void dbg_logger_stdout();
 void dbg_logger_debugger();
 void dbg_logger_file(const char *filename);
+void dbg_logger_filehandle(IOHANDLE handle);
 
 #if defined(CONF_FAMILY_WINDOWS)
 void dbg_console_init();
@@ -1418,16 +1419,16 @@ int str_utf8_is_whitespace(int code);
 const char *str_utf8_skip_whitespaces(const char *str);
 
 /*
-	Function: str_utf8_trim_right
-		Removes trailing characters that render as spaces by modifying
-		the string in-place.
+	Function: str_utf8_trim_whitespaces_right
+		Clears trailing utf8 whitespace characters from a string.
+
 	Parameters:
 		str - Pointer to the string.
+
 	Remarks:
 		- The strings are treated as zero-terminated strings.
-		- The string is modified in-place.
 */
-void str_utf8_trim_right(char *str);
+void str_utf8_trim_whitespaces_right(char *str);
 
 /*
 	Function: str_utf8_rewind

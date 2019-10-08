@@ -316,7 +316,7 @@ int CServer::TrySetClientName(int ClientID, const char *pName)
 
 	// trim the name
 	str_copy(aTrimmedName, str_utf8_skip_whitespaces(pName), sizeof(aTrimmedName));
-	str_utf8_trim_right(aTrimmedName);
+	str_utf8_trim_whitespaces_right(aTrimmedName);
 
 	// check for empty names
 	if(!aTrimmedName[0])
@@ -1793,7 +1793,7 @@ void CServer::RegisterCommands()
 	Console()->Register("kick", "i?r", CFGFLAG_SERVER, ConKick, this, "Kick player with specified id for any reason");
 	Console()->Register("status", "", CFGFLAG_SERVER, ConStatus, this, "List players");
 	Console()->Register("shutdown", "", CFGFLAG_SERVER, ConShutdown, this, "Shut down");
-	Console()->Register("logout", "", CFGFLAG_SERVER, ConLogout, this, "Logout of rcon");
+	Console()->Register("logout", "", CFGFLAG_SERVER|CFGFLAG_BASICACCESS, ConLogout, this, "Logout of rcon");
 
 	Console()->Register("record", "?s", CFGFLAG_SERVER|CFGFLAG_STORE, ConRecord, this, "Record to a file");
 	Console()->Register("stoprecord", "", CFGFLAG_SERVER, ConStopRecord, this, "Stop recording");

@@ -326,6 +326,13 @@ void CCharacter::FireWeapon()
 
 	vec2 ProjStartPos = m_Pos+Direction*GetProximityRadius()*0.75f;
 
+	if(g_Config.m_Debug)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "shot player='%d:%s' team=%d weapon=%d", m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), m_pPlayer->GetTeam(), m_ActiveWeapon);
+		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+	}
+
 	switch(m_ActiveWeapon)
 	{
 		case WEAPON_HAMMER:
@@ -617,6 +624,7 @@ void CCharacter::TickDefered()
 	bool StuckBefore = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
 
 	m_Core.Move();
+
 	bool StuckAfterMove = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
 	m_Core.Quantize();
 	bool StuckAfterQuant = GameServer()->Collision()->TestBox(m_Core.m_Pos, vec2(28.0f, 28.0f));
@@ -715,21 +723,42 @@ void CCharacter::Die(int Killer, int Weapon)
 	m_Alive = false;
 
 	m_pPlayer->m_RespawnTick = Server()->Tick()+Server()->TickSpeed()/2;
-	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
-	
+	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, (Killer < 0) ? 0 : GameServer()->m_apPlayers[Killer], Weapon);
+
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
-		Killer, Server()->ClientName(Killer),
-		m_pPlayer->GetCID(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial);
+	if (Killer < 0)
+		str_format(aBuf, sizeof(aBuf), "kill killer='%d:%d:' victim='%d:%d:%s' weapon=%d special=%d",
+			Killer, - 1 - Killer,
+			m_pPlayer->GetCID(), m_pPlayer->GetTeam(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial
+		);
+	else
+		str_format(aBuf, sizeof(aBuf), "kill killer='%d:%d:%s' victim='%d:%d:%s' weapon=%d special=%d",
+			Killer, GameServer()->m_apPlayers[Killer]->GetTeam(), Server()->ClientName(Killer),
+			m_pPlayer->GetCID(), m_pPlayer->GetTeam(), Server()->ClientName(m_pPlayer->GetCID()), Weapon, ModeSpecial
+		);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
-	Msg.m_Killer = Killer;
 	Msg.m_Victim = m_pPlayer->GetCID();
-	Msg.m_Weapon = Weapon;
 	Msg.m_ModeSpecial = ModeSpecial;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	for(int i = 0 ; i < Server()->MaxClients(); i++)
+	{
+		if(!Server()->ClientIngame(i))
+			continue;
+
+		if(Killer < 0 && Server()->GetClientVersion(i) < MIN_KILLMESSAGE_CLIENTVERSION)
+		{
+			Msg.m_Killer = 0;
+			Msg.m_Weapon = WEAPON_WORLD;
+		}
+		else
+		{
+			Msg.m_Killer = Killer;
+			Msg.m_Weapon = Weapon;
+		}
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, i);
+	}
 
 	// a nice sound
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
@@ -746,8 +775,19 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 {
 	m_Core.m_Vel += Force;
 
-	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
-		return false;
+	if(From >= 0)
+	{
+		if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From))
+			return false;
+	}
+	else
+	{
+		int Team = TEAM_RED;
+		if(From == PLAYER_TEAM_BLUE)
+			Team = TEAM_BLUE;
+		if(GameServer()->m_pController->IsFriendlyTeamFire(m_pPlayer->GetTeam(), Team))
+			return false;
+	}
 
 	// zCatch
 	// don't inflict damage on self

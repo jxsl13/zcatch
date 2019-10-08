@@ -5,6 +5,7 @@
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 #include <engine/keys.h>
+#include <engine/serverbrowser.h>
 #include <engine/shared/config.h>
 
 #include <generated/protocol.h>
@@ -60,6 +61,7 @@ void CChat::OnReset()
 		m_LastWhisperFrom = -1;
 		m_ReverseCompletion = false;
 		m_Show = false;
+		m_BacklogPage = 0;
 		m_InputUpdate = false;
 		m_ChatStringOffset = 0;
 		m_CompletionChosen = -1;
@@ -86,6 +88,22 @@ void CChat::OnReset()
 	}
 }
 
+void CChat::OnMapLoad()
+{
+	if(Client()->State() == IClient::STATE_LOADING)
+	{
+		if(m_FirstMap)
+			m_FirstMap = false;
+		else
+		{
+			// display map rotation marker in chat
+			char aBuf[256];
+			str_format(aBuf, sizeof(aBuf), Localize("Map changed to '%s'"), Client()->GetCurrentMapName());
+			AddLine(CLIENT_MSG, CHAT_ALL, aBuf);
+		}
+	}
+}
+
 void CChat::OnRelease()
 {
 	m_Show = false;
@@ -100,6 +118,7 @@ void CChat::OnStateChange(int NewState, int OldState)
 			m_aLines[i].m_Time = 0;
 		m_CurrentLine = 0;
 		ClearChatBuffer();
+		m_FirstMap = true;
 	}
 }
 
@@ -196,7 +215,27 @@ void CChat::ClearChatBuffer()
 
 bool CChat::OnInput(IInput::CEvent Event)
 {
-	if(m_Mode == CHAT_NONE || Client()->State() != Client()->STATE_ONLINE)
+	if(Client()->State() != Client()->STATE_ONLINE)
+		return false;
+
+	// chat history scrolling
+	if(m_Show && Event.m_Flags&IInput::FLAG_PRESS && (Event.m_Key == KEY_PAGEUP || Event.m_Key == KEY_PAGEDOWN))
+	{
+		if(Event.m_Key == KEY_PAGEUP)
+		{
+			++m_BacklogPage;
+			if(m_BacklogPage >= MAX_CHAT_PAGES) // will be further capped during rendering
+				m_BacklogPage = MAX_CHAT_PAGES-1;
+		}
+		else if(Event.m_Key == KEY_PAGEDOWN)
+		{
+			--m_BacklogPage;
+			if(m_BacklogPage < 0)
+				m_BacklogPage = 0;
+		}
+		return m_Mode != CHAT_NONE;
+	}
+	if(m_Mode == CHAT_NONE)
 		return false;
 
 	if(Event.m_Flags&IInput::FLAG_PRESS && (Event.m_Key == KEY_ESCAPE || Event.m_Key == KEY_MOUSE_1 || Event.m_Key == KEY_MOUSE_2))
@@ -986,7 +1025,54 @@ void CChat::OnRender()
 								   CUI::CORNER_R, 3.0f);
 	}
 
-	for(int i = 0; i < MAX_LINES; i++)
+	// compute the page index
+	int StartLine = 0;
+	if(m_Show)
+	{
+		int Page;
+		int l = 0;
+		for(Page = 0; Page < MAX_CHAT_PAGES; Page++)
+		{
+			int PageY = y;
+			bool endReached = false;
+			for(; l < MAX_LINES; l++)
+			{
+				int r = ((m_CurrentLine-l)+MAX_LINES)%MAX_LINES;
+				CLine& Line = m_aLines[r];
+
+				if(Line.m_aText[0] == 0)
+				{
+					endReached = true;
+					break;
+				}
+				if(Line.m_ClientID >= 0 && m_pClient->m_aClients[Line.m_ClientID].m_ChatIgnore)
+					continue;
+				if(PageY < HeightLimit)
+					break;
+				PageY -= Line.m_Size[OffsetType].y;
+			}
+			if(endReached)
+				break;
+			if(Page < m_BacklogPage)
+				StartLine = l - 1;
+		}
+		if(Page == MAX_CHAT_PAGES)
+			Page--;
+		if(Page < m_BacklogPage) // cap the page to the last
+			m_BacklogPage = Page;
+
+		// render the page count
+		if(Page > 0)
+		{
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), Localize("-Page %d/%d-"), m_BacklogPage+1, Page+1);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.6f);
+			TextRender()->Text(0, 6.0f, HeightLimit-3.0f, FontSize-1.0f, aBuf, -1.0f);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+
+	for(int i = StartLine; i < MAX_LINES; i++)
 	{
 		int r = ((m_CurrentLine-i)+MAX_LINES)%MAX_LINES;
 		CLine& Line = m_aLines[r];
@@ -995,7 +1081,7 @@ void CChat::OnRender()
 			break;
 
 		if(Line.m_ClientID >= 0 && m_pClient->m_aClients[Line.m_ClientID].m_ChatIgnore)
-			break;
+			continue;
 
 		if(Now > Line.m_Time+16*TimeFreq && !m_Show)
 			break;
@@ -1365,12 +1451,17 @@ void CChat::Com_Mute(CChat *pChatData, const char* pCommand)
 	int TargetID = pChatData->IdentifyNameParameter(pCommand);
 	if(TargetID != -1)
 	{
+		bool isMuted = pChatData->m_pClient->m_aClients[TargetID].m_ChatIgnore;
+		if(isMuted)
+			pChatData->m_pClient->Blacklist()->RemoveIgnoredPlayer(pChatData->m_pClient->m_aClients[TargetID].m_aName, pChatData->m_pClient->m_aClients[TargetID].m_aClan);
+		else
+			pChatData->m_pClient->Blacklist()->AddIgnoredPlayer(pChatData->m_pClient->m_aClients[TargetID].m_aName, pChatData->m_pClient->m_aClients[TargetID].m_aClan);
 		pChatData->m_pClient->m_aClients[TargetID].m_ChatIgnore ^= 1;
 
 		pChatData->ClearInput();
 
 		char aMsg[128];
-		str_format(aMsg, sizeof(aMsg), pChatData->m_pClient->m_aClients[TargetID].m_ChatIgnore ? Localize("'%s' was muted") : Localize("'%s' was unmuted"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
+		str_format(aMsg, sizeof(aMsg), !isMuted ? Localize("'%s' was muted") : Localize("'%s' was unmuted"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
 		pChatData->AddLine(CLIENT_MSG, CHAT_ALL, aMsg, -1);
 	}
 }
