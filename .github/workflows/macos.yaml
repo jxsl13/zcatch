@@ -59,7 +59,6 @@ jobs:
           cd ..
 
       - name: Package Release
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd release
           mkdir -p zCatch
@@ -68,6 +67,12 @@ jobs:
           cp -R data/maps zCatch/.
           touch zCatch/autoexec.cfg
           zip -r zCatch_macOS.zip zCatch
+
+      - name: Deploy Artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: zCatch_macOS_latest
+          path: release/zCatch_macOS.zip
 
       - name: Release macOS
         if: startsWith(github.ref, 'refs/tags/')
