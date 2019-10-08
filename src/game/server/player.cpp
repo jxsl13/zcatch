@@ -544,7 +544,7 @@ void CPlayer::TryRespawn()
 bool CPlayer::CatchPlayer(int ID, int reason)
 {	
 	// player can be caught by me(if not already caught)
-	if (GameServer()->m_apPlayers[ID] && GameServer()->m_apPlayers[ID]->BeCaught(GetCID(), reason))
+	if (GameServer()->m_apPlayers[ID] && GameServer()->m_apPlayers[ID]->BeCaught(m_ClientID, reason))
 	{
 		// player not cauht by anybody, add him to my caught players
 		m_CaughtPlayers.push_back(ID);
@@ -592,7 +592,7 @@ bool CPlayer::CatchPlayer(int ID, int reason)
 bool CPlayer::BeCaught(int byID, int reason)
 {	
 	dbg_assert(byID >= 0 && byID < MAX_CLIENTS && GameServer()->m_apPlayers[byID], "Being caught by invalid player ID.");
-	if (byID == GetCID())
+	if (byID == m_ClientID)
 	{
 		// falling into death tiles
 		// you die, you loose all of your caught players.
@@ -777,7 +777,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 				str_format(aBuf, sizeof(aBuf), "You released '%s'(%d left)",
 						   Server()->ClientName(playerToReleaseID),
 						   GetNumCurrentlyCaughtPlayers());
-				GameServer()->SendServerMessage(GetCID(), aBuf);
+				GameServer()->SendServerMessage(m_ClientID, aBuf);
 				m_NumWillinglyReleasedPlayers++;
 			}
 			else if (reason == REASON_PLAYER_WARMUP_RELEASED)
@@ -799,7 +799,7 @@ int CPlayer::ReleaseLastCaughtPlayer(int reason, bool updateSkinColors)
 						if (GameServer()->m_apPlayers[toID])
 						{
 							// send skin update message of id to everyone
-							GameServer()->SendSkinChange(GetCID(), toID);
+							GameServer()->SendSkinChange(m_ClientID, toID);
 						}
 					}
 				}
@@ -918,6 +918,7 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 			break;
 		case REASON_PLAYER_FAILED:
 			str_format(aBuf, sizeof(aBuf), "Your failure caused %d player%s to be set free!", GetNumCurrentlyCaughtPlayers(), GetNumCurrentlyCaughtPlayers() != 1 ? "s" : "");
+			m_Fails++;
 			break;
 		case REASON_PLAYER_LEFT:
 			// no message, because the player leaves.
@@ -937,7 +938,7 @@ int CPlayer::ReleaseAllCaughtPlayers(int reason)
 
 		if (hasReasonMessage)
 		{
-			GameServer()->SendServerMessage(GetCID(), aBuf);
+			GameServer()->SendServerMessage(m_ClientID, aBuf);
 		}
 	}
 

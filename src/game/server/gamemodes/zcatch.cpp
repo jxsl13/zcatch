@@ -619,6 +619,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		// if the server is full, we do not want the 
 		// joining player to be caught by anyone, 
 		// but just join the spectators instead.
+		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -667,20 +668,18 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 
 	// release caught players in any case!
 	player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
-	
+
+
 	// if player voted something/someone and it did not pass
     // before leaving the server, voteban him for the remaining time.
-	if(GameServer()->m_apPlayers[ID])
-	{
-		int Now = Server()->Tick();
-    	int Timeleft = (GameServer()->m_apPlayers[ID]->m_LastVoteCall - Now) + Server()->TickSpeed() * 60 ;
-    	// convert to seconds
-    	Timeleft = Timeleft / Server()->TickSpeed();
+	int Now = Server()->Tick();
+    int Timeleft = (player.m_LastVoteCall - Now) + Server()->TickSpeed() * 60 ;
+    // convert to seconds
+    Timeleft = Timeleft / Server()->TickSpeed();
 
-    	if (GameServer()->m_apPlayers[ID]->m_LastVoteCall && Timeleft > 0)
-    	{
-        	Server()->AddVoteban(ID, Timeleft);
-		}
+    if (player.m_LastVoteCall && Timeleft > 0)
+    {
+        Server()->AddVoteban(ID, Timeleft);
 	}
 	
 	// save player's statistics to the database
@@ -765,7 +764,6 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		case WEAPON_WORLD: // death tiles etc.
 			// needs to be handled in here, as WEAPON_WORLD deaths are not passed to the player::KillCharacter()
 			victim.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_FAILED);
-			victim.m_Fails++;
 			break;
 		case WEAPON_SELF: // suicide
 			// here we catch literally the suicides, not the releases
@@ -820,6 +818,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 void CGameControllerZCATCH::Tick()
 {
 
+	// debugging code
 	for (int i : GameServer()->PlayerIDs())
 	{
 		CPlayer* pPlayer = GameServer()->m_apPlayers[i];
@@ -877,8 +876,8 @@ void CGameControllerZCATCH::Tick()
 		g_Config.m_SvSkillLevel = m_SkillLevel;
 		GameServer()->SendServerMessage(-1, "If you want to change the skill level, please update your configuration file and restart the server.");
 	}
-	
-	
+
+
 	// if  there is no ranking, we want the current killing spree
 	// to be the score
 	if(!m_pRankingServer)
