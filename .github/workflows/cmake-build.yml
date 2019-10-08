@@ -21,14 +21,14 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          env CFLAGS="-Wdeclaration-after-statement -Werror" CXXFLAGS="-Werror" cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
           cd ..
 
       - name: Build zCatch Debug
@@ -62,28 +62,28 @@ jobs:
         run: |
           md build32_debug
           cd build32_debug
-          cmake -Werror=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" ..
+          cmake -Wno-error=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" ..
           cd ..
 
       - name: Create Debug Build Files with CMake x64
         run: |
           md build64_debug
           cd build64_debug
-          cmake -Werror=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" -A x64 ..
+          cmake -Wno-error=dev -DCLIENT=OFF -DDEV=ON -G "Visual Studio 16 2019" -A x64 ..
           cd ..
 
       - name: Create Release Build Files with CMake x86
         run: |
           md build32
           cd build32
-          cmake -Werror=dev -DCLIENT=OFF -G "Visual Studio 16 2019" ..
+          cmake -Wno-error=dev -DCLIENT=OFF -G "Visual Studio 16 2019" ..
           cd ..     
     
       - name: Create Release Build Files with CMake x64
         run: |
           md build64
           cd build64
-          cmake -Werror=dev -DCLIENT=OFF -G "Visual Studio 16 2019" -A x64 ..
+          cmake -Wno-error=dev -DCLIENT=OFF -G "Visual Studio 16 2019" -A x64 ..
           cd ..
 
       - name: Build Debug x86
@@ -127,14 +127,14 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DCLIENT=OFF -DDEV=ON ..
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DCLIENT=OFF -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
           cd ..
 
       - name: Build Debug
