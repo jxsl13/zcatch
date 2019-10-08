@@ -45,6 +45,17 @@ jobs:
           ./zcatch_srv shutdown
           cd ..
       
+      - name: Test zCatch Debug
+        run: |
+          cd debug
+          ./zcatch_srv shutdown
+          cd ..
+        
+      - name: Test zCatch Rellease
+        run: |
+          cd release
+          ./zcatch_srv shutdown
+          cd .. 
  
   build_windows:
     name: Build Windows
