@@ -16,6 +16,8 @@ jobs:
       - name: Prepare
         run: |
           brew install cmake freetype sdl2
+          brew link sdl2
+          export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/lib"
           git submodule update --init --recursive
 
       - name: Create Debug Build Files with CMake
