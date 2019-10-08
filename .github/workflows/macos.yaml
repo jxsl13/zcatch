@@ -22,26 +22,26 @@ jobs:
         run: |
           mkdir debug
           cd debug
-          cmake -Wno-error=dev -DPREFER_BUNDLED_LIBS=1 -DDOWNLOAD_GTEST=ON -DCFLAGS="-Wdeclaration-after-statement -Werror" -DCXXFLAGS="-Werror" -DDEV=ON ..
+          cmake -DPREFER_BUNDLED_LIBS=ON -DDEV=ON ..
           cd ..
 
       - name: Create Release Build Files with CMake
         run: |
           mkdir release
           cd release
-          cmake -Wno-error=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
+          cmake -DCLIENT=OFF ..
           cd ..
 
       - name: Build Debug
         run: |
           cd debug
-          make -j4 zcatch_srv
+          make -j4 everything
           cd ..
 
       - name: Build Release
         run: |
           cd release
-          make -j4 zcatch_srv
+          make -j4 everything
           cd ..
 
       - name: Test Debug
