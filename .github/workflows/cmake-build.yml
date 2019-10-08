@@ -135,7 +135,7 @@ jobs:
           cmake -Werror=dev -DDOWNLOAD_GTEST=ON -DCLIENT=OFF ..
           cd ..
 
-       - name: Build Debug
+      - name: Build Debug
         run: |
           cd debug
           make -j4 zcatch_srv
@@ -146,7 +146,7 @@ jobs:
           cd release
           make -j4 zcatch_srv
           cd ..
-     
+
       - name: Test Debug
         run: |
           cd debug
