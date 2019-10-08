@@ -1,4 +1,4 @@
- Teeworlds zCatch [![Actions Status Ubuntu](https://github.com/jxsl13/zcatch/workflows/Ubuntu/badge.svg)](https://github.com/AssassinTee/catch64/actions)[![Actions Status Windows](https://github.com/jxsl13/zcatch/workflows/Windows/badge.svg)](https://github.com/AssassinTee/catch64/actions)[![Actions Status macOS](https://github.com/jxsl13/zcatch/workflows/macOS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
+ Teeworlds zCatch [![Actions Status Ubuntu](https://github.com/jxsl13/zcatch/workflows/Ubuntu/badge.svg)](https://github.com/AssassinTee/catch64/actions) [![Actions Status Windows](https://github.com/jxsl13/zcatch/workflows/Windows/badge.svg)] (https://github.com/AssassinTee/catch64/actions)[![Actions Status macOS](https://github.com/jxsl13/zcatch/workflows/macOS/badge.svg)](https://github.com/AssassinTee/catch64/actions)
 =========
 
 Description
