@@ -21,9 +21,9 @@ Downloads
 =========
 
 Currently there are two build variants: 
-One is a stable log term release which can be found here: [Releases](https://github.com/jxsl13/zcatch/releases)  
-The second variant ar enightly builds that can be found here: [Nightlies](https://github.com/jxsl13/zcatch/actions)  
-For a nightly build, you search for the top most operating system that you are looking for with a successful build. Click on it and look for the **Artifacts** dropdown menu. Click there and download the latest version.
+One is a stable long term release which can be found here: [Releases](https://github.com/jxsl13/zcatch/releases)  
+The second variant are nightly builds that can be found here: [Nightlies](https://github.com/jxsl13/zcatch/actions)  
+For a nightly build you search for the top most operating system that you are looking for with a successful build. Click on it and look for the **Artifacts** dropdown menu(top right). Click there and download the latest version.
 
 Teeworlds
 =========
