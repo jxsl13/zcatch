@@ -74,7 +74,7 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		if (g_Config.m_SvWeaponMode >= NUM_WEAPONS)
 		{
 			// All weapons mode
-			GiveWeapon(WEAPON_HAMMER, 10);
+			GiveWeapon(WEAPON_HAMMER, -1);
 			GiveWeapon(WEAPON_GUN, 10);
 			GiveWeapon(WEAPON_SHOTGUN, 10);
 			GiveWeapon(WEAPON_GRENADE, 10);
@@ -87,7 +87,10 @@ bool CCharacter::Spawn(CPlayer *pPlayer, vec2 Pos)
 		else
 		{
 			// Give set weapon
-			GiveWeapon(m_ActiveWeapon, 10);
+			if(m_ActiveWeapon == WEAPON_HAMMER)
+				GiveWeapon(m_ActiveWeapon, -1);	// infinite
+			else
+				GiveWeapon(m_ActiveWeapon, 10);
 		}
 	}
 	else
@@ -323,7 +326,7 @@ void CCharacter::FireWeapon()
 		{
 			GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
 			m_LastNoAmmoSound = Server()->Tick();
-		}
+		}		
 		return;
 	}
 
@@ -375,9 +378,10 @@ void CCharacter::FireWeapon()
 					Dir = vec2(0.f, -1.f);
 
 				if(!IsPunished)
+				{
 					pTarget->TakeDamage(vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f, Dir*-1, g_pData->m_Weapons.m_Hammer.m_pBase->m_Damage,
 					m_pPlayer->GetCID(), m_ActiveWeapon);
-
+				}				
 				Hits++;
 			}
 
@@ -822,18 +826,29 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	if(/*Weapon == WEAPON_GAME ||*/ Server()->Tick() - m_SpawnProtectionTick <= Server()->TickSpeed() * 0.25f)
 		return false;
 	
-	// how much damage is needed to kill a player instantly
-	if(Dmg >= 7 - g_Config.m_SvGrenadeHitbox)
+	if(Weapon == WEAPON_GRENADE)
 	{
+		// how much damage is needed to kill a player instantly
+		if(Dmg >= 7 - g_Config.m_SvGrenadeHitbox)
+		{
+			// instant death on damage taken.
+			m_Armor = 0;
+			m_Health = 0;
+		}
+		else
+		{
+			// if not in hitbox, do no damage
+			return false;
+		}
+	}
+	else
+	{
+		// non grenade case, don't check for hitbox, just kill
 		// instant death on damage taken.
 		m_Armor = 0;
 		m_Health = 0;
 	}
-	else
-	{
-		// if not in hitbox, do no damage
-		return false;
-	}
+	
 
 	// create healthmod indicator
 	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
@@ -866,7 +881,7 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 				pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
 			}
 		}
-
+		
 		return false;
 	}
 
