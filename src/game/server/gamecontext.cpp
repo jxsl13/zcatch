@@ -1595,6 +1595,10 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("mute", "ii?r", CFGFLAG_SERVER, ConMute, this, "Mutes a player ID for x seconds with reason.");
 	Console()->Register("unmute", "i", CFGFLAG_SERVER, ConUnmute, this, "Unmutes a player by #Index");
 	Console()->Register("mutes", "", CFGFLAG_SERVER, ConMutes, this, "Show all mutes");
+
+	Console()->Register("punish", "i?i", CFGFLAG_SERVER, ConPunishPlayer, this, "Prevent player from killing other players.");
+	Console()->Register("unpunish", "i", CFGFLAG_SERVER, ConUnPunishPlayer, this, "Allow player to play normally again.");
+	Console()->Register("punishments", "", CFGFLAG_SERVER, ConPunishedPlayers, this, "Show punished players.");
 }
 
 void CGameContext::OnInit()
@@ -1941,3 +1945,86 @@ const std::vector<int>& CGameContext::PlayerIDs()
 { 
 	return m_PlayerIDs; 
 }
+
+
+void CGameContext::ConPunishPlayer(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int ClientID = pResult->GetInteger(0);
+	int Level = pResult->GetInteger(1);
+
+	if(!pSelf->m_apPlayers[ClientID])
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		return;
+	}
+
+	if (Level < 1)
+	{
+		pSelf->m_apPlayers[ClientID]->SetPunishmentLevel(CPlayer::PunishmentLevel::PROJECTILES_DONT_KILL);
+		Level = 1;
+	}
+	else
+	{
+		pSelf->m_apPlayers[ClientID]->SetPunishmentLevel((CPlayer::PunishmentLevel)Level);
+	}
+	
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "'%s' has been punished for cheating.(Level %d)", pSelf->Server()->ClientName(ClientID), Level);
+	for (int ID : pSelf->PlayerIDs())
+	{
+		if(ID == ClientID)
+			continue;
+		
+		pSelf->SendServerMessage(ID, aBuf);
+	}	
+}
+
+
+void CGameContext::ConUnPunishPlayer(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int ClientID = pResult->GetInteger(0);
+
+	if(!pSelf->m_apPlayers[ClientID])
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		return;
+	}
+
+	// reset punishment
+	pSelf->m_apPlayers[ClientID]->SetPunishmentLevel(CPlayer::PunishmentLevel::NONE);
+	
+	
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "'%s' has been pardoned.", pSelf->Server()->ClientName(ClientID));
+	for (int ID : pSelf->PlayerIDs())
+	{
+		pSelf->SendServerMessage(ID, aBuf);
+	}
+}
+
+
+void CGameContext::ConPunishedPlayers(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Punished Players:");
+	char aBuf[128];
+
+	for (int ID : pSelf->PlayerIDs())
+	{
+		CPlayer::PunishmentLevel Level;
+		if(pSelf->m_apPlayers[ID])
+		{	
+			Level = pSelf->m_apPlayers[ID]->GetPunishmentLevel();
+			if(Level > CPlayer::PunishmentLevel::NONE)
+			{
+				str_format(aBuf, sizeof(aBuf), "ID: %d Level: %d '%s' ", ID, Level, pSelf->Server()->ClientName(ID));
+			}
+		}	
+	}
+
+}
+
+

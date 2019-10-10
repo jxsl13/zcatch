@@ -40,6 +40,8 @@ private:
 	int m_StartTick;
 	bool m_Explosive;
 
+	bool m_IsPunished;
+
 	std::set<int> m_ValidTargets;
 	bool IsValidTarget(int TargetID);
 	void FillValidTargets();

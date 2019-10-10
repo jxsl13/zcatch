@@ -53,7 +53,7 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	ResetStatistics();
 	m_DetailedServerMessages = false;
 	m_ChatTicks = 0;
-
+	m_PunishmentLevel = NONE;
 }
 
 CPlayer::~CPlayer()

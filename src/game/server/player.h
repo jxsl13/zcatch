@@ -150,6 +150,13 @@ public:
 
 	void UpdateSkinColors();
 
+	enum PunishmentLevel {
+		NONE = 0,
+		PROJECTILES_DONT_KILL,
+	};
+	PunishmentLevel GetPunishmentLevel() {return m_PunishmentLevel; }
+	void SetPunishmentLevel(PunishmentLevel level) {m_PunishmentLevel = level;}
+
 
 	// Administrative properties of this player.
 	inline bool IsAuthed(){ return Server()->IsAuthed(m_ClientID);};
@@ -266,6 +273,8 @@ private:
 	bool m_WantsToJoinSpectators;
 
 	unsigned int GetColor();
+
+	PunishmentLevel m_PunishmentLevel;
 
 	//Anticamper
 	int Anticamper();

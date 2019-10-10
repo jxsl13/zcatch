@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <generated/server_data.h>
 #include <game/server/gamecontext.h>
+#include <game/server/player.h>
 
 #include "character.h"
 #include "laser.h"
@@ -14,6 +15,8 @@ CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEner
 	m_Dir = Direction;
 	m_Bounces = 0;
 	m_EvalTick = 0;
+
+	m_IsPunished = GameServer()->m_apPlayers[m_Owner] && GameServer()->m_apPlayers[m_Owner]->GetPunishmentLevel() > CPlayer::PunishmentLevel::NONE;
 	GameWorld()->InsertEntity(this);
 	DoBounce();
 }
@@ -30,8 +33,12 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	m_From = From;
 	m_Pos = At;
 	m_Energy = -1;
-	pHit->TakeDamage(vec2(0.f, 0.f), normalize(To-From), g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage, m_Owner, WEAPON_LASER);
+		
+	if(!m_IsPunished)
+		pHit->TakeDamage(vec2(0.f, 0.f), normalize(To-From), g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage, m_Owner, WEAPON_LASER);
+	
 	return true;
+		
 }
 
 void CLaser::DoBounce()
@@ -66,8 +73,9 @@ void CLaser::DoBounce()
 
 			if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
 				m_Energy = -1;
-
-			GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
+			
+			if(!m_IsPunished)
+				GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
 		}
 	}
 	else
@@ -100,6 +108,8 @@ void CLaser::TickPaused()
 void CLaser::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_From))
+		return;
+	else if(SnappingClient != m_Owner && m_IsPunished)
 		return;
 
 	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));

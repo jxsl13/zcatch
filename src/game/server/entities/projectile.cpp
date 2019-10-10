@@ -25,6 +25,7 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_StartTick = Server()->Tick();
 	m_Explosive = Explosive;
 
+	m_IsPunished = GameServer()->m_apPlayers[m_Owner] && GameServer()->m_apPlayers[m_Owner]->GetPunishmentLevel() > CPlayer::PunishmentLevel::NONE;
 	GameWorld()->InsertEntity(this);
 	FillValidTargets();
 }
@@ -84,19 +85,20 @@ void CProjectile::Tick()
 	int Collide = GameServer()->Collision()->IntersectLine(PrevPos, CurPos, &CurPos, 0);
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+	
+	CPlayer *Owner = GameServer()->m_apPlayers[m_Owner];
 
 	m_LifeSpan--;
 
 	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
-		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
+		if((m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE) && !m_IsPunished)
 			GameServer()->CreateSound(CurPos, m_SoundImpact);
 
 		if(m_Explosive)
 		{
 			// if the owner respawns before the projectile hits, invalidate the projectile
-			CPlayer *Owner = GameServer()->m_apPlayers[m_Owner];
-			if (Owner && Owner->m_LastRespawnedTick <= m_StartTick)
+			if (Owner && Owner->m_LastRespawnedTick <= m_StartTick && !m_IsPunished)
 			{
 				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
 			}
@@ -128,7 +130,15 @@ void CProjectile::Snap(int SnappingClient)
 	float Ct = (Server()->Tick()-m_StartTick)/(float)Server()->TickSpeed();
 
 	if(NetworkClipped(SnappingClient, GetPos(Ct)))
+	{
 		return;
+	}
+	else if(SnappingClient != m_Owner && m_IsPunished)
+	{
+		// don't send projectile to players other 
+		// than the owner, if the owner if being punished
+		return;
+	}
 
 	CNetObj_Projectile *pProj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
 	if(pProj)
@@ -136,11 +146,16 @@ void CProjectile::Snap(int SnappingClient)
 }
 
 void CProjectile::FillValidTargets()
-{
+{	
+	// if owner is being punished, don't add any valid enemies to the valid targets.
+	if (m_IsPunished)
+		return;
+	
 	class CGameContext *pGameServer = GameServer();
 	if (pGameServer)
 	{	
-		class CPlayer *pPlayer;
+		
+		class CPlayer *pPlayer;		
 		int tmpID;
 		for (int i : pGameServer->PlayerIDs())
 		{
@@ -154,11 +169,8 @@ void CProjectile::FillValidTargets()
 				if(pPlayer->GetCharacter() && 
 					(distance(m_Pos, pPlayer->GetCharacter()->GetPos()) <= g_Config.m_SvSprayProtectionRadius))
 				{
-					// not already a valid target
-					if (!m_ValidTargets.count(tmpID))
-					{
-						m_ValidTargets.insert(tmpID);
-					}
+					// inserts if not already a valid target
+					m_ValidTargets.insert(tmpID);
 				} 
 			}
 			pPlayer = nullptr;
@@ -171,10 +183,7 @@ void CProjectile::FillValidTargets()
 		if (pOwnerCharacter)
 		{
 			tmpID = pOwnerCharacter->GetHookedPlayer();
-			if (!m_ValidTargets.count(tmpID))
-			{
-				m_ValidTargets.insert(tmpID);
-			}
+			m_ValidTargets.insert(tmpID);
 		}
 	}
 }

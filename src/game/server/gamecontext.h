@@ -75,6 +75,11 @@ class CGameContext : public IGameServer
 	static void ConUnmute(IConsole::IResult *pResult, void *pUserData);
 	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 
+	// players being punished
+	static void ConPunishPlayer(IConsole::IResult *pResult, void *pUserData);
+	static void ConUnPunishPlayer(IConsole::IResult *pResult, void *pUserData);
+	static void ConPunishedPlayers(IConsole::IResult *pResult, void *pUserData);
+
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
 
