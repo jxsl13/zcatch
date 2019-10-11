@@ -92,15 +92,15 @@ void CProjectile::Tick()
 
 	if(TargetChr || Collide || m_LifeSpan < 0 || GameLayerClipped(CurPos))
 	{
-		if((m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE) && !m_IsPunished)
-			GameServer()->CreateSound(CurPos, m_SoundImpact);
+		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
+			GameServer()->CreateSound(CurPos, m_SoundImpact, m_IsPunished ? CmaskOne(m_Owner) : -1);
 
 		if(m_Explosive)
 		{
 			// if the owner respawns before the projectile hits, invalidate the projectile
-			if (Owner && Owner->m_LastRespawnedTick <= m_StartTick && !m_IsPunished)
+			if (Owner && Owner->m_LastRespawnedTick <= m_StartTick)
 			{
-				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets);
+				GameServer()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage, &m_ValidTargets, m_IsPunished ? CmaskOne(m_Owner) : -1);
 			}
 		}
 		else if(TargetChr && IsValidTarget(TargetChr->GetPlayer()->GetCID()))

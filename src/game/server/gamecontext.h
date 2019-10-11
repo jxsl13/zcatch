@@ -152,8 +152,8 @@ public:
 
 	// helper functions
 	void CreateDamage(vec2 Pos, int Id, vec2 Source, int HealthAmount, int ArmorAmount, bool Self);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, std::set<int>* validTargets=nullptr);
-	void CreateHammerHit(vec2 Pos);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, std::set<int>* validTargets=nullptr, int64 Mask=-1);
+	void CreateHammerHit(vec2 Pos, int64 Mask=-1);
 	void CreatePlayerSpawn(vec2 Pos);
 	void CreateDeath(vec2 Pos, int Who);
 	void CreateSound(vec2 Pos, int Sound, int64 Mask=-1);

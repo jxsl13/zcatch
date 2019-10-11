@@ -74,8 +74,7 @@ void CLaser::DoBounce()
 			if(m_Bounces > GameServer()->Tuning()->m_LaserBounceNum)
 				m_Energy = -1;
 			
-			if(!m_IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
+			GameServer()->CreateSound(m_Pos, SOUND_LASER_BOUNCE, m_IsPunished ? CmaskOne(m_Owner) : -1);
 		}
 	}
 	else
