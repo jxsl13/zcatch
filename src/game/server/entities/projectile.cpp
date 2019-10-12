@@ -25,7 +25,9 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_StartTick = Server()->Tick();
 	m_Explosive = Explosive;
 
+	// at this point we cannot yet loose the owner, thus the m_Owner value here is correct.
 	m_IsPunished = GameServer()->m_apPlayers[m_Owner] && GameServer()->m_apPlayers[m_Owner]->GetPunishmentLevel() > CPlayer::PunishmentLevel::NONE;
+
 	GameWorld()->InsertEntity(this);
 	FillValidTargets();
 }
@@ -86,7 +88,9 @@ void CProjectile::Tick()
 	CCharacter *OwnerChar = GameServer()->GetPlayerChar(m_Owner);
 	CCharacter *TargetChr = GameServer()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
 	
-	CPlayer *Owner = GameServer()->m_apPlayers[m_Owner];
+	CPlayer *Owner = nullptr;
+	if(m_Owner >= 0 && m_Owner < MAX_CLIENTS)
+		Owner =	GameServer()->m_apPlayers[m_Owner];
 
 	m_LifeSpan--;
 

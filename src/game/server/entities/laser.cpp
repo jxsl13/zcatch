@@ -16,7 +16,9 @@ CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEner
 	m_Bounces = 0;
 	m_EvalTick = 0;
 
+	// at this point we cannot yet loose the owner, thus the m_Owner value here is correct.
 	m_IsPunished = GameServer()->m_apPlayers[m_Owner] && GameServer()->m_apPlayers[m_Owner]->GetPunishmentLevel() > CPlayer::PunishmentLevel::NONE;
+
 	GameWorld()->InsertEntity(this);
 	DoBounce();
 }
@@ -25,7 +27,7 @@ CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEner
 bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
 	vec2 At;
-	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner);
+	CCharacter *pOwnerChar = GameServer()->GetPlayerChar(m_Owner); // invalid owners are being 
 	CCharacter *pHit = GameServer()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
 	if(!pHit)
 		return false;
