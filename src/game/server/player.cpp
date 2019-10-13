@@ -200,8 +200,9 @@ void CPlayer::Snap(int SnappingClient)
 	if(m_RespawnDisabled && (!GetCharacter() || !GetCharacter()->IsAlive()))
 		pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_DEAD;
 	if(SnappingClient != -1 && (m_Team == TEAM_SPECTATORS || m_DeadSpecMode) && (SnappingClient == m_SpectatorID))
-		if(DontHideAdmin)
+		if(!Server()->IsAuthed(m_ClientID) || DontHideAdmin)
 			pPlayerInfo->m_PlayerFlags |= PLAYERFLAG_WATCHING;
+
 
 	pPlayerInfo->m_Latency = SnappingClient == -1 ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aActLatency[m_ClientID];
 	pPlayerInfo->m_Score = m_Score;
