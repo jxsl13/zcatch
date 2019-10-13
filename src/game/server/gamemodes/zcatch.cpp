@@ -873,6 +873,11 @@ void CGameControllerZCATCH::Tick()
 	ProcessMessageQueue();
 
 
+	// message queue that contains the retrieved player data from the 
+	// database.
+	ProcessRankingRetrievalMessageQueue();
+
+
 	// we do not want WeaponModes to be changed mid game, as it is not supported
 	if (m_WeaponMode != g_Config.m_SvWeaponMode)
 	{
@@ -1230,25 +1235,9 @@ void CGameControllerZCATCH::RetrieveRankingData(int ofID)
 	// retrieve data from database and execute the lambda-function, that is being passed.
 	m_pRankingServer->GetRanking({Server()->ClientName(ofID)}, [this, ofID](CPlayerStats& stats)
 	{
-		// TODO:  I kind of do not trust myself here, this might actually blow up. :D
-		CPlayer* pPlayer = GameServer()->m_apPlayers[ofID];
+		std::lock_guard<std::mutex> lock(m_RankingRetrievalMessageQueueMutex);
 
-		// if a player has been destroyed, before we enter this, this ought to be a nullptr.
-		if(pPlayer)
-		{
-			// only if this is started before the player is being destroyed, this should finish, 
-			// before the player is destroyed 
-			std::lock_guard<std::mutex> lock(pPlayer->m_PreventDestruction);
-			pPlayer->m_Wins += stats["Wins"];
-			pPlayer->m_Score += stats["Score"];
-			pPlayer->m_Kills += stats["Kills"];
-			pPlayer->m_Deaths += stats["Deaths"];
-			pPlayer->m_TicksCaught += stats["TicksCaught"];
-			pPlayer->m_TicksIngame += stats["TicksIngame"];
-			pPlayer->m_TicksWarmup += stats["TicksWarmup"];
-			pPlayer->m_Shots += stats["Shots"];
-			pPlayer->m_Fails += stats["Fails"];
-		}
+		m_RankingRetrievalMessageQueue.emplace_back(ofID, stats);
 
 	}, GetDatabasePrefix());
 }
@@ -1435,6 +1424,46 @@ void CGameControllerZCATCH::ProcessMessageQueue()
 		m_MessageQueue.clear();
 
 		m_MessageQueueMutex.unlock();
+	}
+}
+
+void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
+{
+
+	// if we successfully lock the mutex, process all pending messages
+	// if the mutex cannot be aquired,we skip this in order not to block the
+	// main thread.
+	if (m_RankingRetrievalMessageQueueMutex.try_lock())
+	{
+		if(m_RankingRetrievalMessageQueue.empty())
+		{
+			m_RankingRetrievalMessageQueueMutex.unlock();
+			return;
+		}
+
+		CPlayer* pPlayer = nullptr;	
+		for (auto& [ID, stats] : m_RankingRetrievalMessageQueue)
+		{
+			pPlayer = GameServer()->m_apPlayers[ID];
+
+			if(pPlayer)
+			{
+				pPlayer->m_Wins += stats["Wins"];
+				pPlayer->m_Score += stats["Score"];
+				pPlayer->m_Kills += stats["Kills"];
+				pPlayer->m_Deaths += stats["Deaths"];
+				pPlayer->m_TicksCaught += stats["TicksCaught"];
+				pPlayer->m_TicksIngame += stats["TicksIngame"];
+				pPlayer->m_TicksWarmup += stats["TicksWarmup"];
+				pPlayer->m_Shots += stats["Shots"];
+				pPlayer->m_Fails += stats["Fails"];
+			}
+		}
+
+		// delete all entries.
+		m_RankingRetrievalMessageQueue.clear();
+
+		m_RankingRetrievalMessageQueueMutex.unlock();
 	}
 	
 

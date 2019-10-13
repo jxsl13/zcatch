@@ -113,6 +113,10 @@ private:
 	// an encapsulated class, that handles the database connection.
 	IRankingServer* m_pRankingServer;
 
+	std::vector<std::pair<int, CPlayerStats> > m_RankingRetrievalMessageQueue;
+	std::mutex m_RankingRetrievalMessageQueueMutex;
+	void ProcessRankingRetrievalMessageQueue();
+
 	// initializes ranking server
 	void InitRankingServer();
 

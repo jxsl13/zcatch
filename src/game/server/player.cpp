@@ -58,8 +58,6 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 
 CPlayer::~CPlayer()
 {
-	std::lock_guard<std::mutex> lock(m_PreventDestruction);
-
 	// player doesn't exist -> no need to iterate over that player anymore.
 	m_pGameServer->RemovePlayer(m_ClientID);
 	delete m_pCharacter;

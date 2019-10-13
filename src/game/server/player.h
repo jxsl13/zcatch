@@ -47,24 +47,15 @@ public:
 	CCharacter *GetCharacter();
 
 	// zCatch
-
-	// as it might happen, that a specific player could be destroyed in the 
-	// main thread, before we retrieved data from the database or in between the
-	// async operation, where the stats are retrieved, 
-	// the player's destruction is blocked, if statistics are being written 
-	// shortly before a player ought to be destroyed.
-	std::mutex m_PreventDestruction;
-
-	// atomic-wrapper in order to change these values in a multithreaded context
-	std::atomic<int> m_Wins; // number of wins
-	std::atomic<int> m_Score; // specific value based on players killed
-	std::atomic<int> m_Kills; // players killed
-	std::atomic<int> m_Deaths; // died
-	std::atomic<int> m_TicksWarmup; // playing warmup
-	std::atomic<int> m_TicksCaught; // 
-	std::atomic<int> m_TicksIngame; // ticks ingame
-	std::atomic<int> m_Shots; // number of shot projectiles
-	std::atomic<int> m_Fails; // how often the player fell down
+	int m_Wins; // number of wins
+	int m_Score; // specific value based on players killed
+	int m_Kills; // players killed
+	int m_Deaths; // died
+	int m_TicksWarmup; // playing warmup
+	int m_TicksCaught; // 
+	int m_TicksIngame; // ticks ingame
+	int m_Shots; // number of shot projectiles
+	int m_Fails; // how often the player fell down
 	void ResetStatistics();
 
 	enum EReleaseReason {
