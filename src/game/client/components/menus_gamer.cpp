@@ -422,7 +422,8 @@ void CMenus::RenderSettingsGamerEntitiesFont(CUIRect MainView)
 
 		if(Item.m_Visible)
 		{
-			// Item.m_Rect.y += 2.0f;
+			Item.m_Rect.y += 2.0f;
+			Item.m_Rect.x += 10.0f;
 			if(s_SelectedFont != -1 && !str_comp(m_aFonts[s_SelectedFont], r.front()))
 			{
 				TextRender()->TextColor(0.0f, 0.0f, 0.0f, 1.0f);
