@@ -67,7 +67,6 @@ void CMenus::RenderSettingsGamer(CUIRect MainView)
 	const char* pTabs[] = {"General", "Entities"/* , "Stats", "Credits" */};
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
-	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
 	for(int i=0; i<NumTabs; i++)
 	{
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
@@ -77,6 +76,10 @@ void CMenus::RenderSettingsGamer(CUIRect MainView)
 		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
 			s_SettingsPage = i;
 	}
+	if(s_SettingsPage != 1)
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
+	else
+		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 10.0f);
 	MainView.Margin(10.0f, &MainView);
 	
 	if(s_SettingsPage == 0)
@@ -304,35 +307,60 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 
 void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 {
-	CUIRect Button, Label;
-	char aBuf[512];
-	const float MarginSize = 5.0f;
-	// NewLine(&Button, &MainView);
+	// tabs
+	static int s_EntitiesPage = 0;
+	CUIRect Tabbar, Button;
+	MainView.HSplitTop(/* 1 */4.0f, 0, &MainView);
+	MainView.HSplitTop(/* 24 */20.0f, &Tabbar, &MainView);
 
+	const char* pTabs[] = {"Game skin", "Particles", "Cursor", "Font"/* , "Stats", "Credits" */};
+	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
+	for(int i=0; i<NumTabs; i++)
+	{
+		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
+		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
+				
+		static CButtonContainer s_Buttons[4];
+		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_EntitiesPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
+				s_EntitiesPage = i;
+	}
+	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 10.0f);
+
+	if(s_EntitiesPage == 0)
+		RenderSettingsGamerEntitiesGameSkin(MainView);
+	else if(s_EntitiesPage == 1)
+		RenderSettingsGamerEntitiesParticles(MainView);
+	else if(s_EntitiesPage == 2)
+		RenderSettingsGamerEntitiesCursor(MainView);
+	else if(s_EntitiesPage == 3)
+		RenderSettingsGamerEntitiesFont(MainView);
+}
+
+void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
+{
+	// game skin
+	char aBuf[512];
+
 	if(!m_pClient->m_pEntities->IsLoaded())
 	{
+		CUIRect Button, Label;
 		Button = MainView;
-		Button.HMargin(MainView.w/2-180.0f, &Button);
-		Button.VMargin(MainView.h/2-80.0f, &Button);
-		static int MustLoadCountDown = 0;
+		Button.HMargin(MainView.h/2-24.0f, &Button);
+		static int MustLoadCountDown = 5;
 		static CButtonContainer s_LoadButton;
 		if(MustLoadCountDown) // aesthetics
 		{
-			DoButton_Menu(&s_LoadButton, "Loading...", 0, &Button);
+			str_format(aBuf, sizeof(aBuf), "%s...", Localize("Loading"));
+			UI()->DoLabel(&Button, aBuf, 24.0f, CUI::ALIGN_CENTER);
 			MustLoadCountDown--;
 			if(MustLoadCountDown == 0)
 				m_pClient->m_pEntities->LoadEntities();
-		}
-		else if(DoButton_Menu(&s_LoadButton, "Load entities", 0, &Button))
-		{
-			MustLoadCountDown = 5; // give some time to print the "Loading"
 		}
 	}
 	else
 	{
 		// Game entities selection
-		MainView.HSplitTop(10.0f, 0, &MainView);
 		static CListBoxState s_ListBoxState;
 		int OldSelected = -1;
 		UiDoListboxHeader(&s_ListBoxState, &MainView, Localize("Game skin"), 20.0f, 2.0f);
@@ -353,7 +381,7 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 			if(Item.m_Visible)
 			{
 				CUIRect Pos;
-				Item.m_Rect.Margin(MarginSize, &Item.m_Rect);
+				Item.m_Rect.Margin(5.0f, &Item.m_Rect);
 				Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
 
 				Item.m_Rect.h = Item.m_Rect.w/2.0f;
@@ -379,6 +407,21 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 				str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
 		}
 	}
+}
+
+void CMenus::RenderSettingsGamerEntitiesParticles(CUIRect MainView)
+{
+
+}
+
+void CMenus::RenderSettingsGamerEntitiesCursor(CUIRect MainView)
+{
+
+}
+
+void CMenus::RenderSettingsGamerEntitiesFont(CUIRect MainView)
+{
+
 }
 
 #if 0

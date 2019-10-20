@@ -716,6 +716,10 @@ private:
 	void RenderSettingsGamerGeneral(CUIRect MainView);
 	void RenderSettingsGamerEntities(CUIRect MainView);
 	void RenderSettingsGamerStats(CUIRect MainView);
+	void RenderSettingsGamerEntitiesGameSkin(CUIRect MainView);
+	void RenderSettingsGamerEntitiesParticles(CUIRect MainView);
+	void RenderSettingsGamerEntitiesCursor(CUIRect MainView);
+	void RenderSettingsGamerEntitiesFont(CUIRect MainView);
 
 	// Gamer utilities
 	void NewLine(CUIRect *pButton, CUIRect *pView);
