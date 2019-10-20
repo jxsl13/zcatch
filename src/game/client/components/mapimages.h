@@ -48,4 +48,29 @@ public:
 	void LoadAutoMapres();
 };
 
+class CEntities : public CComponent
+{
+	enum
+	{
+		MAX_TEXTURES=64,
+	};
+	struct
+	{
+		IGraphics::CTextureHandle m_aTextures;
+		char m_aName[256];
+	} m_Info[MAX_TEXTURES];
+	bool m_Loaded;
+	int m_Count;
+	static int EntityScan(const char *pName, int IsDir, int DirType, void *pUser);
+
+public:
+	CEntities() { }
+	bool IsLoaded() const { return m_Loaded; }
+	void OnInit();
+	void LoadEntities();
+	IGraphics::CTextureHandle Get(int Index) const;
+	const char* GetName(int Index) const;
+	int Num() const;
+};
+
 #endif

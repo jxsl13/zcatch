@@ -714,6 +714,7 @@ private:
 	// Gamer
 	void RenderSettingsGamer(CUIRect MainView);
 	void RenderSettingsGamerGeneral(CUIRect MainView);
+	void RenderSettingsGamerEntities(CUIRect MainView);
 	void RenderSettingsGamerStats(CUIRect MainView);
 
 	// Gamer utilities

@@ -8,7 +8,10 @@
 #include <game/client/ui.h>
 #include <game/client/render.h>
 #include <game/client/gameclient.h>
+#include <game/client/components/mapimages.h> // entities
 // #include <game/client/animstate.h>
+
+#include <generated/client_data.h>
 
 #include <fstream> // Loading stats
 #include <time.h> // Random
@@ -39,6 +42,7 @@ void CMenus::NewLine()
 void CMenus::RenderSettingsGamer(CUIRect MainView)
 {
 	CUIRect Button, Tabbar, BottomView;
+	#if 0
 	{
 		MainView.HSplitBottom(80.0f, &MainView, &BottomView);
 		MainView.HSplitTop(24.0f, &Tabbar, &MainView);
@@ -47,39 +51,45 @@ void CMenus::RenderSettingsGamer(CUIRect MainView)
 		RenderSettingsGamerGeneral(MainView);
 		return;
 	}
+	#endif
 	// char buf[64];
 	
 	static int s_SettingsPage = 0;
 	
 	// Tabs (Teecomp pattern)
 	MainView.HSplitBottom(80.0f, &MainView, &BottomView);
+	if(this->Client()->State() != IClient::STATE_ONLINE)
+		MainView.HSplitTop(20.0f, 0, 0);
+	BottomView.HSplitTop(20.f, 0, &BottomView);
+	MainView.HSplitTop(14.0f, 0, &MainView);
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
 
-	const char* Tabs[] = {"General", "Stats", "Credits"};
-	int NumTabs = (int)(sizeof(Tabs)/sizeof(*Tabs));
+	const char* pTabs[] = {"General", "Entities"/* , "Stats", "Credits" */};
+	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
-
 	for(int i=0; i<NumTabs; i++)
 	{
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
 				
-		static int s_Buttons[3] = {0};
-		if (DoButton_MenuTab(&s_Buttons[i], Tabs[i], s_SettingsPage == i, &Button, CUI::CORNER_TL | CUI::CORNER_TR))
+		static CButtonContainer s_Buttons[3];
+		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
 			s_SettingsPage = i;
 	}
-	
-	// ui_hsplit_t(&main_view, 10.0f, &button, &main_view);
 	MainView.Margin(10.0f, &MainView);
 	
 	if(s_SettingsPage == 0)
 		RenderSettingsGamerGeneral(MainView);
 	else if(s_SettingsPage == 1)
 	{
-		// RenderSettingsGamerStats(MainView);
+		RenderSettingsGamerEntities(MainView);
 	}
 	else if(s_SettingsPage == 2)
+	{
+		// RenderSettingsGamerStats(MainView);
+	}
+	else if(s_SettingsPage == 3)
 	{
 		// RenderSettingsGamerCredits(MainView);
 	}
@@ -274,17 +284,15 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 
 	NewLine();
 	NewLine();
-	UI()->DoLabel(&Button, Localize("Maps: default background"), 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
-	RenderTools()->DrawUIRect(&Button, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
-	// Button.VSplitLeft(0.0f, 0, &Button);
-	// Button.VSplitLeft(350.0f, &Button, 0);
-	static CButtonContainer s_ResetClearButton;
-	if(DoButton_Menu(&s_ResetClearButton, Localize("Reset background color"), 0, &Button))
-	{
-		const ivec4 DefaultClearColor = ivec4(149, 255, 53, 255);
-		g_Config.m_GfxClearColor = (int(DefaultClearColor.x) << 16) + (int(DefaultClearColor.y) << 8) + int(DefaultClearColor.z);
-	}
+	UI()->DoLabel(&Button, Localize("Game entities background"), 14.0f, CUI::ALIGN_LEFT);
+	// NewLine();
+	// RenderTools()->DrawUIRect(&Button, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 5.0f);
+	// static CButtonContainer s_ResetClearButton;
+	// if(DoButton_Menu(&s_ResetClearButton, Localize("Reset background color"), 0, &Button))
+	// {
+	// 	const ivec4 DefaultClearColor = ivec4(149, 255, 53, 255);
+	// 	g_Config.m_GfxClearColor = (int(DefaultClearColor.x) << 16) + (int(DefaultClearColor.y) << 8) + int(DefaultClearColor.z);
+	// }
 	bool Modified;
 	static HSLPickerState HSLState;
 	ivec4 Hsl = RenderHSLPicker(RightView, g_Config.m_GfxClearColor, false, Modified, HSLState);
@@ -292,6 +300,85 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		g_Config.m_GfxClearColor = (Hsl.x << 16) + (Hsl.y << 8) + Hsl.z;
 
 	NewLine(NULL, NULL);
+}
+
+void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
+{
+	CUIRect Button, Label;
+	char aBuf[512];
+	const float MarginSize = 5.0f;
+	// NewLine(&Button, &MainView);
+
+	
+	if(!m_pClient->m_pEntities->IsLoaded())
+	{
+		Button = MainView;
+		Button.HMargin(MainView.w/2-180.0f, &Button);
+		Button.VMargin(MainView.h/2-80.0f, &Button);
+		static int MustLoadCountDown = 0;
+		static CButtonContainer s_LoadButton;
+		if(MustLoadCountDown) // aesthetics
+		{
+			DoButton_Menu(&s_LoadButton, "Loading...", 0, &Button);
+			MustLoadCountDown--;
+			if(MustLoadCountDown == 0)
+				m_pClient->m_pEntities->LoadEntities();
+		}
+		else if(DoButton_Menu(&s_LoadButton, "Load entities", 0, &Button))
+		{
+			MustLoadCountDown = 5; // give some time to print the "Loading"
+		}
+	}
+	else
+	{
+		// Game entities selection
+		MainView.HSplitTop(10.0f, 0, &MainView);
+		static CListBoxState s_ListBoxState;
+		int OldSelected = -1;
+		UiDoListboxHeader(&s_ListBoxState, &MainView, Localize("Game skin"), 20.0f, 2.0f);
+	
+		const int Num = m_pClient->m_pEntities->Num();
+		UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/2.0f/3.0f, 0, Num, 3, OldSelected);
+
+		for(int i = 0; i < Num+1; ++i) // first is default
+		{
+			if(i == 0)
+			{
+				if(g_Config.m_ClCustomGameskin[0] == '\0')
+					OldSelected = i;
+			}
+			else if(str_comp(m_pClient->m_pEntities->GetName(i-1), g_Config.m_ClCustomGameskin) == 0)
+				OldSelected = i;
+			CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? m_pClient->m_pEntities->GetName(i-1) : 0, OldSelected == i);
+			if(Item.m_Visible)
+			{
+				CUIRect Pos;
+				Item.m_Rect.Margin(MarginSize, &Item.m_Rect);
+				Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
+
+				Item.m_Rect.h = Item.m_Rect.w/2.0f;
+
+				Graphics()->BlendNormal();
+				if(i == 0)
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+				else
+					Graphics()->TextureSet(m_pClient->m_pEntities->Get(i-1));
+				Graphics()->QuadsBegin();
+				IGraphics::CQuadItem QuadItem(Item.m_Rect.x, Item.m_Rect.y, Item.m_Rect.w, Item.m_Rect.h);
+				Graphics()->QuadsDrawTL(&QuadItem, 1);
+				Graphics()->QuadsEnd();
+			}
+		}
+
+		const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
+		if(OldSelected != NewSelected)
+		{
+			if(NewSelected == 0)
+				g_Config.m_ClCustomGameskin[0] = '\0';
+		 	else
+				str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
+		}
+	}
 }
 
 #if 0

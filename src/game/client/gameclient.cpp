@@ -88,6 +88,7 @@ static CPlayers gs_Players;
 static CNamePlates gs_NamePlates;
 static CItems gs_Items;
 static CMapImages gs_MapImages;
+static CEntities gs_Entities;
 
 static CMapLayers gs_MapLayersBackGround(CMapLayers::TYPE_BACKGROUND);
 static CMapLayers gs_MapLayersForeGround(CMapLayers::TYPE_FOREGROUND);
@@ -206,6 +207,7 @@ void CGameClient::OnConsoleInit()
 	m_pMotd = &::gs_Motd;
 	m_pDamageind = &::gsDamageInd;
 	m_pMapimages = &::gs_MapImages;
+	m_pEntities = &::gs_Entities;
 	m_pVoting = &::gs_Voting;
 	// m_pHud = &::gs_Hud; // for announcers
 	m_pScoreboard = &::gs_Scoreboard;
@@ -218,6 +220,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pSkins);
 	m_All.Add(m_pCountryFlags);
 	m_All.Add(m_pMapimages);
+	m_All.Add(m_pEntities); // unnecessary?
 	m_All.Add(m_pEffects); // doesn't render anything, just updates effects
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 	m_All.Add(m_pBinds);

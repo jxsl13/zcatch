@@ -350,6 +350,7 @@ public:
 	class CSounds *m_pSounds;
 	class CMotd *m_pMotd;
 	class CMapImages *m_pMapimages;
+	class CEntities *m_pEntities;
 	// class CHud *m_pHud;
 	class CVoting *m_pVoting;
 	class CScoreboard *m_pScoreboard;

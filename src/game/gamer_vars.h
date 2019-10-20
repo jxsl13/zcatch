@@ -70,5 +70,8 @@ MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLA
 // instashield
 MACRO_CONFIG_INT(ClShieldDisplay, cl_shield_display, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Display shields instead of armor pickups in iCTF)")
 
+// custom entities
+MACRO_CONFIG_STR(ClCustomGameskin, cl_custom_gameskin, 255, "", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Game skin to use (empty for default)")
+
 // dbg
 MACRO_CONFIG_INT(DbgNoTilemapSkip, dbg_no_tilemapskip, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "No tilemap skip")
