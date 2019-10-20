@@ -233,6 +233,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(&m_pEntities->m_GameSkins);
 	m_All.Add(&m_pEntities->m_Particles);
 	m_All.Add(&m_pEntities->m_Cursors);
+	m_All.Add(&m_pEntities->m_Emoticons);
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
 	m_All.Add(&m_pParticles->m_RenderTrail);

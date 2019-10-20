@@ -76,6 +76,17 @@ public:
 		virtual void LoadEntities();
 		virtual void Reload(int id);
 	} m_Cursors;
+	
+	// emoticons
+	class CEmoticons : public CTextureEntity
+	{
+		virtual bool LoadEntity(const char *pName, int DirType, IGraphics::CTextureHandle *pTexture);
+	public:
+		CEmoticons();
+		virtual void DelayedInit();
+		virtual void LoadEntities();
+		virtual void Reload(int id);
+	} m_Emoticons;
 };
 
 #endif

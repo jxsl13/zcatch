@@ -19,6 +19,7 @@ void CEntities::DelayedInit()
 	m_GameSkins.DelayedInit();
 	m_Particles.DelayedInit();
 	m_Cursors.DelayedInit();
+	m_Emoticons.DelayedInit();
 }
 
 void CEntities::LoadEntities()
@@ -26,6 +27,7 @@ void CEntities::LoadEntities()
 	m_GameSkins.LoadEntities();
 	m_Particles.LoadEntities();
 	m_Cursors.LoadEntities();
+	m_Emoticons.LoadEntities();
 	m_Loaded = true;
 }
 
@@ -244,4 +246,60 @@ void CEntities::CCursors::Reload(int id)
 		g_pData->m_aImages[IMAGE_CURSOR].m_Id = GetDefault();
 	else
 		g_pData->m_aImages[IMAGE_CURSOR].m_Id = Get(id);
+}
+
+// emoticons
+CEntities::CEmoticons::CEmoticons()
+{
+	m_Count = 0;
+}
+void CEntities::CEmoticons::DelayedInit()
+{
+	m_DefaultTexture = g_pData->m_aImages[IMAGE_EMOTICONS].m_Id; // save default texture
+	if(g_Config.m_ClCustomEmoticons[0] == '\0')
+	{
+		g_pData->m_aImages[IMAGE_EMOTICONS].m_Id = GetDefault();
+	}
+	else
+	{
+		LoadEntity(g_Config.m_ClCustomEmoticons, IStorage::TYPE_ALL, &m_InitialTexture);
+		g_pData->m_aImages[IMAGE_EMOTICONS].m_Id = m_InitialTexture;
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "emoticons/%s", g_Config.m_ClCustomEmoticons);
+	}
+}
+void CEntities::CEmoticons::LoadEntities()
+{
+	// unload all textures (don't think that's necessary)
+	for(int i = 0; i < m_Count; i++)
+			Graphics()->UnloadTexture(&(m_Info[i].m_aTextures));
+
+	Storage()->ListDirectory(IStorage::TYPE_ALL, "emoticons", EntityScan, this);
+	dbg_msg("entities", "loaded %d emoticons", m_Count);
+}
+bool CEntities::CEmoticons::LoadEntity(const char *pName, int DirType, IGraphics::CTextureHandle *pTexture)
+{
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "emoticons/%s", pName);
+	CImageInfo Info;
+	if(!Graphics()->LoadPNG(&Info, aBuf, DirType))
+	{
+		str_format(aBuf, sizeof(aBuf), "failed to load emoticons '%s'", pName);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "entities", aBuf);
+		return false;
+	}
+	dbg_msg("entities", "loaded emoticons %s", pName);
+
+	// load entities
+	Graphics()->UnloadTexture(pTexture);
+	*pTexture = Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
+	mem_free(Info.m_pData);
+	return true;
+}
+void CEntities::CEmoticons::Reload(int id)
+{
+	if(id < 0)
+		g_pData->m_aImages[IMAGE_EMOTICONS].m_Id = GetDefault();
+	else
+		g_pData->m_aImages[IMAGE_EMOTICONS].m_Id = Get(id);
 }

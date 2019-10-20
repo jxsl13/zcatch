@@ -721,7 +721,9 @@ private:
 	void RenderSettingsGamerEntitiesGameSkin(CUIRect MainView);
 	void RenderSettingsGamerEntitiesParticles(CUIRect MainView);
 	void RenderSettingsGamerEntitiesCursor(CUIRect MainView);
+	void RenderSettingsGamerEntitiesEmoticons(CUIRect MainView);
 	void RenderSettingsGamerEntitiesFont(CUIRect MainView);
+	sorted_array<string> m_aFonts;
 
 	// Gamer utilities
 	void NewLine(CUIRect *pButton, CUIRect *pView);

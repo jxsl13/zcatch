@@ -58,14 +58,22 @@ void CMenus::RenderSettingsGamer(CUIRect MainView)
 	const char* pTabs[] = {"General", "Entities"/* , "Stats", "Credits" */};
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
+	static CButtonContainer s_Buttons[2];
 	for(int i=0; i<NumTabs; i++)
 	{
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
 				
-		static CButtonContainer s_Buttons[3];
 		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_SettingsPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
 			s_SettingsPage = i;
+		if(i == 1)
+		{	
+			CUIRect Label = Button;
+			Label.w -= 5.0f;
+			TextRender()->TextColor(0.9f, 0.1f, 0.1f, 1.0f);
+			UI()->DoLabel(&Label, Localize("NEW!"), 7.0f, CUI::ALIGN_RIGHT);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
 	}
 	if(s_SettingsPage != 1)
 		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
@@ -304,7 +312,7 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 	MainView.HSplitTop(/* 1 */4.0f, 0, &MainView);
 	MainView.HSplitTop(/* 24 */20.0f, &Tabbar, &MainView);
 
-	const char* pTabs[] = {"Game skin", "Particles", "Cursor", "Font"/* , "Stats", "Credits" */};
+	const char* pTabs[] = {"Game skin", "Particles", "Cursor", "Emoticons", "Font"};
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
 	for(int i=0; i<NumTabs; i++)
@@ -312,7 +320,7 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 		Tabbar.VSplitLeft(10.0f, &Button, &Tabbar);
 		Tabbar.VSplitLeft(80.0f, &Button, &Tabbar);
 				
-		static CButtonContainer s_Buttons[4];
+		static CButtonContainer s_Buttons[5];
 		if (DoButton_MenuTabTop(&s_Buttons[i], pTabs[i], s_EntitiesPage == i, &Button, 1.0f, 1.0f, CUI::CORNER_T, 5.0f, 0.25f))
 				s_EntitiesPage = i;
 	}
@@ -345,24 +353,32 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 		else if(s_EntitiesPage == 2)
 			RenderSettingsGamerEntitiesCursor(MainView);
 		else if(s_EntitiesPage == 3)
+			RenderSettingsGamerEntitiesEmoticons(MainView);
+		else if(s_EntitiesPage == 4)
 			RenderSettingsGamerEntitiesFont(MainView);
 	}
 }
 
 void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_GameSkins, g_Config.m_ClCustomGameskin, "GAme skin", 2, 2.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_GameSkins, g_Config.m_ClCustomGameskin, "Game skin", 3, 2.0f);
 }
 
 void CMenus::RenderSettingsGamerEntitiesParticles(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Particles, g_Config.m_ClCustomParticles, "Particles", 4, 1.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Particles, g_Config.m_ClCustomParticles, "Particles", 5, 1.0f);
 }
 
 void CMenus::RenderSettingsGamerEntitiesCursor(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Cursors, g_Config.m_ClCustomCursor, "Cursors", 10, 1.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Cursors, g_Config.m_ClCustomCursor, "Cursors", 16, 1.0f);
 }
+
+void CMenus::RenderSettingsGamerEntitiesEmoticons(CUIRect MainView)
+{
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Emoticons, g_Config.m_ClCustomEmoticons, "Emoticons", 5, 1.0f);
+}
+
 
 void CMenus::RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTextureEntity* pEntities, char* pConfigStr, const char* pLabel, int ItemsPerRow, float Ratio)
 {
@@ -373,7 +389,6 @@ void CMenus::RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTe
 	UiDoListboxHeader(&s_ListBoxState, &MainView, aBuf, 20.0f, 2.0f);
 
 	const int Num = pEntities->Num();
-	// const int ItemsPerRow = 10;
 	UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/(float)ItemsPerRow/Ratio, 0, Num, ItemsPerRow, OldSelected);
 
 	for(int i = 0; i < Num+1; ++i) // first is default
@@ -393,7 +408,7 @@ void CMenus::RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTe
 			Item.m_Rect.Margin(5.0f, &Item.m_Rect);
 			Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
 
-			Item.m_Rect.h = Item.m_Rect.w;
+			Item.m_Rect.h = Item.m_Rect.w/Ratio;
 
 			Graphics()->BlendNormal();
 			if(i == 0)
@@ -413,14 +428,9 @@ void CMenus::RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTe
 		if(NewSelected == 0)
 			pConfigStr[0] = '\0';
 		else
-			str_copy(pConfigStr, pEntities->GetName(NewSelected-1), sizeof(pConfigStr));
+			str_copy(pConfigStr, pEntities->GetName(NewSelected-1), 255);
 		pEntities->Reload(NewSelected - 1); // -1 is default
 	}
-}
-
-void CMenus::RenderSettingsGamerEntitiesFont(CUIRect MainView)
-{
-
 }
 
 #if 0
