@@ -723,6 +723,7 @@ private:
 	void RenderSettingsGamerEntitiesCursor(CUIRect MainView);
 	void RenderSettingsGamerEntitiesEmoticons(CUIRect MainView);
 	void RenderSettingsGamerEntitiesFont(CUIRect MainView);
+	static int FontsScan(const char *pName, int IsDir, int DirType, void *pUser);
 	sorted_array<string> m_aFonts;
 
 	// Gamer utilities

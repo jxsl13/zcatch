@@ -379,6 +379,85 @@ void CMenus::RenderSettingsGamerEntitiesEmoticons(CUIRect MainView)
 	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Emoticons, g_Config.m_ClCustomEmoticons, "Emoticons", 5, 1.0f);
 }
 
+int CMenus::FontsScan(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	CMenus *pSelf = (CMenus *)pUser;
+	const char *pSuffix = str_endswith(pName, ".ttf");
+	if(IsDir || !str_endswith(pName, ".ttf"))
+		return 0;
+
+	char aFontName[128];
+	str_truncate(aFontName, sizeof(aFontName), pName, pSuffix - pName);
+	pSelf->m_aFonts.add(aFontName);
+	return 0;
+}
+
+void CMenus::RenderSettingsGamerEntitiesFont(CUIRect MainView)
+{
+	char aBuf[512];	
+	static int s_FontList = 0;
+	static int s_SelectedFont = -1;
+	static CListBoxState s_ListBoxState;
+
+	if(m_aFonts.size() == 0) // not loaded yet
+	{
+		Storage()->ListDirectory(IStorage::TYPE_ALL, "fonts", FontsScan, (CMenus*)this);
+		for(int i = 0; i < m_aFonts.size(); i++)
+			if(str_comp(m_aFonts[i], g_Config.m_ClFontfile) == 0)
+			{
+				s_SelectedFont = i;
+				break;
+			}
+	}
+
+	int OldSelected = s_SelectedFont;
+
+	UiDoListboxHeader(&s_ListBoxState, &MainView, Localize("Font"), 20.0f, 2.0f);
+	UiDoListboxStart(&s_ListBoxState, &s_FontList, 20.0f, 0, m_aFonts.size(), 1, s_SelectedFont, 0, true);
+
+	for(sorted_array<string>::range r = m_aFonts.all(); !r.empty(); r.pop_front())
+	{
+		bool IsActive = true;
+		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, &r.front(), false, &IsActive);
+
+		if(Item.m_Visible)
+		{
+			// Item.m_Rect.y += 2.0f;
+			if(s_SelectedFont != -1 && !str_comp(m_aFonts[s_SelectedFont], r.front()))
+			{
+				TextRender()->TextColor(0.0f, 0.0f, 0.0f, 1.0f);
+				TextRender()->TextOutlineColor(1.0f, 1.0f, 1.0f, 0.25f);
+				UI()->DoLabel(&Item.m_Rect, r.front(), Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+				TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
+			}
+			else
+				UI()->DoLabel(&Item.m_Rect, r.front(), Item.m_Rect.h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
+		}
+	}
+
+	s_SelectedFont = UiDoListboxEnd(&s_ListBoxState, 0);
+
+	if(OldSelected != s_SelectedFont)
+	{
+		str_format(g_Config.m_ClFontfile, sizeof(g_Config.m_ClFontfile), "%s.ttf", m_aFonts[s_SelectedFont].cstr());
+		// reload font
+		char aFontName[256];
+		str_format(aFontName, sizeof(aFontName), "fonts/%s", g_Config.m_ClFontfile);
+		char aFilename[512];
+		IOHANDLE File = Storage()->OpenFile(aFontName, IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
+		if(File)
+		{
+			io_close(File);
+			if(TextRender()->LoadFont(aFilename))
+			{
+				char aBuf[256];
+				str_format(aBuf, sizeof(aBuf), "failed to load font. filename='%s'", aFontName);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", aBuf);
+			}
+		}
+	}
+}
 
 void CMenus::RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTextureEntity* pEntities, char* pConfigStr, const char* pLabel, int ItemsPerRow, float Ratio)
 {
