@@ -353,6 +353,7 @@ void CGameClient::OnInit()
 		g_pData->m_aImages[i].m_Id = Graphics()->LoadTexture(g_pData->m_aImages[i].m_pFilename, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, g_pData->m_aImages[i].m_Flag ? IGraphics::TEXLOAD_LINEARMIPMAPS : 0);
 		m_pMenus->RenderLoading();
 	}
+	m_pEntities->DelayedInit();
 
 	OnReset();
 
@@ -362,8 +363,6 @@ void CGameClient::OnInit()
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
-
-	CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics());
 
 	m_IsXmasDay = time_isxmasday();
 	m_IsEasterDay = time_iseasterday();

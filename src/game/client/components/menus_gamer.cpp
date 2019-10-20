@@ -10,6 +10,7 @@
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/teecomp.h>
 #include <game/client/components/entities.h>
 
 #include <generated/client_data.h>
@@ -327,8 +328,6 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 		RenderSettingsGamerEntitiesFont(MainView);
 }
 
-
-#include <game/client/teecomp.h>
 void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 {
 	// game skin
@@ -355,7 +354,8 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 		// Game entities selection
 		static CListBoxState s_ListBoxState;
 		int OldSelected = -1;
-		UiDoListboxHeader(&s_ListBoxState, &MainView, Localize("Game skin"), 20.0f, 2.0f);
+		str_format(aBuf, sizeof(aBuf), Localize("Game skin: %s"), g_Config.m_ClCustomGameskin[0] ? g_Config.m_ClCustomGameskin : "default");
+		UiDoListboxHeader(&s_ListBoxState, &MainView, aBuf, 20.0f, 2.0f);
 	
 		const int Num = m_pClient->m_pEntities->Num();
 		UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/2.0f/3.0f, 0, Num, 3, OldSelected);
@@ -381,7 +381,7 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 
 				Graphics()->BlendNormal();
 				if(i == 0)
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAME].m_Id);
+					Graphics()->TextureSet(m_pClient->m_pEntities->GetDefault());
 				else
 					Graphics()->TextureSet(m_pClient->m_pEntities->Get(i-1));
 				Graphics()->QuadsBegin();
@@ -397,15 +397,14 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 			if(NewSelected == 0)
 			{
 				g_Config.m_ClCustomGameskin[0] = '\0';
-				g_pData->m_aImages[IMAGE_GAME].m_Id = Graphics()->LoadTexture(
-					"game.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+				g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->GetDefault();
+				CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), "game.png");
 			}
 		 	else
 			{
 				str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
 				str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
-				g_pData->m_aImages[IMAGE_GAME].m_Id = Graphics()->LoadTexture(
-					aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+				g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->Get(NewSelected-1);
 				CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), aBuf);
 			}
 		}

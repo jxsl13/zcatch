@@ -15,18 +15,25 @@ class CEntities : public CComponent
 		IGraphics::CTextureHandle m_aTextures;
 		char m_aName[256];
 	} m_Info[MAX_TEXTURES];
+	IGraphics::CTextureHandle m_DefaultTexture;
+	IGraphics::CTextureHandle m_InitialTexture; // store the texture at init there if it is custom (redundant)
+
 	bool m_Loaded;
 	int m_Count;
 	static int EntityScan(const char *pName, int IsDir, int DirType, void *pUser);
+	bool LoadEntity(const char *pName, int DirType, IGraphics::CTextureHandle *pTexture);
 
 public:
-	CEntities() { }
+	CEntities();
 	bool IsLoaded() const { return m_Loaded; }
-	void OnInit();
+	void DelayedInit();
 	void LoadEntities();
 	IGraphics::CTextureHandle Get(int Index) const;
+	IGraphics::CTextureHandle GetDefault() const;
 	const char* GetName(int Index) const;
 	int Num() const;
+
+	void ReloadGameSkin();
 };
 
 #endif
