@@ -17,7 +17,7 @@ public:
 	static void ResetConfig();
 	static const char* HslToName(int hsl, int Team);
 	static const char* TeamColorToName(int hsl, int Team);
-	static void TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics);
+	static void TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics, const char* pFilePath = "");
 
 	static bool UseDefaultTeamColor(int ForTeam, int LocalTeam, const CConfiguration& Config);
 	static int GetTeamColorInt(int ForTeam, int LocalTeam, int Color1, int Color2, int Method);

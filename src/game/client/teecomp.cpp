@@ -176,13 +176,13 @@ const char* CTeecompUtils::TeamColorToName(int hsl, int Team)
 	return "red team";
 }
 
-void CTeecompUtils::TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics)
+void CTeecompUtils::TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGraphics* pGraphics, const char* pFilePath)
 {
 	// Teecomp grayscale flags
 	pGraphics->UnloadTexture(Texture); // Already loaded with full color, unload
 
 	CImageInfo Info;
-	if(!pGraphics->LoadPNG(&Info, g_pData->m_aImages[IMAGE_GAME_GRAY].m_pFilename, IStorage::TYPE_ALL))
+	if(!pGraphics->LoadPNG(&Info, pFilePath ? pFilePath : g_pData->m_aImages[IMAGE_GAME_GRAY].m_pFilename, IStorage::TYPE_ALL))
 		return;
 
 	unsigned char *d = (unsigned char *)Info.m_pData;

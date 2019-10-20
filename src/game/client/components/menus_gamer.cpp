@@ -3,6 +3,7 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 #include <engine/graphics.h>
+#include <engine/storage.h> // entities loading
 
 #include <game/version.h>
 // #include <game/client/animstate.h>
@@ -326,6 +327,8 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 		RenderSettingsGamerEntitiesFont(MainView);
 }
 
+
+#include <game/client/teecomp.h>
 void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 {
 	// game skin
@@ -366,7 +369,8 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 			}
 			else if(str_comp(m_pClient->m_pEntities->GetName(i-1), g_Config.m_ClCustomGameskin) == 0)
 				OldSelected = i;
-			CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? m_pClient->m_pEntities->GetName(i-1) : 0, OldSelected == i);
+			static int s_DefaultEntitiyId;
+			CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? (void*)m_pClient->m_pEntities->GetName(i-1) : (void*)&s_DefaultEntitiyId, OldSelected == i);
 			if(Item.m_Visible)
 			{
 				CUIRect Pos;
@@ -391,9 +395,19 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 		if(OldSelected != NewSelected)
 		{
 			if(NewSelected == 0)
+			{
 				g_Config.m_ClCustomGameskin[0] = '\0';
+				g_pData->m_aImages[IMAGE_GAME].m_Id = Graphics()->LoadTexture(
+					"game.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+			}
 		 	else
+			{
 				str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
+				str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
+				g_pData->m_aImages[IMAGE_GAME].m_Id = Graphics()->LoadTexture(
+					aBuf, IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+				CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), aBuf);
+			}
 		}
 	}
 }
