@@ -55,7 +55,7 @@ void CMenus::RenderSettingsGamer(CUIRect MainView)
 	MainView.HSplitTop(14.0f, 0, &MainView);
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
 
-	const char* pTabs[] = {"General", "Entities"/* , "Stats", "Credits" */};
+	const char* pTabs[] = {"General", "Assets"/* , "Stats", "Credits" */};
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));
 	
 	static CButtonContainer s_Buttons[2];
