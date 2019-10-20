@@ -193,8 +193,8 @@ void CEntities::LoadEntities()
 	for(int i = 0; i < m_Count; i++)
 		Graphics()->UnloadTexture(&(m_Info[i].m_aTextures));
 
-	Storage()->ListDirectory(IStorage::TYPE_ALL, "entities", EntityScan, this);
-	dbg_msg("entities", "loaded %d entities", m_Count);
+	Storage()->ListDirectory(IStorage::TYPE_ALL, "gameskins", EntityScan, this);
+	dbg_msg("entities", "loaded %d gameskins", m_Count);
 	m_Loaded = true;
 }
 
@@ -204,14 +204,14 @@ int CEntities::EntityScan(const char *pName, int IsDir, int DirType, void *pUser
 	if(IsDir || !str_endswith(pName, ".png"))
 		return 0;
 
-	dbg_msg("entities", "loaded entities %s", pName);
+	dbg_msg("entities", "loaded gameskin %s", pName);
 
 	char aFilePath[512];
-	str_format(aFilePath, sizeof(aFilePath), "entities/%s", pName);
+	str_format(aFilePath, sizeof(aFilePath), "gameskins/%s", pName);
 	CImageInfo Info;
 	if(!pSelf->Graphics()->LoadPNG(&Info, aFilePath, DirType))
 	{
-		str_format(aFilePath, sizeof(aFilePath), "failed to load entities '%s'", pName);
+		str_format(aFilePath, sizeof(aFilePath), "failed to load gameskin '%s'", pName);
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "entities", aFilePath);
 		return 0;
 	}
