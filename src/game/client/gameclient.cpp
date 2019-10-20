@@ -37,6 +37,7 @@
 #include "components/debughud.h"
 #include "components/effects.h"
 #include "components/emoticon.h"
+#include "components/entities.h"
 #include "components/flow.h"
 #include "components/hud.h"
 #include "components/items.h"

@@ -5,11 +5,11 @@
 #include <engine/graphics.h>
 
 #include <game/version.h>
-#include <game/client/ui.h>
-#include <game/client/render.h>
-#include <game/client/gameclient.h>
-#include <game/client/components/mapimages.h> // entities
 // #include <game/client/animstate.h>
+#include <game/client/gameclient.h>
+#include <game/client/render.h>
+#include <game/client/ui.h>
+#include <game/client/components/entities.h>
 
 #include <generated/client_data.h>
 
