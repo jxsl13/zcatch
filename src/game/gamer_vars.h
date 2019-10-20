@@ -72,6 +72,8 @@ MACRO_CONFIG_INT(ClShieldDisplay, cl_shield_display, 1, 0, 1, CFGFLAG_CLIENT|CFG
 
 // custom entities
 MACRO_CONFIG_STR(ClCustomGameskin, cl_custom_gameskin, 255, "", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Game skin to use (empty for default)")
+MACRO_CONFIG_STR(ClCustomParticles, cl_custom_particles, 255, "", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Particles to use (empty for default)")
+MACRO_CONFIG_STR(ClCustomCursor, cl_custom_cursor, 255, "", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Cursor to use (empty for default)")
 
 // dbg
 MACRO_CONFIG_INT(DbgNoTilemapSkip, dbg_no_tilemapskip, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "No tilemap skip")

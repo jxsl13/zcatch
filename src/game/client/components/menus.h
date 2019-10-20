@@ -14,6 +14,7 @@
 #include <game/client/component.h>
 #include <game/client/localization.h>
 #include <game/client/ui.h>
+#include <game/client/components/entities.h>
 
 #include "skins.h"
 
@@ -716,6 +717,7 @@ private:
 	void RenderSettingsGamerGeneral(CUIRect MainView);
 	void RenderSettingsGamerEntities(CUIRect MainView);
 	void RenderSettingsGamerStats(CUIRect MainView);
+	void RenderSettingsGamerEntitiesGeneric(CUIRect MainView, CEntities::CTextureEntity* pEntities, char* pConfigStr, const char* pLabel, int ItemsPerRow, float Ratio);
 	void RenderSettingsGamerEntitiesGameSkin(CUIRect MainView);
 	void RenderSettingsGamerEntitiesParticles(CUIRect MainView);
 	void RenderSettingsGamerEntitiesCursor(CUIRect MainView);
