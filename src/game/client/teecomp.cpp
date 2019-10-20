@@ -180,7 +180,6 @@ void CTeecompUtils::TcReloadAsGrayScale(IGraphics::CTextureHandle* Texture, IGra
 {
 	// Teecomp grayscale flags
 	pGraphics->UnloadTexture(Texture); // Already loaded with full color, unload
-	//*Texture = -1; // Is that okay??
 
 	CImageInfo Info;
 	if(!pGraphics->LoadPNG(&Info, g_pData->m_aImages[IMAGE_GAME_GRAY].m_pFilename, IStorage::TYPE_ALL))

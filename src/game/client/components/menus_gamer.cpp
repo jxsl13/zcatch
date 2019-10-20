@@ -42,17 +42,6 @@ void CMenus::NewLine()
 void CMenus::RenderSettingsGamer(CUIRect MainView)
 {
 	CUIRect Button, Tabbar, BottomView;
-	#if 0
-	{
-		MainView.HSplitBottom(80.0f, &MainView, &BottomView);
-		MainView.HSplitTop(24.0f, &Tabbar, &MainView);
-		RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.5f), CUI::CORNER_ALL, 10.0f);
-		MainView.Margin(10.0f, &MainView);
-		RenderSettingsGamerGeneral(MainView);
-		return;
-	}
-	#endif
-	// char buf[64];
 	
 	static int s_SettingsPage = 0;
 	
