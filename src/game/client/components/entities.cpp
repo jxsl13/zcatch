@@ -11,21 +11,37 @@
 
 CEntities::CEntities()
 {
-	m_Count = 0;
 	m_Loaded = false;
 }
 
 void CEntities::DelayedInit()
 {
+	m_GameSkins.DelayedInit();
+}
+
+void CEntities::LoadEntities()
+{
+	m_GameSkins.LoadEntities();
+	m_Loaded = true;
+}
+
+// game skins
+CEntities::CGameSkins::CGameSkins()
+{
+	m_Count = 0;
+}
+
+void CEntities::CGameSkins::DelayedInit()
+{
 	m_DefaultTexture = g_pData->m_aImages[IMAGE_GAME].m_Id; // save default texture
 	if(g_Config.m_ClCustomGameskin[0] == '\0')
 	{
-		g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->GetDefault();
+		g_pData->m_aImages[IMAGE_GAME].m_Id = GetDefault();
 		CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), "game.png");
 	}
 	else
 	{
-		LoadEntity(g_Config.m_ClCustomGameskin, IStorage::TYPE_ALL, &m_InitialTexture);
+		LoadGameSkin(g_Config.m_ClCustomGameskin, IStorage::TYPE_ALL, &m_InitialTexture);
 		g_pData->m_aImages[IMAGE_GAME].m_Id = m_InitialTexture;
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
@@ -33,65 +49,46 @@ void CEntities::DelayedInit()
 	}
 }
 
-IGraphics::CTextureHandle CEntities::Get(int Index) const
-{
-	return m_Info[clamp(Index, 0, m_Count)].m_aTextures;
-}
-
-IGraphics::CTextureHandle CEntities::GetDefault() const
-{
-	return m_DefaultTexture;
-}
-
-const char* CEntities::GetName(int Index) const
-{
-	return m_Info[clamp(Index, 0, m_Count)].m_aName;
-}
-
-int CEntities::Num() const
-{
-	return m_Count;
-}
-
-void CEntities::LoadEntities()
+void CEntities::CGameSkins::LoadEntities()
 {
 	// unload all textures (don't think that's necessary)
 	for(int i = 0; i < m_Count; i++)
 			Graphics()->UnloadTexture(&(m_Info[i].m_aTextures));
 
-	Storage()->ListDirectory(IStorage::TYPE_ALL, "gameskins", EntityScan, this);
+	Storage()->ListDirectory(IStorage::TYPE_ALL, "gameskins", GameSkinScan, this);
 	dbg_msg("entities", "loaded %d gameskins", m_Count);
-	m_Loaded = true;
 }
 
-int CEntities::EntityScan(const char *pName, int IsDir, int DirType, void *pUser)
+IGraphics::CTextureHandle CEntities::CGameSkins::Get(int Index) const
 {
-	CEntities *pSelf = (CEntities *)pUser;
+	return m_Info[clamp(Index, 0, m_Count)].m_aTextures;
+}
+
+IGraphics::CTextureHandle CEntities::CGameSkins::GetDefault() const
+{
+	return m_DefaultTexture;
+}
+
+const char* CEntities::CGameSkins::GetName(int Index) const
+{
+	return m_Info[clamp(Index, 0, m_Count)].m_aName;
+}
+
+int CEntities::CGameSkins::Num() const
+{
+	return m_Count;
+}
+
+int CEntities::CGameSkins::GameSkinScan(const char *pName, int IsDir, int DirType, void *pUser)
+{
+	CEntities::CGameSkins *pSelf = (CEntities::CGameSkins *)pUser;
 	if(IsDir || !str_endswith(pName, ".png"))
 		return 0;
-
-	/* CImageInfo Info;
-	if(!pSelf->Graphics()->LoadPNG(&Info, aFilePath, DirType))
-	{
-		str_format(aFilePath, sizeof(aFilePath), "failed to load gameskin '%s'", pName);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "entities", aFilePath);
-		return 0;
-	}
-	dbg_msg("entities", "loaded gameskin %s", pName);
-
-	// load entities
-	if(pSelf->m_Count >= MAX_TEXTURES)
-		return 0;
-	pSelf->Graphics()->UnloadTexture(&pSelf->m_Info[pSelf->m_Count].m_aTextures);
-	pSelf->m_Info[pSelf->m_Count].m_aTextures = pSelf->Graphics()->LoadTextureRaw(Info.m_Width, Info.m_Height, Info.m_Format, Info.m_pData, Info.m_Format, 0);
-	mem_free(Info.m_pData);
- */
 	if(pSelf->m_Count >= MAX_TEXTURES)
 		return 1;
 
-	if(!pSelf->LoadEntity(pName, DirType, &pSelf->m_Info[pSelf->m_Count].m_aTextures))
+	if(!pSelf->LoadGameSkin(pName, DirType, &pSelf->m_Info[pSelf->m_Count].m_aTextures))
 		return 0;
-
 	// write name
 	str_copy(pSelf->m_Info[pSelf->m_Count].m_aName, pName, sizeof(pSelf->m_Info[pSelf->m_Count].m_aName));
 
@@ -99,7 +96,7 @@ int CEntities::EntityScan(const char *pName, int IsDir, int DirType, void *pUser
 	return 0;
 }
 
-bool CEntities::LoadEntity(const char *pName, int DirType, IGraphics::CTextureHandle *pTexture)
+bool CEntities::CGameSkins::LoadGameSkin(const char *pName, int DirType, IGraphics::CTextureHandle *pTexture)
 {
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "gameskins/%s", pName);

@@ -221,7 +221,6 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pSkins);
 	m_All.Add(m_pCountryFlags);
 	m_All.Add(m_pMapimages);
-	m_All.Add(m_pEntities); // unnecessary?
 	m_All.Add(m_pEffects); // doesn't render anything, just updates effects
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 	m_All.Add(m_pBinds);
@@ -230,6 +229,8 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pCamera);
 	m_All.Add(m_pSounds);
 	m_All.Add(m_pVoting);
+	m_All.Add(m_pEntities);
+	m_All.Add(&m_pEntities->m_GameSkins);
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
 	m_All.Add(&m_pParticles->m_RenderTrail);

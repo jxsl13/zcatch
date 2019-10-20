@@ -318,23 +318,10 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 	}
 	RenderTools()->DrawUIRect(&MainView, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_ALL, 10.0f);
 
-	if(s_EntitiesPage == 0)
-		RenderSettingsGamerEntitiesGameSkin(MainView);
-	else if(s_EntitiesPage == 1)
-		RenderSettingsGamerEntitiesParticles(MainView);
-	else if(s_EntitiesPage == 2)
-		RenderSettingsGamerEntitiesCursor(MainView);
-	else if(s_EntitiesPage == 3)
-		RenderSettingsGamerEntitiesFont(MainView);
-}
-
-void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
-{
-	// game skin
-	char aBuf[512];
-
+	// loading
 	if(!m_pClient->m_pEntities->IsLoaded())
 	{
+		char aBuf[512];
 		CUIRect Button, Label;
 		Button = MainView;
 		Button.HMargin(MainView.h/2-24.0f, &Button);
@@ -351,69 +338,138 @@ void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 	}
 	else
 	{
-		// Game entities selection
-		static CListBoxState s_ListBoxState;
-		int OldSelected = -1;
-		str_format(aBuf, sizeof(aBuf), Localize("Game skin: %s"), g_Config.m_ClCustomGameskin[0] ? g_Config.m_ClCustomGameskin : "default");
-		UiDoListboxHeader(&s_ListBoxState, &MainView, aBuf, 20.0f, 2.0f);
-	
-		const int Num = m_pClient->m_pEntities->Num();
-		UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/2.0f/3.0f, 0, Num, 3, OldSelected);
+		if(s_EntitiesPage == 0)
+			RenderSettingsGamerEntitiesGameSkin(MainView);
+		else if(s_EntitiesPage == 1)
+			RenderSettingsGamerEntitiesParticles(MainView);
+		else if(s_EntitiesPage == 2)
+			RenderSettingsGamerEntitiesCursor(MainView);
+		else if(s_EntitiesPage == 3)
+			RenderSettingsGamerEntitiesFont(MainView);
+	}
+}
 
-		for(int i = 0; i < Num+1; ++i) // first is default
+void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
+{
+	// Game entities selection
+	char aBuf[512];
+	static CListBoxState s_ListBoxState;
+	int OldSelected = -1;
+	str_format(aBuf, sizeof(aBuf), Localize("Game skin: %s"), g_Config.m_ClCustomGameskin[0] ? g_Config.m_ClCustomGameskin : "default");
+	UiDoListboxHeader(&s_ListBoxState, &MainView, aBuf, 20.0f, 2.0f);
+
+	const int Num = m_pClient->m_pEntities->m_GameSkins.Num();
+	UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/2.0f/3.0f, 0, Num, 3, OldSelected);
+
+	for(int i = 0; i < Num+1; ++i) // first is default
+	{
+		if(i == 0)
 		{
-			if(i == 0)
-			{
-				if(g_Config.m_ClCustomGameskin[0] == '\0')
-					OldSelected = i;
-			}
-			else if(str_comp(m_pClient->m_pEntities->GetName(i-1), g_Config.m_ClCustomGameskin) == 0)
+			if(g_Config.m_ClCustomGameskin[0] == '\0')
 				OldSelected = i;
-			static int s_DefaultEntitiyId;
-			CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? (void*)m_pClient->m_pEntities->GetName(i-1) : (void*)&s_DefaultEntitiyId, OldSelected == i);
-			if(Item.m_Visible)
-			{
-				CUIRect Pos;
-				Item.m_Rect.Margin(5.0f, &Item.m_Rect);
-				Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
-
-				Item.m_Rect.h = Item.m_Rect.w/2.0f;
-
-				Graphics()->BlendNormal();
-				if(i == 0)
-					Graphics()->TextureSet(m_pClient->m_pEntities->GetDefault());
-				else
-					Graphics()->TextureSet(m_pClient->m_pEntities->Get(i-1));
-				Graphics()->QuadsBegin();
-				IGraphics::CQuadItem QuadItem(Item.m_Rect.x, Item.m_Rect.y, Item.m_Rect.w, Item.m_Rect.h);
-				Graphics()->QuadsDrawTL(&QuadItem, 1);
-				Graphics()->QuadsEnd();
-			}
 		}
-
-		const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
-		if(OldSelected != NewSelected)
+		else if(str_comp(m_pClient->m_pEntities->m_GameSkins.GetName(i-1), g_Config.m_ClCustomGameskin) == 0)
+			OldSelected = i;
+		static int s_DefaultEntitiyId;
+		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? (void*)m_pClient->m_pEntities->m_GameSkins.GetName(i-1) : (void*)&s_DefaultEntitiyId, OldSelected == i);
+		if(Item.m_Visible)
 		{
-			if(NewSelected == 0)
-			{
-				g_Config.m_ClCustomGameskin[0] = '\0';
-				g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->GetDefault();
-				CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), "game.png");
-			}
-		 	else
-			{
-				str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
-				str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
-				g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->Get(NewSelected-1);
-				CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), aBuf);
-			}
+			CUIRect Pos;
+			Item.m_Rect.Margin(5.0f, &Item.m_Rect);
+			Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
+
+			Item.m_Rect.h = Item.m_Rect.w/2.0f;
+
+			Graphics()->BlendNormal();
+			if(i == 0)
+				Graphics()->TextureSet(m_pClient->m_pEntities->m_GameSkins.GetDefault());
+			else
+				Graphics()->TextureSet(m_pClient->m_pEntities->m_GameSkins.Get(i-1));
+			Graphics()->QuadsBegin();
+			IGraphics::CQuadItem QuadItem(Item.m_Rect.x, Item.m_Rect.y, Item.m_Rect.w, Item.m_Rect.h);
+			Graphics()->QuadsDrawTL(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+		}
+	}
+
+	const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
+	if(OldSelected != NewSelected)
+	{
+		if(NewSelected == 0)
+		{
+			g_Config.m_ClCustomGameskin[0] = '\0';
+			g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->m_GameSkins.GetDefault();
+			CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), "game.png");
+		}
+		else
+		{
+			str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->m_GameSkins.GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
+			str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
+			g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->m_GameSkins.Get(NewSelected-1);
+			CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), aBuf);
 		}
 	}
 }
 
 void CMenus::RenderSettingsGamerEntitiesParticles(CUIRect MainView)
 {
+	char aBuf[512];
+	static CListBoxState s_ListBoxState;
+	int OldSelected = -1;
+	str_format(aBuf, sizeof(aBuf), Localize("Game skin: %s"), g_Config.m_ClCustomGameskin[0] ? g_Config.m_ClCustomGameskin : "default");
+	UiDoListboxHeader(&s_ListBoxState, &MainView, aBuf, 20.0f, 2.0f);
 
+	const int Num = m_pClient->m_pEntities->m_GameSkins.Num();
+	UiDoListboxStart(&s_ListBoxState, &s_ListBoxState, MainView.w/2.0f/3.0f, 0, Num, 3, OldSelected);
+
+	for(int i = 0; i < Num+1; ++i) // first is default
+	{
+		if(i == 0)
+		{
+			if(g_Config.m_ClCustomGameskin[0] == '\0')
+				OldSelected = i;
+		}
+		else if(str_comp(m_pClient->m_pEntities->m_GameSkins.GetName(i-1), g_Config.m_ClCustomGameskin) == 0)
+			OldSelected = i;
+		static int s_DefaultEntitiyId;
+		CListboxItem Item = UiDoListboxNextItem(&s_ListBoxState, i > 0 ? (void*)m_pClient->m_pEntities->m_GameSkins.GetName(i-1) : (void*)&s_DefaultEntitiyId, OldSelected == i);
+		if(Item.m_Visible)
+		{
+			CUIRect Pos;
+			Item.m_Rect.Margin(5.0f, &Item.m_Rect);
+			Item.m_Rect.HSplitBottom(10.0f, &Item.m_Rect, &Pos);
+
+			Item.m_Rect.h = Item.m_Rect.w/2.0f;
+
+			Graphics()->BlendNormal();
+			if(i == 0)
+				Graphics()->TextureSet(m_pClient->m_pEntities->m_GameSkins.GetDefault());
+			else
+				Graphics()->TextureSet(m_pClient->m_pEntities->m_GameSkins.Get(i-1));
+			Graphics()->QuadsBegin();
+			IGraphics::CQuadItem QuadItem(Item.m_Rect.x, Item.m_Rect.y, Item.m_Rect.w, Item.m_Rect.h);
+			Graphics()->QuadsDrawTL(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+		}
+	}
+
+	// const int NewSelected = UiDoListboxEnd(&s_ListBoxState, 0);
+	// if(OldSelected != NewSelected)
+	// {
+	// 	if(NewSelected == 0)
+	// 	{
+	// 		g_Config.m_ClCustomGameskin[0] = '\0';
+	// 		g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->GetDefault();
+	// 		CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), "game.png");
+	// 	}
+	// 	else
+	// 	{
+	// 		str_copy(g_Config.m_ClCustomGameskin, m_pClient->m_pEntities->GetName(NewSelected-1), sizeof(g_Config.m_ClCustomGameskin));
+	// 		str_format(aBuf, sizeof(aBuf), "gameskins/%s", g_Config.m_ClCustomGameskin);
+	// 		g_pData->m_aImages[IMAGE_GAME].m_Id = m_pClient->m_pEntities->Get(NewSelected-1);
+	// 		CTeecompUtils::TcReloadAsGrayScale(&g_pData->m_aImages[IMAGE_GAME_GRAY].m_Id, Graphics(), aBuf);
+	// 	}
+	// }
 }
 
 void CMenus::RenderSettingsGamerEntitiesCursor(CUIRect MainView)
