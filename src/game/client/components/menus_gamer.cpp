@@ -122,30 +122,25 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	DoButton_BinaryCheckBox(&g_Config.m_ClNoHud, "Disable HUD", &Button);
 		
 	NewLine();
-	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBar, "Display healthbar", &Button);
 	
 	if(g_Config.m_GfxHealthBar)
 	{
 		NewLine();
+		Button.VSplitLeft(20.0f, 0, &Button);
 		DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBarDamagedOnly, "Only display damaged attributes", &Button);
 
 		NewLine();
-		DoButton_BinaryCheckBox(&g_Config.m_GfxArmorUnderHealth, "Render armor under health for the healthbar", &Button);
+		Button.VSplitLeft(20.0f, 0, &Button);
+		DoButton_BinaryCheckBox(&g_Config.m_GfxArmorUnderHealth, "Render armor under health", &Button);
 		
 		NewLine();
+		Button.VSplitLeft(20.0f, 0, &Button);
 		DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBarNumbers, "Render numbers next to the healthbar", &Button);
 	}
 
 	// NewLine();
 	// DoButton_BinaryCheckBox(&g_Config.m_ClGcolor, "Use Gamer colors", &Button);
-	
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Announcers"), 14.0f, CUI::ALIGN_LEFT);
-	
-	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncers, "Visual announcers", &Button);
 	/*
 	
 	if(g_Config.m_ClAnnouncers)
@@ -188,31 +183,37 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 
 	NewLine();
 	NewLine();
-	UI()->DoLabel(&Button, Localize("Instagib"), 14.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabel(&Button, Localize("Instashield"), 14.0f, CUI::ALIGN_LEFT);
 	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClShieldDisplay, "Display shield graphics instead of pickups", &Button);
+	DoButton_BinaryCheckBox(&g_Config.m_ClShieldDisplay, "Display prettier shield graphics", &Button);
 	
-	
 	NewLine();
 	NewLine();
-	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
+	UI()->DoLabel(&Button, Localize("Announcers"), 14.0f, CUI::ALIGN_LEFT);
 	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_ClAutomapperMenus, "Show automapper options in the ingame menus", &Button);
-
+	DoButton_BinaryCheckBox(&g_Config.m_ClAnnouncers, "Visual announcers", &Button);
 	NewLine();
-	static int s_ShowGameTiles = 0;
-	if(DoButton_CheckBox(&s_ShowGameTiles, "Show the game tiles", g_Config.m_GfxGameTiles > 0, &Button))
+	if(DoButton_CheckBox(&g_Config.m_ClGSound, Localize("Play announcer sounds"), g_Config.m_ClGSound, &Button))
+		g_Config.m_ClGSound ^= 1;
+		
+	Button.VSplitLeft(185.0f, 0, &Button);
+	Button.VSplitLeft(140.0f, &Button, 0);
+	static CButtonContainer s_TestButton;
+	if(DoButton_Menu(&s_TestButton, "Test one!", 0, &Button))
 	{
-		if(g_Config.m_GfxGameTiles)
-			g_Config.m_GfxGameTiles = 0;
-		else
-			g_Config.m_GfxGameTiles = 1;
-	}
+		int sounds[11] = {SOUND_SPREE_HUMILIATION, SOUND_SPREE_KILLING, SOUND_SPREE_RAMPAGE, SOUND_SPREE_DOMINATING, SOUND_SPREE_UNSTOPPABLE, SOUND_SPREE_GODLIKE,
+		SOUND_SPREE_WICKEDSICK, SOUND_SPREE_PREPARETOFIGHT, SOUND_SPREE_PREPARETOKILL, SOUND_SPREE_HOLYSHIT, SOUND_SPREE_FIRSTBLOOD};
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, sounds[rand()%11], 0);
+	}	
 
 	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Misc"), 14.0f, CUI::ALIGN_LEFT);
+	DoButton_BinaryCheckBox(&g_Config.m_ClPingGraph, "Show network graph next to ping in scoreboard", &Button);
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClClientRecognition, "Enable gamer client recognition", &Button);
 		
+	// ===------------ right side ------------===
 	NewLine(&Button, &RightView);
 	
 	UI()->DoLabel(&Button, Localize("Chat"), 14.0f, CUI::ALIGN_LEFT);
@@ -266,25 +267,23 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 		else if(Minus)
 			g_Config.m_ClTextSize -= 10;
 	}
-	
-	NewLine();
-	NewLine();
-	UI()->DoLabel(&Button, Localize("Sounds"), 14.0f, CUI::ALIGN_LEFT);
-	NewLine();
-	if(DoButton_CheckBox(&g_Config.m_ClGSound, Localize("Gamer sounds"), g_Config.m_ClGSound, &Button))
-		g_Config.m_ClGSound ^= 1;
-		
-	Button.VSplitLeft(145.0f, 0, &Button);
-	Button.VSplitLeft(140.0f, &Button, 0);
-	static CButtonContainer s_TestButton;
-	if(DoButton_Menu(&s_TestButton, "Test one!", 0, &Button))
-	{
-		int sounds[11] = {SOUND_SPREE_HUMILIATION, SOUND_SPREE_KILLING, SOUND_SPREE_RAMPAGE, SOUND_SPREE_DOMINATING, SOUND_SPREE_UNSTOPPABLE, SOUND_SPREE_GODLIKE,
-		SOUND_SPREE_WICKEDSICK, SOUND_SPREE_PREPARETOFIGHT, SOUND_SPREE_PREPARETOKILL, SOUND_SPREE_HOLYSHIT, SOUND_SPREE_FIRSTBLOOD};
-		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, sounds[rand()%11], 0);
-	}	
 
 	NewLine();
+	NewLine();
+	UI()->DoLabel(&Button, Localize("Automapper"), 14.0f, CUI::ALIGN_LEFT);
+	NewLine();
+	DoButton_BinaryCheckBox(&g_Config.m_ClAutomapperMenus, "Show automapper options in the ingame menus", &Button);
+	NewLine();
+	static int s_ShowGameTiles = 0;
+	if(DoButton_CheckBox(&s_ShowGameTiles, "Show the game tiles", g_Config.m_GfxGameTiles > 0, &Button))
+	{
+		if(g_Config.m_GfxGameTiles)
+			g_Config.m_GfxGameTiles = 0;
+		else
+			g_Config.m_GfxGameTiles = 1;
+	}
+
+	RightView.HSplitTop(10.0f, &Button, &RightView);
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Game entities background"), 14.0f, CUI::ALIGN_LEFT);
 	// NewLine();
