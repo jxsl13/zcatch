@@ -492,6 +492,15 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			TextRender()->TextColor(TextColor.r, TextColor.g, TextColor.b, ColorAlpha);
 			TextRender()->TextOutlineColor(OutlineColor.r, OutlineColor.g, OutlineColor.b, OutlineColor.a);
 
+			// dbggraph
+			if(g_Config.m_ClPingGraph && m_pClient->m_LocalClientID == pInfo->m_ClientID)
+			{
+				float GraphX = PingOffset;
+				float GraphY = y-LineHeight/2.0f;
+				float GraphW = PingLength;
+				float GraphH = LineHeight*3.0f;
+				Client()->RenderInputtimeMarginGraph(GraphX, GraphY, GraphW, GraphH);
+			}
 			// ping
 			TextRender()->TextColor(TextColor.r, TextColor.g, TextColor.b, 0.5f*ColorAlpha);
 			str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_pPlayerInfo->m_Latency, 0, 999));

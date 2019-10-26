@@ -149,6 +149,31 @@ void CGraph::Render(IGraphics *pGraphics, IGraphics::CTextureHandle FontTexture,
 	pGraphics->QuadsEnd();
 }
 
+void CGraph::RenderLite(IGraphics *pGraphics, IGraphics::CTextureHandle FontTexture, float x, float y, float w, float h)
+{
+	pGraphics->TextureClear();
+
+	pGraphics->LinesBegin();
+	for(int i = 1; i < MAX_VALUES; i++)
+	{
+		float a0 = (i-1)/(float)MAX_VALUES;
+		float a1 = i/(float)MAX_VALUES;
+		int i0 = (m_Index+i-1)&(MAX_VALUES-1);
+		int i1 = (m_Index+i)&(MAX_VALUES-1);
+
+		float v0 = (m_aValues[i0]-m_Min) / (m_Max-m_Min);
+		float v1 = (m_aValues[i1]-m_Min) / (m_Max-m_Min);
+
+		IGraphics::CColorVertex Array[2] = {
+			IGraphics::CColorVertex(0, m_aColors[i0][0], m_aColors[i0][1], m_aColors[i0][2], 0.75f),
+			IGraphics::CColorVertex(1, m_aColors[i1][0], m_aColors[i1][1], m_aColors[i1][2], 0.75f)};
+		pGraphics->SetColorVertex(Array, 2);
+		IGraphics::CLineItem LineItem(x+a0*w, y+h-v0*h, x+a1*w, y+h-v1*h);
+		pGraphics->LinesDraw(&LineItem, 1);
+	}
+	pGraphics->LinesEnd();
+}
+
 
 void CSmoothTime::Init(int64 Target)
 {
@@ -220,7 +245,7 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 		}
 		else
 		{
-			pGraph->Add(TimeLeft, 1,0,0);
+			pGraph->Add(TimeLeft, 1,0.3f,0.3f);
 			if(m_aAdjustSpeed[AdjustDirection] < 30.0f)
 				m_aAdjustSpeed[AdjustDirection] *= 2.0f;
 		}
@@ -230,7 +255,7 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 		if(m_SpikeCounter)
 			m_SpikeCounter--;
 
-		pGraph->Add(TimeLeft, 0,1,0);
+		pGraph->Add(TimeLeft, 0.75f,1,0.75f);
 
 		m_aAdjustSpeed[AdjustDirection] *= 0.95f;
 		if(m_aAdjustSpeed[AdjustDirection] < 2.0f)
@@ -380,6 +405,13 @@ void CClient::Rcon(const char *pCmd)
 bool CClient::ConnectionProblems() const
 {
 	return m_NetClient.GotProblems() != 0;
+}
+
+void CClient::RenderInputtimeMarginGraph(float x, float y, float w, float h)
+{
+	m_InputtimeMarginGraph.ScaleMin();
+	m_InputtimeMarginGraph.ScaleMax();
+	m_InputtimeMarginGraph.RenderLite(Graphics(), m_DebugFont, x, y, w, h);
 }
 
 void CClient::SendInput()

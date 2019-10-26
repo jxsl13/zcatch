@@ -54,8 +54,11 @@ MACRO_CONFIG_INT(ClShowSilentMessages, cl_show_silent_messages, 0, 0, 1, CFGFLAG
 // MACRO_CONFIG_INT(ClShowSkins, cl_showskins, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show skin names on scoreboard")
 // MACRO_CONFIG_INT(ClShowId, cl_showid, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show IDs on scoreboard")
 
-// Client auto-reconizing
+// Client auto-recognition
 MACRO_CONFIG_INT(ClClientRecognition, cl_client_recognition, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Enable gamer client recognition")
+
+// Prediction graph
+MACRO_CONFIG_INT(ClPingGraph, cl_ping_graph, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Renders a graph of the prediction margin in the scoreboard")
 
 // 	Spectating
 MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Spectator zoom")

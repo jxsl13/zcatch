@@ -27,6 +27,7 @@ public:
 
 	void Add(float v, float r, float g, float b);
 	void Render(IGraphics *pGraphics, IGraphics::CTextureHandle FontTexture, float x, float y, float w, float h, const char *pDescription);
+	void RenderLite(IGraphics *pGraphics, IGraphics::CTextureHandle FontTexture, float x, float y, float w, float h);
 };
 
 
@@ -214,6 +215,7 @@ public:
 	virtual void Rcon(const char *pCmd);
 
 	virtual bool ConnectionProblems() const;
+	virtual void RenderInputtimeMarginGraph(float x, float y, float w, float h);
 
 	virtual bool SoundInitFailed() const { return m_SoundInitFailed; }
 
