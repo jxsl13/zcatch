@@ -255,7 +255,7 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 		if(m_SpikeCounter)
 			m_SpikeCounter--;
 
-		pGraph->Add(TimeLeft, 0.75f,1,0.75f);
+		pGraph->Add(TimeLeft, 0.67f,1,0.67f);
 
 		m_aAdjustSpeed[AdjustDirection] *= 0.95f;
 		if(m_aAdjustSpeed[AdjustDirection] < 2.0f)
