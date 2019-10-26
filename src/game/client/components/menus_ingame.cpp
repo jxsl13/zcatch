@@ -945,6 +945,7 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	}
 }
 
+// 2019-10: I think this is all dead code!
 void CMenus::RenderServerBrowse(CUIRect MainView)
 {
 	// static int s_HasChosen = 0;
@@ -965,7 +966,6 @@ void CMenus::RenderServerBrowse(CUIRect MainView)
 		MainView.HSplitTop(25.0f, &MainView, 0);
 		MainView.VMargin(10.0f, &MainView);
 		
-		// static int s_InternetButton = 0;
 		MainView.VSplitLeft(30.0f, &Button, &MainView);
 		MainView.VSplitLeft(120.0f, &Button, &MainView);
 		static CButtonContainer s_InternetButton;
@@ -977,7 +977,6 @@ void CMenus::RenderServerBrowse(CUIRect MainView)
 			m_BrowsePageChosen = true;
 		}
 		
-		// static int s_LanButton = 0;
 		MainView.VSplitLeft(30.0f, &Button, &MainView);
 		MainView.VSplitLeft(120.0f, &Button, &MainView);	
 		static CButtonContainer s_LanButton;
@@ -986,6 +985,16 @@ void CMenus::RenderServerBrowse(CUIRect MainView)
 			m_ActivePage = PAGE_LAN;
 			// m_NewPage = PAGE_LAN;
 			ServerBrowser()->Refresh(IServerBrowser::TYPE_LAN);
+			m_BrowsePageChosen = true;
+		}
+		
+		MainView.VSplitLeft(30.0f, &Button, &MainView);
+		MainView.VSplitLeft(120.0f, &Button, &MainView);	
+		static CButtonContainer s_FavButton;
+		if(DoButton_Menu(&s_FavButton, Localize("Favorites"), 0, &Button))
+		{
+			m_ActivePage = PAGE_FAVORITES;
+			ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
 			m_BrowsePageChosen = true;
 		}
 	}	

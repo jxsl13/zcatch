@@ -941,11 +941,12 @@ void CMenus::UiDoListboxHeader(CListBoxState* pState, const CUIRect *pRect, cons
 	CUIRect View = *pRect;
 
 	// background
-	View.HSplitTop(ms_ListheaderHeight+Spacing, &Header, 0);
+	const float Height = GetListHeaderHeight();
+	View.HSplitTop(Height+Spacing, &Header, 0);
 	RenderTools()->DrawUIRect(&Header, vec4(0.0f, 0.0f, 0.0f, 0.25f), CUI::CORNER_T, 5.0f);
 
 	// draw header
-	View.HSplitTop(ms_ListheaderHeight, &Header, &View);
+	View.HSplitTop(Height, &Header, &View);
 	Header.y += 2.0f;
 	UI()->DoLabel(&Header, pTitle, Header.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 
@@ -973,7 +974,8 @@ void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowH
 	// draw footers
 	if(pBottomText)
 	{
-		View.HSplitBottom(ms_ListheaderHeight, &View, &Footer);
+		const float Height = GetListHeaderHeight();
+		View.HSplitBottom(Height, &View, &Footer);
 		Footer.VSplitLeft(10.0f, 0, &Footer);
 		Footer.y += 2.0f;
 		UI()->DoLabel(&Footer, pBottomText, Footer.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
@@ -1211,8 +1213,8 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		Left.VSplitLeft(Spacing, 0, &Left); // little space
 		Left.VSplitLeft(ButtonWidth, &Button, &Left);
 		static CButtonContainer s_ServerBrowserButton;
-		if(DoButton_SpriteID(&s_ServerBrowserButton, IMAGE_SIDEBARICONS, (m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN) ? SPRITE_SIDEBAR_REFRESH_B : SPRITE_SIDEBAR_REFRESH_A,
-			m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN, &Button, Alpha, Alpha) || CheckHotKey(KEY_B))
+		if(DoButton_SpriteID(&s_ServerBrowserButton, IMAGE_SIDEBARICONS, (m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN || m_GamePage == PAGE_FAVORITES) ? SPRITE_SIDEBAR_REFRESH_B : SPRITE_SIDEBAR_REFRESH_A,
+			m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN || m_GamePage == PAGE_FAVORITES, &Button, Alpha, Alpha) || CheckHotKey(KEY_B))
 			NewPage = PAGE_INTERNET;
 
 		static CButtonContainer s_SettingsButton;
@@ -1333,7 +1335,8 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		float ButtonWidth = (Box.w/6.0f)-(Spacing*5.0)/6.0f;
 
 		CUIRect Left;
-		Box.VSplitLeft(ButtonWidth*2.0f+Spacing, &Left, 0);
+		const int TabCount = g_Config.m_ClGBrowser ? 3 : 2;
+		Box.VSplitLeft(ButtonWidth*TabCount+(TabCount-1)*Spacing, &Left, 0);
 
 		// render header backgrounds
 		RenderTools()->DrawUIRect4(&Left, vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
@@ -1359,6 +1362,57 @@ void CMenus::RenderMenubar(CUIRect Rect)
 			ServerBrowser()->SetType(IServerBrowser::TYPE_LAN);
 			NewPage = PAGE_LAN;
 			g_Config.m_UiBrowserPage = PAGE_LAN;
+		}
+
+		if(g_Config.m_ClGBrowser)
+		{
+			Left.VSplitLeft(Spacing, 0, &Left); // little space
+			Left.VSplitLeft(ButtonWidth, &Button, &Left);
+			static CButtonContainer s_FavButton;
+			if(DoButton_MenuTabTop(&s_FavButton, Localize("Favorites"), m_ActivePage==PAGE_FAVORITES, &Button) || CheckHotKey(KEY_F))
+			{
+				m_pClient->m_pCamera->ChangePosition(CCamera::POS_LAN);
+				ServerBrowser()->SetType(IServerBrowser::TYPE_INTERNET);
+				NewPage = PAGE_FAVORITES;
+				g_Config.m_UiBrowserPage = PAGE_FAVORITES;
+			}
+		}
+
+		if(Client()->State() == IClient::STATE_OFFLINE)
+		{
+			CUIRect Right, Button;
+			Box.VSplitRight(20.0f, &Box, 0);
+			Box.VSplitRight(60.0f, 0, &Right);
+			Right.HSplitBottom(20.0f, 0, &Button);
+			static int s_LargeView = 0;
+			
+			// gamer: do fading button with two icons
+			{
+				static CButtonContainer s_SwitchViewButton;
+				float Seconds = 0.6f; //  0.6 seconds for fade
+				float FadeVal = ButtonFade(&s_SwitchViewButton, Seconds, 0) / Seconds;
+
+				RenderTools()->DrawUIRect(&Button, vec4(0.0f + FadeVal, 0.0f + FadeVal, 0.0f + FadeVal, 0.25f + FadeVal * 0.5f), CUI::CORNER_ALL, 5.0f);
+
+				for(int IconId = 0; IconId < 2; IconId++)
+				{
+					// rewrites CMenus::DoButton_SpriteID
+					CUIRect Icon = Button;
+					Icon.VMargin(Icon.w/4.0f, &Icon);
+					Icon.x += IconId*Icon.w*0.50f;
+					Icon.w *= 0.50f;
+					if(Icon.w > Icon.h)
+						Icon.VMargin((Icon.w - Icon.h) / 2, &Icon);
+					else if(Icon.w < Icon.h)
+						Icon.HMargin((Icon.h - Icon.w) / 2, &Icon);
+					Icon.Margin(2.0f, &Icon);
+					DoIcon(IMAGE_ARROWICONS, (IconId ^ g_Config.m_ClGBrowser) ? SPRITE_ARROW_RIGHT_A:SPRITE_ARROW_LEFT_A, &Icon);
+				}
+				if(UI()->DoButtonLogic(s_SwitchViewButton.GetID(), "", 0, &Button))
+				{
+					g_Config.m_ClGBrowser = (g_Config.m_ClGBrowser + 1) % 2;
+				}
+			}
 		}
 	}
 	else if(Client()->State() == IClient::STATE_OFFLINE)
@@ -1746,7 +1800,11 @@ int CMenus::Render()
 				BarHeight += 3.0f + 25.0f;
 			else if(Client()->State() == IClient::STATE_ONLINE && m_GamePage >= PAGE_INTERNET && m_GamePage <= PAGE_LAN)
 				BarHeight += 3.0f + 25.0f;
-			Screen.VMargin(Screen.w/2-365.0f, &MainView);
+			float VMargin = Screen.w/2-365.0f;
+			if(g_Config.m_ClGBrowser)
+				VMargin = 40.0f;
+
+			Screen.VMargin(VMargin, &MainView);
 			MainView.HSplitTop(BarHeight, &TabBar, &MainView);
 			RenderMenubar(TabBar);
 
@@ -1779,7 +1837,7 @@ int CMenus::Render()
 					m_Popup = POPUP_QUIT;
 
 				// settings button
-				if(Client()->State() == IClient::STATE_OFFLINE && (m_MenuPage == PAGE_INTERNET || m_MenuPage == PAGE_LAN || m_MenuPage == PAGE_DEMOS))
+				if(Client()->State() == IClient::STATE_OFFLINE && (m_MenuPage == PAGE_INTERNET || m_MenuPage == PAGE_LAN || m_MenuPage == PAGE_FAVORITES  || m_MenuPage == PAGE_DEMOS))
 				{
 					Row.VSplitRight(5.0f, &Row, 0);
 					Row.VSplitRight(TopOffset, &Row, &Button);
@@ -1813,6 +1871,8 @@ int CMenus::Render()
 					RenderServerbrowser(MainView);
 				else if(m_GamePage == PAGE_LAN)
 					RenderServerbrowser(MainView);
+				else if(m_GamePage == PAGE_FAVORITES)
+					RenderServerbrowser(MainView);
 			}
 			else
 			{
@@ -1821,6 +1881,8 @@ int CMenus::Render()
 				else if(m_MenuPage == PAGE_INTERNET)
 					RenderServerbrowser(MainView);
 				else if(m_MenuPage == PAGE_LAN)
+					RenderServerbrowser(MainView);
+				else if(m_MenuPage == PAGE_FAVORITES)
 					RenderServerbrowser(MainView);
 				else if(m_MenuPage == PAGE_DEMOS)
 					RenderDemoList(MainView);
@@ -2803,6 +2865,7 @@ void CMenus::SetMenuPage(int NewPage) {
 		case PAGE_SETTINGS: CameraPos = CCamera::POS_SETTINGS_GENERAL+g_Config.m_UiSettingsPage; break;
 		case PAGE_INTERNET: CameraPos = CCamera::POS_INTERNET; break;
 		case PAGE_LAN: CameraPos = CCamera::POS_LAN;
+		case PAGE_FAVORITES: CameraPos = CCamera::POS_LAN; break;
 		}
 
 		if(CameraPos != -1 && m_pClient && m_pClient->m_pCamera)

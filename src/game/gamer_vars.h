@@ -60,6 +60,9 @@ MACRO_CONFIG_INT(ClClientRecognition, cl_client_recognition, 1, 0, 1, CFGFLAG_CL
 // Prediction graph
 MACRO_CONFIG_INT(ClPingGraph, cl_ping_graph, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Renders a graph of the prediction margin in the scoreboard")
 
+// Browser
+MACRO_CONFIG_INT(ClGBrowser, cl_gbrowser, 1, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Gamer server browser")
+
 // 	Spectating
 MACRO_CONFIG_INT(GfxSpecZoom, gfx_spec_zoom, 100, 50, 500, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Spectator zoom")
 

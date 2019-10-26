@@ -278,6 +278,7 @@ private:
 		PAGE_SERVER_INFO,
 		PAGE_CALLVOTE,
 		PAGE_INTERNET,
+		PAGE_FAVORITES,
 		PAGE_LAN,
 		PAGE_DEMOS,
 		PAGE_SETTINGS,
@@ -504,9 +505,8 @@ private:
 
 		static class CServerFilterInfo ms_FilterStandard;
 		static class CServerFilterInfo ms_FilterFavorites;
-		static class CServerFilterInfo ms_FilterAll;
-
 	public:
+		static class CServerFilterInfo ms_FilterAll;
 
 		enum
 		{
@@ -637,6 +637,8 @@ private:
 	void RenderMenubar(CUIRect r);
 	void RenderNews(CUIRect MainView);
 	void RenderBackButton(CUIRect MainView);
+	inline float GetListHeaderHeight() const { return ms_ListheaderHeight + (g_Config.m_ClGBrowser ? 3.0f : 0.0f); }
+	inline float GetListHeaderHeightFactor() const { return 1.0f + (g_Config.m_ClGBrowser ? (3.0f/ms_ListheaderHeight) : 0.0f); }
 
 	// found in menus_demo.cpp
 	void RenderDemoPlayer(CUIRect MainView);
@@ -661,6 +663,7 @@ private:
 	// int m_ScrollOffset;
 	void RenderServerbrowserServerList(CUIRect View);
 	void RenderServerbrowserSidebar(CUIRect View);
+	void RenderServerbrowserFilterbar(CUIRect View); // gamer only
 	void RenderServerbrowserFriendTab(CUIRect View);
 	void RenderServerbrowserFilterTab(CUIRect View);
 	void RenderServerbrowserInfoTab(CUIRect View);
