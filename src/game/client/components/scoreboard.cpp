@@ -577,7 +577,19 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			{
 				CTeeRenderInfo TeeInfo = m_pClient->m_aClients[pInfo->m_ClientID].m_RenderInfo;
 				TeeInfo.m_Size = 20*TeeSizeMod;
-				RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(TeeOffset+TeeLength/2, y+LineHeight/2+Spacing));
+				bool isFriend = m_pClient->m_aClients[pInfo->m_ClientID].m_Friend;
+				RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, isFriend ? EMOTE_HAPPY : EMOTE_NORMAL, vec2(1.0f, 0.0f), vec2(TeeOffset+TeeLength/2, y+LineHeight/2+Spacing));
+				if(isFriend)
+				{
+					IGraphics::CQuadItem QuadIcon;
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_EMOTICONS].m_Id);
+					Graphics()->QuadsBegin();
+					RenderTools()->SelectSprite(SPRITE_HEARTS);
+					QuadIcon = IGraphics::CQuadItem(TeeOffset+TeeLength/2-2.0f, y, 14.f, 14.0f);
+					Graphics()->SetColor(1, 1, 1, 1.0f);
+					Graphics()->QuadsDrawTL(&QuadIcon, 1);
+					Graphics()->QuadsEnd();
+				}
 			}
 
 			// TODO: make an eye icon or something
