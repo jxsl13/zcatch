@@ -1848,8 +1848,8 @@ void CGameClient::DoLeaveMessage(const char *pName, int ClientID, const char *pR
 		str_format(aBuf, sizeof(aBuf), Localize("'%s' has left the game (%s)"), aLabel, pReason);
 	else
 		str_format(aBuf, sizeof(aBuf), Localize("'%s' has left the game"), aLabel);
-		if(Silent)
-			str_append(aBuf, " [silent]", sizeof(aBuf));
+	if(Silent)
+		str_append(aBuf, " [silent]", sizeof(aBuf));
 	m_pChat->AddLine(-1, 0, aBuf);
 }
 

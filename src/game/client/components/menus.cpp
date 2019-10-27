@@ -1384,7 +1384,6 @@ void CMenus::RenderMenubar(CUIRect Rect)
 			Box.VSplitRight(20.0f, &Box, 0);
 			Box.VSplitRight(60.0f, 0, &Right);
 			Right.HSplitBottom(20.0f, 0, &Button);
-			static int s_LargeView = 0;
 			
 			// gamer: do fading button with two icons
 			{

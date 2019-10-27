@@ -329,11 +329,10 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 	if(!m_pClient->m_pEntities->IsLoaded())
 	{
 		char aBuf[512];
-		CUIRect Button, Label;
+		CUIRect Button;
 		Button = MainView;
 		Button.HMargin(MainView.h/2-24.0f, &Button);
 		static int MustLoadCountDown = 5;
-		static CButtonContainer s_LoadButton;
 		if(MustLoadCountDown) // aesthetics
 		{
 			str_format(aBuf, sizeof(aBuf), "%s...", Localize("Loading"));
