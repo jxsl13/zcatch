@@ -359,22 +359,22 @@ void CMenus::RenderSettingsGamerEntities(CUIRect MainView)
 
 void CMenus::RenderSettingsGamerEntitiesGameSkin(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_GameSkins, g_Config.m_ClCustomGameskin, "Game skin", 3, 2.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_GameSkins, g_Config.m_ClCustomGameskin, "Game skin", g_Config.m_ClGBrowser ? 4 : 3, 2.0f);
 }
 
 void CMenus::RenderSettingsGamerEntitiesParticles(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Particles, g_Config.m_ClCustomParticles, "Particles", 5, 1.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Particles, g_Config.m_ClCustomParticles, "Particles", g_Config.m_ClGBrowser ? 6 : 5, 1.0f);
 }
 
 void CMenus::RenderSettingsGamerEntitiesCursor(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Cursors, g_Config.m_ClCustomCursor, "Cursors", 16, 1.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Cursors, g_Config.m_ClCustomCursor, "Cursors", g_Config.m_ClGBrowser ? 20 : 16, 1.0f);
 }
 
 void CMenus::RenderSettingsGamerEntitiesEmoticons(CUIRect MainView)
 {
-	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Emoticons, g_Config.m_ClCustomEmoticons, "Emoticons", 5, 1.0f);
+	RenderSettingsGamerEntitiesGeneric(MainView, &m_pClient->m_pEntities->m_Emoticons, g_Config.m_ClCustomEmoticons, "Emoticons", g_Config.m_ClGBrowser ? 6 : 5, 1.0f);
 }
 
 int CMenus::FontsScan(const char *pName, int IsDir, int DirType, void *pUser)
