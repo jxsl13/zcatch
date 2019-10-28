@@ -2161,6 +2161,8 @@ void CMenus::RenderServerbrowserBottomBox(CUIRect MainView)
 			ServerBrowser()->Refresh(IServerBrowser::REFRESHFLAG_INTERNET);
 		else if(m_MenuPage == PAGE_LAN)
 			ServerBrowser()->Refresh(IServerBrowser::REFRESHFLAG_LAN);
+		else if(m_MenuPage == PAGE_FAVORITES)
+			ServerBrowser()->Refresh(IServerBrowser::REFRESHFLAG_INTERNET);
 	}
 
 	MainView.VSplitLeft(Spacing, 0, &MainView); // little space
