@@ -1130,15 +1130,27 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	for(int s = 0; s < m_lFilters.size(); s++)
 	{
 		CBrowserFilter *pFilter = &m_lFilters[s];
-		if(g_Config.m_ClGBrowser)
+		if (g_Config.m_ClGBrowser)
 		{
-			if(m_ActivePage == PAGE_FAVORITES)
+			if (m_ActivePage == PAGE_FAVORITES)
 			{
-				if(pFilter->Custom() != CBrowserFilter::FILTER_FAVORITES)
+				if (pFilter->Custom() != CBrowserFilter::FILTER_FAVORITES)
+				{
+					if (pFilter->Extended())
+						pFilter->Switch();
 					continue;
+				}
+				else if(!pFilter->Extended())
+					pFilter->Switch();
 			}
-			else if(pFilter->Custom() != CBrowserFilter::FILTER_ALL)
+			else if (pFilter->Custom() != CBrowserFilter::FILTER_ALL)
+			{
+				if (pFilter->Extended())
+					pFilter->Switch();
 				continue;
+			}
+			else if (!pFilter->Extended())
+				pFilter->Switch();
 		}
 
 		// filter header
