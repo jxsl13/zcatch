@@ -1241,6 +1241,7 @@ void CGameControllerZCATCH::RetrieveRankingData(int ofID)
 
 	}, GetDatabasePrefix());
 }
+
 void CGameControllerZCATCH::SaveRankingData(int ofID)
 {
 	if(m_pRankingServer == nullptr)
@@ -1249,6 +1250,10 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 	CPlayer* pPlayer = GameServer()->m_apPlayers[ofID];
 	
 	if(pPlayer == nullptr)
+		return;
+
+	// if player leaves before his data was fetched from db.
+	if(!pPlayer->m_IsRankFetched)
 		return;
 	
 	m_pRankingServer->SetRanking({Server()->ClientName(ofID)}, {
@@ -1457,6 +1462,8 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 				pPlayer->m_TicksWarmup += stats["TicksWarmup"];
 				pPlayer->m_Shots += stats["Shots"];
 				pPlayer->m_Fails += stats["Fails"];
+
+				pPlayer->m_IsRankFetched = true;
 			}
 		}
 

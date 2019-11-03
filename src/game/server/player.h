@@ -5,7 +5,6 @@
 
 #include "alloc.h"
 #include <vector>
-#include <atomic>
 #include <mutex>
 #include <sstream>
 
@@ -47,6 +46,8 @@ public:
 	CCharacter *GetCharacter();
 
 	// zCatch
+	
+	bool m_IsRankFetched; // set to true if data was successfully or not successfully fetched from db.
 	int m_Wins; // number of wins
 	int m_Score; // specific value based on players killed
 	int m_Kills; // players killed

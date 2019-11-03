@@ -1070,6 +1070,7 @@ void CPlayer::SetWantsToJoinSpectators()
 
 void CPlayer::ResetStatistics()
 {
+	m_IsRankFetched = false;
 	m_Wins = 0;
 	m_Score = 0;
 	m_Kills = 0;
