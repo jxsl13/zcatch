@@ -480,7 +480,11 @@ void CPlayers::RenderPlayer(
 	// gamer: render health bar
 	if(m_pClient->m_LocalClientID == ClientID && g_Config.m_GfxHealthBar)
 	{
-		RenderHealthBar(Position, m_pClient->m_Snap.m_pLocalCharacter->m_Health, m_pClient->m_Snap.m_pLocalCharacter->m_Armor);
+		RenderHealthBar(Position, 
+			m_pClient->m_Snap.m_pLocalCharacter->m_Health,
+			m_pClient->m_Snap.m_pLocalCharacter->m_Armor,
+			m_pClient->m_Snap.m_pLocalCharacter->m_AmmoCount,
+			m_pClient->m_Snap.m_pLocalCharacter->m_Weapon);
 	}
 	// end gamer
 
@@ -528,7 +532,7 @@ void CPlayers::RenderPlayer(
 	}
 }
 
-void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
+void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int Weapon)
 {
 	hp = clamp(hp, 0, 10);
 	armor = clamp(armor, 0, 10);
@@ -544,7 +548,6 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 		nb--;
 		HealthIsBot = true;
 	}
-	if(!nb) return;
 
 	vec3 color,
 		red 	= vec3(0.9f,0.1f,0.1f), 
@@ -568,119 +571,215 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor)
 	r.x = Position.x-r.w/2;
 	r.y = Position.y-30-r.h;
 	const int Scale = 1;
+	const bool NewHealthBar = g_Config.m_GfxHealthBar == 3;
 
-	
-	// Draw a black round rect (ugly way)
-	if(nb == 2)
+	if(!NewHealthBar)
 	{
-		vec4 c = vec4(color.r/2,color.g/2,color.b/2, 1.0f);
-		CUIRect q;
-		// draw bottom border
-		q.w = r.w + 2*Scale;
-		q.h = Scale;
-		q.x = r.x - Scale;
-		q.y = r.y + r.h;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw top border
-		q.y = g_Config.m_GfxHealthBar == 1 ? r.y - r.h - 2 * Scale : r.y - r.h - Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw left border
-		q.w = Scale;
-		q.h = 2*r.h + 2*Scale;
-		q.x = r.x - Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw right border
-		q.x = r.x + r.w;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw middle border
-		if(g_Config.m_GfxHealthBar == 1)
+		if(!nb) return;
+		// Draw a black round rect (ugly way)
+		if(nb == 2)
 		{
+			vec4 c = vec4(color.r/2,color.g/2,color.b/2, 1.0f);
+			CUIRect q;
+			// draw bottom border
 			q.w = r.w + 2*Scale;
 			q.h = Scale;
 			q.x = r.x - Scale;
+			q.y = r.y + r.h;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw top border
+			q.y = g_Config.m_GfxHealthBar == 1 ? r.y - r.h - 2 * Scale : r.y - r.h - Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw left border
+			q.w = Scale;
+			q.h = 2*r.h + 2*Scale;
+			q.x = r.x - Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw right border
+			q.x = r.x + r.w;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw middle border
+			if(g_Config.m_GfxHealthBar == 1)
+			{
+				q.w = r.w + 2*Scale;
+				q.h = Scale;
+				q.x = r.x - Scale;
+				q.y = r.y - Scale;
+				RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			}
+		}
+		else // nb = 1
+		{
+			vec4 c = vec4(.5f,.5f,.5f, 1.0f);
+			CUIRect q;
+			// draw bottom border
+			q.x = r.x - Scale;
+			q.y = r.y + r.h;
+			q.w = r.w + 2*Scale;
+			q.h = Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw left border
+			q.x = r.x - Scale;
 			q.y = r.y - Scale;
+			q.w = Scale;
+			q.h = r.h + Scale;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw right border
+			q.x = r.x + r.w;
+			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
+			
+			// draw top border
+			q.x = r.x - Scale;
+			q.y = r.y - Scale;
+			q.w = r.w + 2*Scale;
+			q.h = Scale;
 			RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		}
-	}
-	else // nb = 1
-	{
-		vec4 c = vec4(.5f,.5f,.5f, 1.0f);
-		CUIRect q;
-		// draw bottom border
-		q.x = r.x - Scale;
-		q.y = r.y + r.h;
-		q.w = r.w + 2*Scale;
-		q.h = Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
 		
-		// draw left border
-		q.x = r.x - Scale;
-		q.y = r.y - Scale;
-		q.w = Scale;
-		q.h = r.h + Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw right border
-		q.x = r.x + r.w;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-		
-		// draw top border
-		q.x = r.x - Scale;
-		q.y = r.y - Scale;
-		q.w = r.w + 2*Scale;
-		q.h = Scale;
-		RenderTools()->DrawUIRect(&q, c, 0, 1.0f);
-	}
-	
 
-	const vec4 HealthColor = vec4(color.r, color.g, color.b, 0.9f);
-	const vec4 ArmorColor = vec4(0.9f, 0.6f, 0.1f, 0.9f);
-	// draw the below bar
-	if(true)
-	{
-		const bool isHealth = HealthIsBot;
-		const int x = isHealth ? hp : armor;
-		if(x)
+		const vec4 HealthColor = vec4(color.r, color.g, color.b, 1.0f);
+		const vec4 ArmorColor = vec4(0.9f, 0.6f, 0.1f, 1.0f);
+		const vec4 AmmoColor = vec4(0.6f, 0.6f, 0.9f, 1.0f);
+		bool HasBorders = g_Config.m_GfxHealthBar == 1; 
+		// draw the below bar
+		if(true)
 		{
-			r.w = 70.0f * x/10.f;
-			RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, 0, 5.0f);
+			const bool isHealth = HealthIsBot;
+			const int x = isHealth ? hp : armor;
+			if(x)
+			{
+				r.w = 70.0f * x/10.f;
+				RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, CUI::CORNER_ALL, 2.0f);
+			}
+		}
+		// draw the above bar
+		if(nb == 2)
+		{
+			bool isHealth = !HealthIsBot;
+			const int x = isHealth ? hp : armor;
+			if(x)
+			{
+				r.y -= HasBorders ? (r.h + Scale) : r.h;
+				r.w = 70.0f * x/10.f;
+				RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, CUI::CORNER_ALL, 2.0f);
+			}
+		}
+			
+		r.x -= 5;
+		// Rendering numbers next to the bar
+		if(g_Config.m_GfxHealthBarNumbers)
+		{
+			CTextCursor Cursor;
+			char Text[32];
+			r.y += g_Config.m_GfxArmorUnderHealth ? (3.0f) :(-3.0f);
+			
+			str_format(Text, sizeof(Text), "%d", hp);
+			int w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
+			TextRender()->SetCursor(&Cursor, r.x-w, r.y-g_Config.m_GfxArmorUnderHealth*8, 9.0f, TEXTFLAG_RENDER);
+			TextRender()->TextEx(&Cursor, Text, -1);
+			
+			str_format(Text, sizeof(Text), "%d", armor);
+			w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
+			TextRender()->SetCursor(&Cursor, r.x-w, r.y-(1-g_Config.m_GfxArmorUnderHealth)*8, 9.0f, TEXTFLAG_RENDER);
+			TextRender()->TextEx(&Cursor, Text, -1);
 		}
 	}
-	// draw the above bar
-	if(nb == 2)
+	else
 	{
-		bool isHealth = !HealthIsBot;
-		const int x = isHealth ? hp : armor;
-		if(x)
+		const vec4 HealthColor = vec4(color.r, color.g, color.b, 1.0f);
+		const vec4 ArmorColor = vec4(0.25f, 0.45f, 1.0f, 1.0f);
+		const vec4 AmmoColor = Ammo ? vec4(0.75f, 0.75f, 0.75f, 0.85f) : vec4(0.8f, 0.2f, 0.2f, 1.0f);
+		const vec4 ShadowColor = vec4(0.1f, 0.1f, 0.1f, 0.4f);
+		const vec4 (&aColors)[] = {HealthColor, ArmorColor, AmmoColor};
+
+		for(int ElementIndex = 0; ElementIndex < 3; ElementIndex++) // health -> armor -> ammo
 		{
-			r.y -= g_Config.m_GfxHealthBar == 1 ? (r.h + Scale) : r.h;
-			r.w = 70.0f * x/10.f;
-			RenderTools()->DrawUIRect(&r, isHealth ? HealthColor : ArmorColor, 0, 5.0f);
+			bool Skip;
+			float Value;
+			if(ElementIndex == 0)
+			{
+				// health
+				Value = hp;
+				Skip = hp == 10;
+			}
+			else if(ElementIndex == 1)
+			{
+				// armor
+				Value = armor;
+				Skip = armor == 0;
+			}
+			else
+			{
+				// ammo
+				Value = Ammo;
+				Skip = Ammo == 10;
+				if(Weapon == WEAPON_HAMMER)
+					Skip = true;
+				else if(!Ammo)
+					Value = 10;
+			}
+			if(ElementIndex == 2 && Weapon == WEAPON_NINJA) // ninja
+			{
+				const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
+				float NinjaProgress = clamp((int)Value-Client()->GameTick(), 0, Max) / (float)Max;
+				Value = (NinjaProgress*10.0f);
+			}
+			Value = clamp(Value, 0.0f, 10.0f);
+			
+			if(!Skip)
+			{
+				float Corners = 4.0f;
+				if(ElementIndex == 2)
+				{
+					// r.y += 2;
+					// r.h = 3;
+					// Corners = 3.0f;
+					// r.y = r.h*2;
+
+					// bullets
+					// r.w = 70.0f;
+					r.h--;
+					r.y++;
+					r.w = 4;
+					r.x += 1.5f;
+					int i;
+					for(i = 0; i < Value; i++)
+					{
+						RenderTools()->DrawUIRect(&r, AmmoColor, CUI::CORNER_ALL, 2);
+						r.x += 7;
+					}
+					for(; i < 10; i++)
+					{
+						RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, 2);
+						r.x += 7;
+					}
+
+					// r.w = 5;
+					// r.x -= r.w;
+					// r.h = r.h*2;
+					// r.y += r.h;
+					// RenderTools()->DrawUIRect(&r, ShadowColor, 0, 0);
+					// r.y += r.h * Value/10.f;
+					// r.h = r.h * Value/10.f;
+					// RenderTools()->DrawUIRect(&r, aColors[ElementIndex], 0, 0);
+				}
+				else
+				{
+					r.w = 70.0f;
+					RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, Corners);
+					r.w = 70.0f * Value/10.f;
+					RenderTools()->DrawUIRect(&r, aColors[ElementIndex], CUI::CORNER_ALL, Corners);
+				}
+			}
+			r.y -= r.h;
 		}
-	}
-		
-	r.x -= 5;
-	// Rendering numbers next to the bar
-	if(g_Config.m_GfxHealthBarNumbers)
-	{
-		CTextCursor Cursor;
-		char Text[32];
-		r.y += g_Config.m_GfxArmorUnderHealth ? (3.0f) :(-3.0f);
-		
-		str_format(Text, sizeof(Text), "%d", hp);
-		int w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
-		TextRender()->SetCursor(&Cursor, r.x-w, r.y-g_Config.m_GfxArmorUnderHealth*8, 9.0f, TEXTFLAG_RENDER);
-		TextRender()->TextEx(&Cursor, Text, -1);
-		
-		str_format(Text, sizeof(Text), "%d", armor);
-		w = TextRender()->TextWidth(0, 9, Text, -1, -1.0f);
-		TextRender()->SetCursor(&Cursor, r.x-w, r.y-(1-g_Config.m_GfxArmorUnderHealth)*8, 9.0f, TEXTFLAG_RENDER);
-		TextRender()->TextEx(&Cursor, Text, -1);
-	}
+	}	
 }
 
 void CPlayers::OnRender()

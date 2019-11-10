@@ -9,7 +9,7 @@ MACRO_CONFIG_INT(GfxClearColor, gfx_clear_color, 0, 0, 0xFFFFFF, CFGFLAG_SAVE|CF
 MACRO_CONFIG_INT(GfxMinimapMode, gfx_minimap_mode, 0, 0, 1, CFGFLAG_CLIENT, "Show minimap (use +minimap)")
 
 // Healthbar
-MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 0, 0, 2, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
+MACRO_CONFIG_INT(GfxHealthBar, gfx_healthbar, 0, 0, 3, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1, 2 or 3)")
 MACRO_CONFIG_INT(GfxHealthBarDamagedOnly, gfx_healthbar_damaged_only, 1, 1, 0, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render healthbar (mode 1 or 2)")
 MACRO_CONFIG_INT(GfxArmorUnderHealth, gfx_armor_under_health, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render the armor bar under the health")
 MACRO_CONFIG_INT(GfxHealthBarNumbers, gfx_healthbar_numbers, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Render numbers next to the healthbar")
