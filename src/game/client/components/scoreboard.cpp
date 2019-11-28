@@ -461,6 +461,23 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 		}
 	}
 
+	bool hasRecognizedClients = false;
+	if(g_Config.m_ClClientRecognition)
+		for(int i = 0 ; i < NumRenderScoreIDs ; i++)
+			if(RenderScoreIDs[i] >= 0)
+			{
+				const CGameClient::CPlayerInfoItem *pInfo = &m_pClient->m_Snap.m_aInfoByScore[RenderScoreIDs[i]];
+				if(m_pClient->m_LocalClientID != pInfo->m_ClientID && (
+					   !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")
+					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
+					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!")))
+				{
+					hasRecognizedClients = true;
+					break;
+				}
+			}
+
 	for(int i = 0 ; i < NumRenderScoreIDs ; i++)
 	{
 		if(RenderScoreIDs[i] >= 0)
@@ -517,18 +534,33 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 
 			// gamer detection
 			if(g_Config.m_ClClientRecognition && 
-				m_pClient->m_LocalClientID != pInfo->m_ClientID && // not for the local client
-				(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
-				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")))
+				(m_pClient->m_LocalClientID != pInfo->m_ClientID || hasRecognizedClients)) // not for the local client, except if there are others
 			{
-				// gamer symbol
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GAMERICON].m_Id);
-				Graphics()->QuadsBegin();
-				RenderTools()->SelectSprite(SPRITE_GAMERICON);
-				// Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.75f*ColorAlpha);
-				IGraphics::CQuadItem QuadItem(CountryFlagOffset + 30.0f-10.0f, y, 10, 10);
-				Graphics()->QuadsDrawTL(&QuadItem, 1);
-				Graphics()->QuadsEnd();
+				if(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!"))
+				{
+					// gamer symbol
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CLIENTICONS].m_Id);
+					Graphics()->QuadsBegin();
+					RenderTools()->SelectSprite(SPRITE_GAMERICON);
+					if(m_pClient->m_LocalClientID == pInfo->m_ClientID)
+						Graphics()->SetColor(0.5f, 0.5f, 0.5f, 0.5f);					
+					IGraphics::CQuadItem QuadItem(CountryFlagOffset + 30.0f-10.0f, y, 10, 10);
+					Graphics()->QuadsDrawTL(&QuadItem, 1);
+					Graphics()->QuadsEnd();
+				}
+				// zilly detection
+				else if(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
+					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!"))
+				{
+					// zilly symbol
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CLIENTICONS].m_Id);
+					Graphics()->QuadsBegin();
+					RenderTools()->SelectSprite(SPRITE_ZILLYICON);
+					IGraphics::CQuadItem QuadItem(CountryFlagOffset + 30.0f-10.0f, y, 10, 10);
+					Graphics()->QuadsDrawTL(&QuadItem, 1);
+					Graphics()->QuadsEnd();
+				}
 			}
 
 			// flag
