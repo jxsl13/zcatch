@@ -205,40 +205,41 @@ function(set_glob VAR GLOBBING EXTS DIRECTORY) # ...
   endforeach()
   file(${GLOBBING} GLOB_RESULT ${GLOBS})
   list(SORT GLOB_RESULT)
-  set(FILES)
-  foreach(file ${ARGN})
-    list(APPEND FILES "${PROJECT_SOURCE_DIR}/${DIRECTORY}/${file}")
-  endforeach()
+  set(${VAR} ${GLOB_RESULT} PARENT_SCOPE)
+  # set(FILES)
+  # foreach(file ${ARGN})
+  #   list(APPEND FILES "${PROJECT_SOURCE_DIR}/${DIRECTORY}/${file}")
+  # endforeach()
 
-  if(NOT FILES STREQUAL GLOB_RESULT)
-    message(AUTHOR_WARNING "${VAR} does not contain every file from directory ${DIRECTORY}")
-    set(LIST_BUT_NOT_GLOB)
-    if(POLICY CMP0057)
-      cmake_policy(SET CMP0057 NEW)
-      foreach(file ${FILES})
-        if(NOT file IN_LIST GLOB_RESULT)
-          list(APPEND LIST_BUT_NOT_GLOB ${file})
-        endif()
-      endforeach()
-      if(LIST_BUT_NOT_GLOB)
-        message(AUTHOR_WARNING "Entries only present in ${VAR}: ${LIST_BUT_NOT_GLOB}")
-      endif()
-      set(GLOB_BUT_NOT_LIST)
-      foreach(file ${GLOB_RESULT})
-        if(NOT file IN_LIST FILES)
-          list(APPEND GLOB_BUT_NOT_LIST ${file})
-        endif()
-      endforeach()
-      if(GLOB_BUT_NOT_LIST)
-        message(AUTHOR_WARNING "Entries only present in ${DIRECTORY}: ${GLOB_BUT_NOT_LIST}")
-      endif()
-      if(NOT LIST_BUT_NOT_GLOB AND NOT GLOB_BUT_NOT_LIST)
-        message(AUTHOR_WARNING "${VAR} is not alphabetically sorted")
-      endif()
-    endif()
-  endif()
+  # if(NOT FILES STREQUAL GLOB_RESULT)
+  #   message(AUTHOR_WARNING "${VAR} does not contain every file from directory ${DIRECTORY}")
+  #   set(LIST_BUT_NOT_GLOB)
+  #   if(POLICY CMP0057)
+  #     cmake_policy(SET CMP0057 NEW)
+  #     foreach(file ${FILES})
+  #       if(NOT file IN_LIST GLOB_RESULT)
+  #         list(APPEND LIST_BUT_NOT_GLOB ${file})
+  #       endif()
+  #     endforeach()
+  #     if(LIST_BUT_NOT_GLOB)
+  #       message(AUTHOR_WARNING "Entries only present in ${VAR}: ${LIST_BUT_NOT_GLOB}")
+  #     endif()
+  #     set(GLOB_BUT_NOT_LIST)
+  #     foreach(file ${GLOB_RESULT})
+  #       if(NOT file IN_LIST FILES)
+  #         list(APPEND GLOB_BUT_NOT_LIST ${file})
+  #       endif()
+  #     endforeach()
+  #     if(GLOB_BUT_NOT_LIST)
+  #       message(AUTHOR_WARNING "Entries only present in ${DIRECTORY}: ${GLOB_BUT_NOT_LIST}")
+  #     endif()
+  #     if(NOT LIST_BUT_NOT_GLOB AND NOT GLOB_BUT_NOT_LIST)
+  #       message(AUTHOR_WARNING "${VAR} is not alphabetically sorted")
+  #     endif()
+  #   endif()
+  # endif()
 
-  set(${VAR} ${FILES} PARENT_SCOPE)
+  # set(${VAR} ${FILES} PARENT_SCOPE)
 endfunction()
 
 function(set_src VAR GLOBBING DIRECTORY) # ...
@@ -1125,7 +1126,8 @@ if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/maps/dm1.map)
   endforeach()
 endif()
 
-set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
+# set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc ${EXPECTED_DATA})
+set_glob(DATA GLOB_RECURSE "json;map;png;rules;ttf;txt;wv" datasrc)
 
 ########################################################################
 # COPY DATA AND DLLS
@@ -1343,129 +1345,10 @@ list(APPEND TARGETS_OWN engine-shared game-shared)
 
 if(CLIENT)
   # Sources
-  set_src(ENGINE_CLIENT GLOB src/engine/client
-    backend_sdl.cpp
-    backend_sdl.h
-    client.cpp
-    client.h
-    contacts.cpp
-    contacts.h
-    graphics_threaded.cpp
-    graphics_threaded.h
-    input.cpp
-    input.h
-    keynames.h
-    serverbrowser.cpp
-    serverbrowser.h
-    serverbrowser_entry.h
-    serverbrowser_fav.cpp
-    serverbrowser_fav.h
-    serverbrowser_filter.cpp
-    serverbrowser_filter.h
-    sound.cpp
-    sound.h
-    text.cpp
-  )
-  set_src(GAME_CLIENT GLOB_RECURSE src/game/client
-    animstate.cpp
-    animstate.h
-    component.h
-    components/announcers.cpp
-    components/announcers.h
-    components/auto_tile.cpp
-    components/auto_tile.h
-    components/binds.cpp
-    components/binds.h
-    components/broadcast.cpp
-    components/broadcast.h
-    components/camera.cpp
-    components/camera.h
-    components/chat.cpp
-    components/chat.h
-    components/console.cpp
-    components/console.h
-    components/controls.cpp
-    components/controls.h
-    components/countryflags.cpp
-    components/countryflags.h
-    components/damageind.cpp
-    components/damageind.h
-    components/debughud.cpp
-    components/debughud.h
-    components/effects.cpp
-    components/effects.h
-    components/emoticon.cpp
-    components/emoticon.h
-    components/flow.cpp
-    components/flow.h
-    components/hud.cpp
-    components/hud.h
-    components/items.cpp
-    components/items.h
-    components/killmessages.cpp
-    components/killmessages.h
-    components/mapimages.cpp
-    components/mapimages.h
-    components/maplayers.cpp
-    components/maplayers.h
-    components/menus.cpp
-    components/menus.h
-    components/menus_browser.cpp
-    components/menus_callback.cpp
-    components/menus_demo.cpp
-    components/menus_gamer.cpp
-    components/menus_ingame.cpp
-    components/menus_popups.cpp
-    components/menus_settings.cpp
-    components/menus_start.cpp
-    components/menus_teecomp.cpp
-    components/motd.cpp
-    components/motd.h
-    components/nameplates.cpp
-    components/nameplates.h
-    components/notifications.cpp
-    components/notifications.h
-    components/particles.cpp
-    components/particles.h
-    components/players.cpp
-    components/players.h
-    components/scoreboard.cpp
-    components/scoreboard.h
-    components/skins.cpp
-    components/skins.h
-    components/sounds.cpp
-    components/sounds.h
-    components/spectator.cpp
-    components/spectator.h
-    components/stats.cpp
-    components/stats.h
-    components/voting.cpp
-    components/voting.h
-    gameclient.cpp
-    gameclient.h
-    lineinput.cpp
-    lineinput.h
-    localization.cpp
-    localization.h
-    render.cpp
-    render.h
-    render_map.cpp
-    teecomp.cpp
-    teecomp.h
-    ui.cpp
-    ui.h
-  )
-  set_src(GAME_EDITOR GLOB src/game/editor
-    auto_map.cpp
-    auto_map.h
-    editor.cpp
-    editor.h
-    io.cpp
-    layer_game.cpp
-    layer_quads.cpp
-    layer_tiles.cpp
-    popups.cpp
-  )
+
+  file(GLOB ENGINE_CLIENT "src/engine/client/*.cpp" "src/engine/client/*.h" CONFIGURE_DEPENDS)
+  file(GLOB GAME_CLIENT "src/game/client/*.cpp" "src/game/client/*.h" "src/game/client/components/*.cpp" "src/game/client/components/*.h" CONFIGURE_DEPENDS)
+  file(GLOB GAME_EDITOR "src/game/editor/*.cpp" "src/game/editor/*.h" CONFIGURE_DEPENDS)
   set(GAME_GENERATED_CLIENT
     src/generated/client_data.cpp
     src/generated/client_data.h
