@@ -28,7 +28,13 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	m_BroadcastRefreshTime = Server()->TickSpeed() * 9;
 
 	m_pRankingServer = nullptr;
-	InitRankingServer();		
+	InitRankingServer();	
+
+	
+	// reserve double the needed space, 
+	// in order to not have any reallocations
+	// mid game
+	m_LeftCaughtCache.reserve(MAX_CLIENTS * 2 * 2);	
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -630,37 +636,44 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		// joining player to be caught by anyone, 
 		// but just join the spectators instead.
 		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
+
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
 
-	// add tocaught players of dominatig player.
-	class CPlayer *pDominatingPlayer = ChooseDominatingPlayer(ID);
 
+	bool IsAlreadyCaught = HandleJoiningPlayerCaching(ID);
 	
-	if (pDominatingPlayer)
+	if(!IsAlreadyCaught)
 	{
-		pDominatingPlayer->CatchPlayer(player.GetCID(), CPlayer::REASON_PLAYER_JOINED);
-	}
-	else 
-	{
-		if (m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound)
-		{			
-			// if the player joins & nobody has caught anybody 
-			// at that exact moment, when a round is running
-			// the player directly joins the game
-			
-			// we don't want this message to be displayed in any other case
-			player.BeReleased(CPlayer::REASON_PLAYER_JOINED);
+		// add to caught players of dominatig player.
+		class CPlayer *pDominatingPlayer = ChooseDominatingPlayer(ID);
+
+		if (pDominatingPlayer)
+		{
+			pDominatingPlayer->CatchPlayer(player.GetCID(), CPlayer::REASON_PLAYER_JOINED);
 		}
 		else
 		{
-			// no chat announcements
-			// when switching game modes/states
-			// or other stuff.
-			player.BeReleased(); // silent join
+			if (m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound)
+			{			
+				// if the player joins & nobody has caught anybody 
+				// at that exact moment, when a round is running
+				// the player directly joins the game
+				
+				// we don't want this message to be displayed in any other case
+				player.BeReleased(CPlayer::REASON_PLAYER_JOINED);
+			}
+			else
+			{
+				// no chat announcements
+				// when switching game modes/states
+				// or other stuff.
+				player.BeReleased(); // silent join
+			}
 		}
 	}
+	
 	
 	// needed to do the spawning stuff.
 	IGameController::OnPlayerConnect(pPlayer);
@@ -679,6 +692,9 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	// release caught players in any case!
 	player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
 
+	// if player is caught, associate him iwth their killer for
+	// a specific time after disconnecting
+	HandleLeavingPlayerCaching(ID);
 
 	// if player voted something/someone and it did not pass
     // before leaving the server, voteban him for the remaining time.
@@ -706,11 +722,19 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	CPlayer& victim = (*pVictim->GetPlayer());
 	CPlayer& killer = (*pKiller);
 
+	int victimID = victim.GetCID();
+	int killerID = killer.GetCID();
+
+
+	// clear rejoin cache after the player died
+	// in any case!
+	HandleDyingPlayerCaching(victimID);
+
 	// warmup
 	if (IsGameWarmup())
 	{
 		// not killed by enemy.
-		if(victim.GetCID() == killer.GetCID())
+		if(victimID == killerID)
 		{
 			if(Weapon == WEAPON_SELF)
 			{
@@ -732,7 +756,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		else
 		{
 			// killed by enemy:
-			killer.CatchPlayer(victim.GetCID(), CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
+			killer.CatchPlayer(victimID, CPlayer::REASON_PLAYER_WARMUP_CAUGHT);
 			bool updateSkinColors = true;
 			killer.ReleaseLastCaughtPlayer(CPlayer::REASON_PLAYER_WARMUP_RELEASED, updateSkinColors);
 		}
@@ -748,7 +772,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	 * the character from actually being killed, when releasing a player, 
 	 * that was killed by mistake.
 	 */
-	if(victim.GetCID() != killer.GetCID() && Weapon >= 0)
+	if(victimID != killerID && Weapon >= 0)
 	{
 		// someone killed me with a real weapon
 
@@ -759,15 +783,16 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 			// if the player is already caught, the player won't get caught again.
 			// meaning if the player is caught by two different players within the exact same tick, 
 			// the player with the lower ID will get the kill.
-			killer.CatchPlayer(victim.GetCID());
+			killer.CatchPlayer(victimID);
 		}
 
 
 		// if the killer was caught before he killed someone
 		// victim is not being caught, but must release everyone caught.
 		victim.ReleaseAllCaughtPlayers();
+
 	}
-	else if(Weapon < 0 && victim.GetCID() == killer.GetCID())
+	else if(Weapon < 0 && victimID == killerID)
 	{
 		switch (Weapon)
 		{
@@ -788,10 +813,10 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	}
 
 	// send broadcast update to victim and killer
-	UpdateBroadcastOf({victim.GetCID(), killer.GetCID()});
+	UpdateBroadcastOf({victimID, killerID});
 
 	// update colors of both players
-	UpdateSkinsOf({victim.GetCID(), killer.GetCID()});
+	UpdateSkinsOf({victimID, killerID});
 
 	// vanilla handling
 	// do scoreing
@@ -828,24 +853,12 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 void CGameControllerZCATCH::Tick()
 {
 
-	// debugging code
-	for (int i : GameServer()->PlayerIDs())
+
+	if (Server()->Tick() % Server()->TickSpeed() == 0)
 	{
-		CPlayer* pPlayer = GameServer()->m_apPlayers[i];
-		if (pPlayer && pPlayer->IsCaught())
-		{
-			int caughtMe = pPlayer->GetIDCaughtBy();
-			CPlayer* pCaughtMe = GameServer()->m_apPlayers[caughtMe];
-			if (pCaughtMe && pCaughtMe->IsCaught())
-			{
-				dbg_msg("DEBUG_CAUGHT", "Player %d is still caught(REASON: %d) even tho his killer %d is caught!", i, pPlayer->GetCaughtReason(), caughtMe);
-			}
-			else if(!pCaughtMe)
-			{
-				dbg_msg("DEBUG_CAUGHT", "Player %d is still caught(REASON: %d) even tho his killer %d does not exist anymore!", i, pPlayer->GetCaughtReason(), caughtMe);
-			}
-		}
-		
+		// do cache cleanup of left players that were caught
+		// once every second.
+		CleanLeftCaughtCache();
 	}
 	
 
@@ -1472,9 +1485,197 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 
 		m_RankingRetrievalMessageQueueMutex.unlock();
 	}
+}
+
+
+void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
+{
+	CPlayer* pPlayer = GameServer()->m_apPlayers[LeavingID];
+	if (pPlayer)
+	{
+		int caughtByID = pPlayer->GetIDCaughtBy();
+		if (caughtByID >= 0)
+		{
+			char aBuf[NETADDR_MAXSTRSIZE];
+			Server()->GetClientAddr(LeavingID, aBuf, NETADDR_MAXSTRSIZE);
+			
+			// expires in 1 minute
+			int expirationTick = Server()->Tick() + (Server()->TickSpeed() * 60);
+			std::string IP = {aBuf};
+			m_LeftCaughtCache.emplace_back(IP, caughtByID, expirationTick);
+			dbg_msg("DEBUG_CACHE", "Added leaving player IP: %s caught by ID: %d and ExpTick: %d", IP.c_str(), caughtByID, expirationTick);
+		}
+	}
+}
+void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
+{
+	if (m_LeftCaughtCache.size() == 0)
+		return;
+
+	// if a player leaves, his caught cache is cleared
+	m_LeftCaughtCache.erase(std::remove_if(
+			m_LeftCaughtCache.begin(), 
+			m_LeftCaughtCache.end(), 
+			[DyingOrLeavingID](std::tuple<std::string, int, int>& element)-> bool 
+				{
+					const auto& [addr, caughtByID, expirationTick] = element;
+					if (DyingOrLeavingID == caughtByID)
+					{
+						dbg_msg("DEBUG_CACHE", "Clearing cache of ID: %d", caughtByID);
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}), 
+			m_LeftCaughtCache.end()
+		);
+}
+
+void CGameControllerZCATCH::RemoveIPOfJoiningPlayerFromCaughtCache(std::string& IP)
+{
+	if (m_LeftCaughtCache.size() == 0)
+		return;
+
+	// remove element by IP of previously left player and now joining player
+	m_LeftCaughtCache.erase(std::remove_if(
+			m_LeftCaughtCache.begin(), 
+			m_LeftCaughtCache.end(), 
+			[IP](std::tuple<std::string, int, int>& element)-> bool 
+				{
+					const auto& [cachedIP, caughtByID, expirationTick] = element;
+					if (cachedIP == IP)
+					{
+						dbg_msg("DEBUG_CACHE", "IP removed on join: %s, caught by ID: %d", cachedIP.c_str(), caughtByID);
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}), 
+			m_LeftCaughtCache.end()
+		);
+}
+
+int CGameControllerZCATCH::IsInCaughtCache(int JoiningID)
+{
+	if (m_LeftCaughtCache.size() == 0)
+		return -1;
+
+	char aBuf[NETADDR_MAXSTRSIZE];
+	Server()->GetClientAddr(JoiningID, aBuf, NETADDR_MAXSTRSIZE);
+
+	std::string joiningIP = {aBuf};
+	int currentTick = Server()->Tick();
+
+	for (auto& [cachedIP, caughtByID, expirationTick] : m_LeftCaughtCache)
+	{
+		if (joiningIP == cachedIP && currentTick < expirationTick)
+		{
+			dbg_msg("DEBUG_CACHE", "IP: %s was found in cache, ID: %d", cachedIP.c_str(), caughtByID);
+			return caughtByID;
+		}	
+	}
+	
+	return -1;
+	
+}
+
+void CGameControllerZCATCH::CleanLeftCaughtCache()
+{
+
+	if (m_LeftCaughtCache.size() > 0)
+	{
+		int currentTick = Server()->Tick();
+
+		// remove expired cache elements
+		m_LeftCaughtCache.erase(std::remove_if(
+			m_LeftCaughtCache.begin(), 
+			m_LeftCaughtCache.end(), 
+			[currentTick](std::tuple<std::string, int, int>& element)-> bool 
+				{
+					const auto& [cachedIP, caughtByID, expirationTick] = element;
+					if (currentTick >= expirationTick)
+					{
+						dbg_msg("DEBUG_CACHE", "IP expired: %s ID: %d", cachedIP.c_str(), caughtByID);
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}), 
+			m_LeftCaughtCache.end()
+		);
+
+		
+		int moreThanLimit = (int) (m_LeftCaughtCache.size() - MAX_CLIENTS * 2);
+		if (moreThanLimit > 0)
+		{
+			auto it = m_LeftCaughtCache.begin() + moreThanLimit;
+			std::vector<std::tuple<std::string, int, int> > tmpVec = {it, m_LeftCaughtCache.end()};
+			m_LeftCaughtCache = tmpVec;
+			 
+		}	
+	}
+}
+
+void CGameControllerZCATCH::HandleLeavingPlayerCaching(int LeavingID)
+{
+	class CPlayer& Player = *GameServer()->m_apPlayers[LeavingID];
+
+	if (Player.IsCaught())
+	{
+		// if player is caught, his ip will be added to the cache assiciated to the id
+		AddLeavingPlayerIPToCaughtCache(LeavingID);
+	}
+
+	// player leaves -> nobody that previously left 
+	// can be caught by that player 
+	// on joining anymore
+	RemovePlayerIDFromCaughtCache(LeavingID);
+}
+
+void CGameControllerZCATCH::HandleDyingPlayerCaching(int DyingPlayerID)
+{
+	RemovePlayerIDFromCaughtCache(DyingPlayerID);	
+}
+
+
+bool CGameControllerZCATCH::HandleJoiningPlayerCaching(int JoiningPlayerID)
+{
+	int CaughtByID  = IsInCaughtCache(JoiningPlayerID);
+	if (CaughtByID >= 0)
+	{
+		class CPlayer* pKiller = GameServer()->m_apPlayers[CaughtByID];
+		if (pKiller)
+		{
+			// be caught
+			pKiller->CatchPlayer(JoiningPlayerID, CPlayer::REASON_PLAYER_JOINED);
+
+			// retireve IP
+			char aBuf[NETADDR_MAXSTRSIZE];
+			Server()->GetClientAddr(JoiningPlayerID, aBuf, NETADDR_MAXSTRSIZE);
+			std::string IP = {aBuf};
+
+			// remove ip from cache
+			RemoveIPOfJoiningPlayerFromCaughtCache(IP);
+			return true;
+		}	
+	}
+	
+	// bool : IsAlreadyCaught
+	return false;
+}
+
+
 	
 
-}
+
+
+
 
 
 

@@ -4,6 +4,7 @@
 #define GAME_SERVER_GAMEMODES_ZCATCH_H
 #include <initializer_list>
 #include <set>
+#include <tuple>
 #include <game/server/gamecontroller.h>
 #include <game/server/gamemodes/zcatch/rankingserver.h>
 
@@ -152,6 +153,70 @@ private:
 
 	// handles the filling of the MessageQueue for the /top command
 	void RequestTopRankingData(int requestingID, std::string key);
+
+
+	// left players cache
+	// leaving player's ips are saved here with the player's id who caught them
+	// if the catching player dies, their entry is removed from cache, if the leaving player
+	// rejoins, they are caught by the same player again.
+	// <leaving IP, caught by ID, expires at Tick>
+	std::vector<std::tuple<std::string, int, int> > m_LeftCaughtCache;
+
+	void AddLeavingPlayerIPToCaughtCache(int LeavingID);
+
+	/**
+	 * @brief If a player dies or leaves, his cache of players that left while being caught by him, will be cleared
+	 * 
+	 * @param DyingOrLeavingID 
+	 */
+	void RemovePlayerIDFromCaughtCache(int DyingOrLeavingID);
+
+	/**
+	 * @brief If a player joins and gets caught, his entry in the cache is being removed
+	 * 
+	 * @param IP 
+	 */
+	void RemoveIPOfJoiningPlayerFromCaughtCache(std::string& IP);
+
+	/**
+	 * @brief A joining player that previously left the game can be added
+	 * 			on rejoining to the same player
+	 * 
+	 * @param JoiningID 
+	 * @return int valid id, if in cache, -1 else
+	 */
+	int IsInCaughtCache(int JoiningID);
+
+	/**
+	 * @brief should be executed periodically, like every second at most
+	 */
+	void CleanLeftCaughtCache();
+
+	/**
+	 * @brief Handle rejoin cache when player leaves
+	 * 
+	 * @param LeavingID 
+	 */
+	void HandleLeavingPlayerCaching(int LeavingID);
+
+	/**
+	 * @brief Handle rejoin cache when player dies.
+	 * 
+	 * @param DyingPlayer 
+	 */
+	void HandleDyingPlayerCaching(int DyingPlayerID);
+
+	/**
+	 * @brief Handle rejoin cache when player joins
+	 * 
+	 * @param JoiningPlayer 
+	 * @return returns false if no action has been taken, 
+	 * returns true if a player was added to his cached catcher.
+	 */
+	bool HandleJoiningPlayerCaching(int JoiningPlayerID);
+
+
+	
 
 };
 
