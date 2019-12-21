@@ -238,7 +238,7 @@ void CVoting::OnMessage(int MsgType, void *pRawMsg)
 			case  VOTE_END_FAIL:
 				OnReset();
 				if(pMsg->m_ClientID == -1)
-					m_pClient->m_pChat->AddLine(-1, 0, Localize("Admin forced vote no"));
+					m_pClient->m_pChat->AddLine(-1, 0, Localize("Vote aborted"));
 				else
 					m_pClient->m_pChat->AddLine(-1, 0, Localize("Vote failed"));
 				m_CallvoteBlockTick = BlockTick;
