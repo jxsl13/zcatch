@@ -685,6 +685,10 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
 
+	// if player is caught, associate him iwth their killer for
+	// a specific time after disconnecting
+	// needs to be first
+	HandleLeavingPlayerCaching(ID);
 
 	// if the player is caught, he will be released
 	player.BeSetFree(CPlayer::REASON_PLAYER_LEFT);
@@ -692,9 +696,6 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	// release caught players in any case!
 	player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_LEFT);
 
-	// if player is caught, associate him iwth their killer for
-	// a specific time after disconnecting
-	HandleLeavingPlayerCaching(ID);
 
 	// if player voted something/someone and it did not pass
     // before leaving the server, voteban him for the remaining time.
