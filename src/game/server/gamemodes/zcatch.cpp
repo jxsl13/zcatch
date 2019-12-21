@@ -1491,9 +1491,11 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 {
 	CPlayer* pPlayer = GameServer()->m_apPlayers[LeavingID];
+	dbg_msg("DEBUG_CACHE", "Leaving Player ID: %d", LeavingID);
 	if (pPlayer)
 	{
 		int caughtByID = pPlayer->GetIDCaughtBy();
+		dbg_msg("DEBUG_CACHE", "Leaving Player was caught by ID:: %d", caughtByID);
 		if (caughtByID >= 0)
 		{
 			char aBuf[NETADDR_MAXSTRSIZE];
@@ -1506,6 +1508,11 @@ void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 			dbg_msg("DEBUG_CACHE", "Added leaving player IP: %s caught by ID: %d and ExpTick: %d", IP.c_str(), caughtByID, expirationTick);
 		}
 	}
+	else
+	{
+		dbg_msg("DEBUG_CACHE", "Player is a nullptr:");
+	}
+	
 }
 void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
 {
