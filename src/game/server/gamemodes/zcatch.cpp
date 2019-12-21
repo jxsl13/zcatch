@@ -1519,6 +1519,8 @@ void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
 			[DyingOrLeavingID](std::tuple<std::string, int, int>& element)-> bool 
 				{
 					const auto& [addr, caughtByID, expirationTick] = element;
+					(void) addr;
+					(void) expirationTick;
 					if (DyingOrLeavingID == caughtByID)
 					{
 						dbg_msg("DEBUG_CACHE", "Clearing cache of ID: %d", caughtByID);
@@ -1547,6 +1549,8 @@ void CGameControllerZCATCH::RemoveIPOfJoiningPlayerFromCaughtCache(std::string& 
 					const auto& [cachedIP, caughtByID, expirationTick] = element;
 					if (cachedIP == IP)
 					{
+						(void)caughtByID;
+						(void)expirationTick;
 						dbg_msg("DEBUG_CACHE", "IP removed on join: %s, caught by ID: %d", cachedIP.c_str(), caughtByID);
 						return true;
 					}
