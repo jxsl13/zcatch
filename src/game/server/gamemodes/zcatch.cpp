@@ -1644,11 +1644,7 @@ void CGameControllerZCATCH::CleanLeftCaughtCache()
 			 
 		}	
 	}
-	else
-	{
-		dbg_msg("DEBUG_CACHE", "Nothing to cleanup!");
-	}
-	
+
 }
 
 void CGameControllerZCATCH::HandleLeavingPlayerCaching(int LeavingID)
