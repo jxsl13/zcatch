@@ -1111,7 +1111,7 @@ set(EXPECTED_DATA
 )
 
 if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/languages/index.json)
-  message(WARNING "Missing datasrc/languages submodule. Please download a source release or update your git submodules with `git submodule update --init`")
+  message(WARNING "Missing datasrc/languages submodule. Please download a source release or update your git submodules with `git submodule update --init --recursive`")
   foreach(item ${EXPECTED_DATA})
     if(item MATCHES "^languages/")
       list(REMOVE_ITEM EXPECTED_DATA ${item})
@@ -1120,7 +1120,7 @@ if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/languages/index.json)
 endif()
 
 if(NOT EXISTS ${PROJECT_SOURCE_DIR}/datasrc/maps/dm1.map)
-  message(WARNING "Missing datasrc/maps submodule. Please download a source release or update your git submodules with `git submodule update --init`")
+  message(WARNING "Missing datasrc/maps submodule. Please download a source release or update your git submodules with `git submodule update --init --recursive`")
   foreach(item ${EXPECTED_DATA})
     if(item MATCHES "^maps/")
       list(REMOVE_ITEM EXPECTED_DATA ${item})
