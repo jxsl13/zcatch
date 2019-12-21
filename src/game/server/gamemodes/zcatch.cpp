@@ -1356,7 +1356,7 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	constexpr int topNumber = 5; // constexpr, no need to capture
 	constexpr bool biggestFirst = true;
 
-	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key, topNumber](std::vector<std::pair<std::string, CPlayerStats> >& data){
+	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
 	
 	// messages that will be shown to the player
 	std::vector<std::string> messages;
