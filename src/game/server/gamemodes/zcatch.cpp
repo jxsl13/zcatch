@@ -1353,7 +1353,7 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	}
 
 	// constants
-	constexpr int topNumber = 5;
+	constexpr int topNumber = 5; // constexpr, no need to capture
 	constexpr bool biggestFirst = true;
 
 	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key, topNumber](std::vector<std::pair<std::string, CPlayerStats> >& data){
