@@ -341,7 +341,7 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 			int Limit = (int)(((m_IngamePlayerCount - 1) * 0.5)); // 50% of players scaught
 
 			// can only change map if less than 50% are caught.
-			dbg_msg("DEBUG", "IngamePlayers: %d, TotalCaughtPlayers: %d, CurrentlyCaughtPlayers: %d, treshold(50%): %d", m_IngamePlayerCount, NumCaughtPlayers, pDominatingPlayer->GetNumCurrentlyCaughtPlayers(),  Limit);
+			dbg_msg("DEBUG", "IngamePlayers: %d, TotalCaughtPlayers: %d, CurrentlyCaughtPlayers: %d, treshold(50\%): %d", m_IngamePlayerCount, NumCaughtPlayers, pDominatingPlayer->GetNumCurrentlyCaughtPlayers(),  Limit);
 			if(m_IngamePlayerCount >= g_Config.m_SvPlayersToStartRound && NumCaughtPlayers >= Limit)
 			{
 				GameServer()->SendServerMessage(ClientID, "You cannot change the map, while someone is currently on a winning streak.");
