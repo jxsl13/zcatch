@@ -652,7 +652,6 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		// force into spec
 		pPlayer->SetTeam(-1, false);
 		IGameController::OnPlayerConnect(pPlayer);
-		pPlayer
 		return;
 	}
 
