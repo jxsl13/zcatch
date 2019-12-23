@@ -309,9 +309,20 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 
 bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescription, const char* pCommand, const char* pReason)
 {
+
 	if(GameServer()->m_apPlayers[ClientID] && GameServer()->m_apPlayers[ClientID]->GetTeam() == TEAM_SPECTATORS)
 	{
 		GameServer()->SendServerMessage(ClientID, "Spectators are not allowed to start a vote.");
+		return false;
+	}
+
+	int TimeLeft = Server()->ClientVotebannedTime(ClientID);
+
+	if (TimeLeft > 0)
+	{
+		char aChatmsg[128];
+		str_format(aChatmsg, sizeof(aChatmsg), "You are not allowed to vote for the next %d:%02d min.", TimeLeft / 60, TimeLeft % 60);
+		GameServer()->SendServerMessage(ClientID, aChatmsg);
 		return false;
 	}
 
