@@ -352,7 +352,7 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 				// map change cooldown
 				int CooldownInSeconds = g_Config.m_SvMapChangeCooldown * 60;
 				int SecondsPassedAfterLastMapChange = (Server()->Tick() - Server()->m_LastMapChangeTick) / Server()->TickSpeed();
-				
+				dbg_msg("DEBUG", "SecondsPassedAfterLastMapChange: %d", SecondsPassedAfterLastMapChange);
 				if(SecondsPassedAfterLastMapChange <= CooldownInSeconds)
 				{
 					
