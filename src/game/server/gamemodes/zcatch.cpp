@@ -649,7 +649,10 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		// but just join the spectators instead.
 		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
 
+		// force into spec
+		pPlayer->SetTeam(-1, false);
 		IGameController::OnPlayerConnect(pPlayer);
+		pPlayer
 		return;
 	}
 
