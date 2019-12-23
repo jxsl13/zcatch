@@ -346,25 +346,25 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 				GameServer()->SendServerMessage(ClientID, "You cannot change the map, while someone is currently on a winning streak.");
 				return false;
 			}
-		}
-		else
-		{
-			// map change cooldown
-			int CooldownInSeconds = g_Config.m_SvMapChangeCooldown * 60;
-			int SecondsPassedAfterLastMapChange = (Server()->Tick() - Server()->m_LastMapChangeTick) / Server()->TickSpeed();
-			
-			if(SecondsPassedAfterLastMapChange <= CooldownInSeconds)
+			else
 			{
+				// map change cooldown
+				int CooldownInSeconds = g_Config.m_SvMapChangeCooldown * 60;
+				int SecondsPassedAfterLastMapChange = (Server()->Tick() - Server()->m_LastMapChangeTick) / Server()->TickSpeed();
 				
-				int totalSecondsLeftToWait = CooldownInSeconds - SecondsPassedAfterLastMapChange;
-				int minsLeftToWait = totalSecondsLeftToWait / 60;
-				int secondsLeftToWait = totalSecondsLeftToWait % 60;
+				if(SecondsPassedAfterLastMapChange <= CooldownInSeconds)
+				{
+					
+					int totalSecondsLeftToWait = CooldownInSeconds - SecondsPassedAfterLastMapChange;
+					int minsLeftToWait = totalSecondsLeftToWait / 60;
+					int secondsLeftToWait = totalSecondsLeftToWait % 60;
 
-				char aBuf[256];
-				str_format(aBuf, sizeof(aBuf), "Please wait for another %d:%02d mins before trying to change the map.", minsLeftToWait, secondsLeftToWait);
-				GameServer()->SendServerMessage(ClientID, aBuf);
-				
-				return false;
+					char aBuf[256];
+					str_format(aBuf, sizeof(aBuf), "Please wait for another %d:%02d mins before trying to change the map.", minsLeftToWait, secondsLeftToWait);
+					GameServer()->SendServerMessage(ClientID, aBuf);
+					
+					return false;
+				}
 			}
 		}
 	}
