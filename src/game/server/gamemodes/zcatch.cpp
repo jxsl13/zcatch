@@ -637,11 +637,12 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	// no auto kick for player yet.
 	SetKickIn(ID, NO_KICK);
 
-	if (CheckIPInKickedBeginnerServerCache(ID))
+
+	bool IsInNotBeginnerIPCache = CheckIPInKickedBeginnerServerCache(ID);
+	if (IsInNotBeginnerIPCache)
 	{
 		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
 		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
-		return;
 	}
 	
 
@@ -659,7 +660,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
-	else if(m_IngamePlayerCount >= MAX_PLAYERS)
+	else if(IsInNotBeginnerIPCache || m_IngamePlayerCount >= MAX_PLAYERS)
 	{
 		// if the server is full, we do not want the 
 		// joining player to be caught by anyone, 
@@ -1000,6 +1001,13 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
 		return;
 	}
+	else if (m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && !player.IsAuthed())
+	{
+		// player that's not allowed to play on the beginner server cannot join the game.
+		GameServer()->SendServerMessage(player.GetCID(), g_Config.m_SvBeginnerServerKickWarning);
+		return;
+	}
+	
 	
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 }
@@ -1828,6 +1836,7 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 	if (EnableKickCountdown)
 	{
 		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
+		DoTeamChange(pPlayer, TEAM_SPECTATORS, false);
 		AddKickedPlayerIPToCache(ID);
 		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
 	}
