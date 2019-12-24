@@ -163,6 +163,14 @@ MACRO_CONFIG_INT(SvDatabasePort, sv_db_port, 6379, 1024, 65535, CFGFLAG_SERVER, 
 
 MACRO_CONFIG_STR(SvSQLiteFilename, sv_db_sqlite_file, 256, "ranking.db", CFGFLAG_SERVER, "Relative path to the sqlite3 database(default: ranking.db).")
 
+// beginner server stuff
+MACRO_CONFIG_STR(SvBeginnerServerKickWarning, sv_beginner_srv_kick_warning, 512, "This is a beginner server, you are not allowed to play here.", CFGFLAG_SERVER, "Warning message when the countdown starts.")
+MACRO_CONFIG_STR(SvBeginnerServerKickReason, sv_beginner_srv_kick_reason, 512, "You are not allowed to play on this server.", CFGFLAG_SERVER, "Kick reason, that's shown when a player is being automatically kicked.")
+MACRO_CONFIG_INT(SvBeginnerServerRankLimit, sv_beginner_srv_rank_limit, 0, 0, 1048560, CFGFLAG_SERVER, "Rank above which players can join the server w/o being kicked(0 = disabled)")
+MACRO_CONFIG_INT(SvBeginnerServerScoreLimit, sv_beginner_server_score_limit, 0, 0, 1048560, CFGFLAG_SERVER, "Score below which players are not able to join the server(0 = disabled)")
+MACRO_CONFIG_INT(SvBeginnerServerKickTimeLimit, sv_beginner_server_kick_time_limit, 30, 0, 86400, CFGFLAG_SERVER, "How many seconds to wait before kicking a player that's not allowed to play on the server(0 = disabled)")
+
+
 // debug
 #ifdef CONF_DEBUG // this one can crash the server if not used correctly
 	MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS, CFGFLAG_SERVER, "")

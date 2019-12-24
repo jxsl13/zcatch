@@ -57,6 +57,7 @@ public:
 	int m_TicksIngame; // ticks ingame
 	int m_Shots; // number of shot projectiles
 	int m_Fails; // how often the player fell down
+	int m_Rank;
 	void ResetStatistics();
 
 	enum EReleaseReason {

@@ -5,6 +5,7 @@
 #include <initializer_list>
 #include <set>
 #include <tuple>
+#include  <deque>
 #include <game/server/gamecontroller.h>
 #include <game/server/gamemodes/zcatch/rankingserver.h>
 
@@ -216,7 +217,23 @@ private:
 	bool HandleJoiningPlayerCaching(int JoiningPlayerID);
 
 
-	
+	/**
+	 * @brief Newbie Server stuff
+	 * -1 -> don't kick
+	 * 0 -> kick,
+	 * > 0 -> decrease counter
+	 */
+	int m_PlayerKickTicksCountdown[MAX_CLIENTS];
+	std::deque<std::string> m_KickedPlayersIPCache;
+	enum {
+		NO_KICK = -1,
+	};
+
+	void SetKickIn(int ClientID, int Seconds);
+	void KickCountdownOnTick();
+	void HandleBeginnerServerCondition(CPlayer* pPlayer);
+	void AddKickedPlayerIPToCache(int ClientID);
+	bool CheckIPInKickedBeginnerServerCache(int ClientID);
 
 };
 

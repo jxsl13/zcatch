@@ -34,7 +34,13 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	// reserve double the needed space, 
 	// in order to not have any reallocations
 	// mid game
-	m_LeftCaughtCache.reserve(MAX_CLIENTS * 2 * 2);	
+	m_LeftCaughtCache.reserve(MAX_CLIENTS * 2 * 2);
+	
+	for (size_t i = 0; i < MAX_CLIENTS; i++)
+	{
+		m_PlayerKickTicksCountdown[i] = NO_KICK;
+	}
+	
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -628,6 +634,17 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
 
+	// no auto kick for player yet.
+	SetKickIn(ID, NO_KICK);
+
+	if (CheckIPInKickedBeginnerServerCache(ID))
+	{
+		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
+		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
+		return;
+	}
+	
+
 	// fill player's stats with database information.
 	RetrieveRankingData(ID);
 
@@ -650,7 +667,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
 
 		// force into spec
-		pPlayer->SetTeam(-1, false);
+		pPlayer->SetTeam(TEAM_SPECTATORS, false);
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -904,6 +921,10 @@ void CGameControllerZCATCH::Tick()
 	// message queue that contains the retrieved player data from the 
 	// database.
 	ProcessRankingRetrievalMessageQueue();
+
+
+	// beginner server
+	KickCountdownOnTick();
 
 
 	// we do not want WeaponModes to be changed mid game, as it is not supported
@@ -1490,8 +1511,11 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 				pPlayer->m_TicksWarmup += stats["TicksWarmup"];
 				pPlayer->m_Shots += stats["Shots"];
 				pPlayer->m_Fails += stats["Fails"];
-
+				pPlayer->m_Rank = stats.GetRank();
 				pPlayer->m_IsRankFetched = true;
+
+
+				HandleBeginnerServerCondition(pPlayer);
 			}
 		}
 
@@ -1721,6 +1745,143 @@ bool CGameControllerZCATCH::HandleJoiningPlayerCaching(int JoiningPlayerID)
 	// bool : IsAlreadyCaught
 	return false;
 }
+
+
+void CGameControllerZCATCH::SetKickIn(int ClientID, int Seconds)
+{
+	if (Seconds < 0)
+	{
+		m_PlayerKickTicksCountdown[ClientID] = NO_KICK;
+		
+	}
+	else
+	{
+		m_PlayerKickTicksCountdown[ClientID] = Seconds * Server()->TickSpeed();
+	}
+}
+
+void CGameControllerZCATCH::KickCountdownOnTick()
+{
+	if (g_Config.m_SvBeginnerServerRankLimit == 0 && g_Config.m_SvBeginnerServerScoreLimit == 0)
+		return;
+
+	
+	for (int ID : GameServer()->PlayerIDs())
+	{
+		if (GameServer()->m_apPlayers[ID]->IsAuthed())
+		{
+			m_PlayerKickTicksCountdown[ID] = NO_KICK;
+			continue;
+		}
+		else
+		{
+			if (m_PlayerKickTicksCountdown[ID] < 0)
+			{
+				continue;
+			}	
+			else if (m_PlayerKickTicksCountdown[ID] > 0)
+			{
+				m_PlayerKickTicksCountdown[ID]--;
+			}
+			else if(m_PlayerKickTicksCountdown[ID] == 0)
+			{
+				dbg_msg("DEBUG", "KickCountdownOnTick: ID: %d", ID);
+				AddKickedPlayerIPToCache(ID);
+				Server()->Kick(ID, g_Config.m_SvBeginnerServerKickReason);
+				m_PlayerKickTicksCountdown[ID] = NO_KICK;
+			}
+		}
+		
+	}	
+}
+
+void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
+{
+	if (!pPlayer)
+		return;
+	
+	int ID = pPlayer->GetCID();
+	bool EnableKickCountdown = false;
+
+	if (g_Config.m_SvBeginnerServerScoreLimit)
+	{
+		int Score = pPlayer->m_Score;
+		if (Score >= g_Config.m_SvBeginnerServerScoreLimit)
+		{
+			EnableKickCountdown = true;
+		}
+	}
+
+	if (g_Config.m_SvBeginnerServerRankLimit)
+	{
+		int Rank = pPlayer->m_Rank;
+		if (Rank <= g_Config.m_SvBeginnerServerRankLimit)
+		{
+			EnableKickCountdown = true;
+		}
+	}
+
+	if (EnableKickCountdown)
+	{
+		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
+		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
+	}
+	
+}
+
+void CGameControllerZCATCH::AddKickedPlayerIPToCache(int ClientID)
+{
+	// basically a ringbuffer of strings
+	constexpr unsigned int CacheSize = 256;
+
+	char aBuf[NETADDR_MAXSTRSIZE];
+	Server()->GetClientAddr(ClientID, aBuf, NETADDR_MAXSTRSIZE);
+	std::string IPToKick = {aBuf};
+
+	if (m_KickedPlayersIPCache.size() > 0)
+	{
+		for (std::string& IP : m_KickedPlayersIPCache)
+		{
+			if (IP == IPToKick)
+			{
+				return;
+			}
+		}
+	}
+	
+	// ip not in cache, add it
+	if (m_KickedPlayersIPCache.size() >= CacheSize)
+	{
+		m_KickedPlayersIPCache.pop_front();
+		m_KickedPlayersIPCache.push_back(IPToKick);
+	}
+	else
+	{
+		m_KickedPlayersIPCache.push_back(IPToKick);
+	}
+}
+
+bool CGameControllerZCATCH::CheckIPInKickedBeginnerServerCache(int ClientID)
+{
+	if (m_KickedPlayersIPCache.size() == 0)
+		return false;
+	
+	char aBuf[NETADDR_MAXSTRSIZE];
+	Server()->GetClientAddr(ClientID, aBuf, NETADDR_MAXSTRSIZE);
+	std::string CheckingIP = {aBuf};
+
+	for (std::string& IP : m_KickedPlayersIPCache)
+	{
+		if (IP == CheckingIP)
+		{
+			return true;
+		}	
+	}
+
+	return false;
+	
+}
+
 
 
 	
