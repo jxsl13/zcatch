@@ -635,15 +635,10 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	int ID = player.GetCID();
 
 	// no auto kick for player yet.
+	// people usually are forced to stay in spec, 
+	// but if they happen to enter the game somehow, kick them
+	// after x seconds.
 	SetKickIn(ID, NO_KICK);
-
-
-	bool IsInNotBeginnerIPCache = CheckIPInKickedBeginnerServerCache(ID);
-	if (IsInNotBeginnerIPCache)
-	{
-		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
-		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
-	}
 	
 
 	// fill player's stats with database information.
@@ -660,7 +655,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
-	else if(IsInNotBeginnerIPCache || m_IngamePlayerCount >= MAX_PLAYERS)
+	else if(m_IngamePlayerCount >= MAX_PLAYERS)
 	{
 		// if the server is full, we do not want the 
 		// joining player to be caught by anyone, 
@@ -990,6 +985,16 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		// player is not caught and wants to join the spectators.
 		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_JOINED_SPEC);
 	}
+	else if (player.GetTeam() == TEAM_SPECTATORS && 
+			Team != TEAM_SPECTATORS && 
+			m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && 
+			!player.IsAuthed())
+	{
+		// player that's not allowed to play on the beginner server cannot join the game.
+		GameServer()->SendServerMessage(player.GetCID(), g_Config.m_SvBeginnerServerKickWarning);
+		return;
+	}
+	
 	else if(player.GetTeam() == TEAM_SPECTATORS && Team != TEAM_SPECTATORS)
 	{
 		// players joins the game after being in spec
@@ -1001,13 +1006,6 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
 		return;
 	}
-	else if (m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && !player.IsAuthed())
-	{
-		// player that's not allowed to play on the beginner server cannot join the game.
-		GameServer()->SendServerMessage(player.GetCID(), g_Config.m_SvBeginnerServerKickWarning);
-		return;
-	}
-	
 	
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 }
@@ -1772,7 +1770,6 @@ void CGameControllerZCATCH::KickCountdownOnTick()
 {
 	if (g_Config.m_SvBeginnerServerRankLimit == 0 && g_Config.m_SvBeginnerServerScoreLimit == 0)
 		return;
-
 	
 	for (int ID : GameServer()->PlayerIDs())
 	{
@@ -1803,8 +1800,14 @@ void CGameControllerZCATCH::KickCountdownOnTick()
 				m_PlayerKickTicksCountdown[ID] = NO_KICK;
 			}
 		}
-		
 	}	
+
+	// clear cache daily
+	if (m_KickedPlayersIPCache.size() > 0 && Server()->Tick() % (24 * 3600 * Server()->TickSpeed()) == 0)
+	{
+		m_KickedPlayersIPCache.clear();
+	}
+	
 }
 
 void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
@@ -1818,7 +1821,7 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 	if (g_Config.m_SvBeginnerServerScoreLimit)
 	{
 		int Score = pPlayer->m_Score;
-		if (Score >= g_Config.m_SvBeginnerServerScoreLimit)
+		if (g_Config.m_SvBeginnerServerScoreLimit <= Score)
 		{
 			EnableKickCountdown = true;
 		}
@@ -1833,12 +1836,18 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 		}
 	}
 
+	if (CheckIPInKickedBeginnerServerCache(ID))
+	{
+		EnableKickCountdown = true;
+	}
+	
+
 	if (EnableKickCountdown)
 	{
 		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
-		DoTeamChange(pPlayer, TEAM_SPECTATORS, false);
+		pPlayer->BeSetFree(CPlayer::REASON_NONE);
+		pPlayer->SetTeam(TEAM_SPECTATORS, false);
 		AddKickedPlayerIPToCache(ID);
-		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
 	}
 	
 }
@@ -1846,7 +1855,7 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 void CGameControllerZCATCH::AddKickedPlayerIPToCache(int ClientID)
 {
 	// basically a ringbuffer of strings
-	constexpr unsigned int CacheSize = 256;
+	constexpr unsigned int CacheSize = 512;
 
 	char aBuf[NETADDR_MAXSTRSIZE];
 	Server()->GetClientAddr(ClientID, aBuf, NETADDR_MAXSTRSIZE);
