@@ -1781,7 +1781,11 @@ void CGameControllerZCATCH::KickCountdownOnTick()
 			}	
 			else if (m_PlayerKickTicksCountdown[ID] > 0)
 			{
-				m_PlayerKickTicksCountdown[ID]--;
+				CPlayer* pPlayer = GameServer()->m_apPlayers[ID];
+				if (pPlayer && pPlayer->GetTeam() != TEAM_SPECTATORS)
+				{
+					m_PlayerKickTicksCountdown[ID]--;
+				}
 			}
 			else if(m_PlayerKickTicksCountdown[ID] == 0)
 			{
