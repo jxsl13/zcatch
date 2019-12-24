@@ -1824,6 +1824,7 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 	if (EnableKickCountdown)
 	{
 		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
+		AddKickedPlayerIPToCache(ID);
 		GameServer()->SendServerMessageText(ID, g_Config.m_SvBeginnerServerKickWarning);
 	}
 	
