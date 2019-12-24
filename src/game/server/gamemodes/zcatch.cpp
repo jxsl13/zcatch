@@ -1845,9 +1845,10 @@ void CGameControllerZCATCH::HandleBeginnerServerCondition(CPlayer* pPlayer)
 	if (EnableKickCountdown)
 	{
 		SetKickIn(ID, g_Config.m_SvBeginnerServerKickTimeLimit);
-		pPlayer->BeSetFree(CPlayer::REASON_NONE);
-		pPlayer->SetTeam(TEAM_SPECTATORS, false);
 		AddKickedPlayerIPToCache(ID);
+		// move to spec.
+		pPlayer->BeSetFree(CPlayer::REASON_NONE);
+		DoTeamChange(pPlayer, TEAM_SPECTATORS, false);
 	}
 	
 }
