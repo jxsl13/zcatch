@@ -48,7 +48,7 @@ void CStats::OnReset()
 	m_ScreenshotTime = -1;
 }
 
-bool CStats::IsActive()
+bool CStats::IsActive() const
 {
 	// force statboard after three seconds of game over if autostatscreenshot is on
 	if(g_Config.m_ClAutoStatScreenshot && m_ScreenshotTime > -1 && m_ScreenshotTime < time_get())
@@ -240,6 +240,8 @@ void CStats::OnRender()
 	{
 		if(!m_pClient->m_aClients[i].m_Active)
 			continue;
+		if(m_pClient->m_aClients[i].m_Team == TEAM_SPECTATORS)
+			continue;
 
 		apPlayers[NumPlayers] = i;
 		NumPlayers++;
@@ -356,13 +358,8 @@ void CStats::OnRender()
 			break;
 		}
 
-
-		// skip specs
-		if(m_pClient->m_aClients[apPlayers[j]].m_Active && m_pClient->m_aClients[apPlayers[j]].m_Team == TEAM_SPECTATORS)
-			continue;
-
 		const CPlayerStats *pStats = &m_aStats[apPlayers[j]];		
-		const bool HighlightedLine = (!m_pClient->m_Snap.m_SpecInfo.m_Active && apPlayers[j] == m_pClient->m_LocalClientID)
+		const bool HighlightedLine = apPlayers[j] == m_pClient->m_LocalClientID
 			|| (m_pClient->m_Snap.m_SpecInfo.m_Active && apPlayers[j] == m_pClient->m_Snap.m_SpecInfo.m_SpectatorID);
 
 		// background so it's easy to find the local player or the followed one in spectator mode

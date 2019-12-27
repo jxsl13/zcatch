@@ -1306,7 +1306,7 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   snapshot.h
   storage.cpp
 )
-set(ENGINE_GENERATED_SHARED src/generated/protocol.cpp src/generated/protocol.h)
+set(ENGINE_GENERATED_SHARED src/generated/nethash.cpp src/generated/protocol.cpp src/generated/protocol.h)
 set_src(GAME_SHARED GLOB src/game
   collision.cpp
   collision.h

@@ -2652,7 +2652,7 @@ int main(int argc, const char **argv) // ignore_convention
 	if(!UseDefaultConfig)
 	{
 		// execute config file
-		if(!pConsole->ExecuteFile("settings_gamer7.cfg"))
+		if(!pConsole->ExecuteFile("settings_gamer7.cfg") && !pConsole->ExecuteFile(SETTINGS_FILENAME ".cfg"))
 			pConsole->ExecuteFile("settings.cfg"); // load the default settings for the first time, gamer
 
 		// execute autoexec file

@@ -4,6 +4,7 @@
 #include <engine/console.h>
 #include <engine/storage.h>
 #include <engine/shared/config.h>
+#include <game/version.h>
 
 
 CConfiguration g_Config;
@@ -109,6 +110,8 @@ public:
 
 		if(!m_ConfigFile)
 			return;
+
+		WriteLine("# Teeworlds " GAME_VERSION);
 
 		char aLineBuf[1024*2];
 		char aEscapeBuf[1024*2];

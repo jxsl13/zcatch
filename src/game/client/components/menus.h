@@ -712,7 +712,6 @@ private:
 	void RenderSettingsControls(CUIRect MainView);
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);
-	void RenderSettingsStats(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 
 	// Gamer
