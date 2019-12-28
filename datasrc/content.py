@@ -249,6 +249,8 @@ container.sounds.Add(SoundSet("button_hover", ["audio/button_hover.wv"]))
 container.sounds.Add(SoundSet("button_click", ["audio/button_click.wv"]))
 container.sounds.Add(SoundSet("race_checkpoint_fast", ["audio/race_checkpoint_fast.wv"]))
 container.sounds.Add(SoundSet("race_checkpoint_slow", ["audio/race_checkpoint_slow.wv"]))
+container.sounds.Add(SoundSet("race_start", ["audio/race_start.wv"]))
+container.sounds.Add(SoundSet("race_finish", ["audio/race_finish.wv"]))
 
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
