@@ -948,7 +948,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	float ButtonHeight = 20.0f;
 
 	// background
-	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_ALL, 5.0f);
+	RenderTools()->DrawUIRect(&View, vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), (Client()->State() == IClient::STATE_OFFLINE) ? CUI::CORNER_ALL : CUI::CORNER_B|CUI::CORNER_TR, 5.0f);
 
 	// make room for scrollbar
 	{
@@ -2273,7 +2273,8 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 
 	CUIRect ServerList, Sidebar, Filterbar, BottomBox, SidebarButton;
 
-	MainView.HSplitTop(20.0f, 0, &MainView);
+	if(Client()->State() == IClient::STATE_OFFLINE)
+		MainView.HSplitTop(20.0f, 0, &MainView);
 	MainView.HSplitBottom(80.0f, &MainView, &BottomBox);
 	
 	if(g_Config.m_ClGBrowser == 2)

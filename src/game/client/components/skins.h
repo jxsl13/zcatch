@@ -73,6 +73,9 @@ public:
 	int GetTeamColor(int UseCustomColors, int PartColor, int Team, int Part, int TeamColor = -1) const; // last param for teecomp
 	vec3 GetBasicTeamColor(vec3 hsl) const;
 
+	// returns true if everything was valid and nothing changed
+	bool ValidateSkinParts(char *aPartNames[NUM_SKINPARTS], int *aUseCustomColors, int* aPartColors, int GameFlags) const;
+
 private:
 	int m_ScanningPart;
 	sorted_array<CSkinPart> m_aaSkinParts[NUM_SKINPARTS];
