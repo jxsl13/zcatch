@@ -958,7 +958,7 @@ void CMenus::UiDoListboxHeader(CListBoxState* pState, const CUIRect *pRect, cons
 
 void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowHeight,
 							  const char *pBottomText, int NumItems, int ItemsPerRow, int SelectedIndex,
-							  const CUIRect *pRect, bool Background)
+							  const CUIRect *pRect, bool Background, bool *pActive)
 {
 	CUIRect View;
 	if(pRect)
@@ -985,6 +985,7 @@ void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowH
 	pState->m_ListBoxView = View;
 	pState->m_ListBoxSelectedIndex = SelectedIndex;
 	pState->m_ListBoxNewSelected = SelectedIndex;
+	pState->m_ListBoxNewSelOffset = 0;
 	pState->m_ListBoxItemIndex = 0;
 	pState->m_ListBoxRowHeight = RowHeight;
 	pState->m_ListBoxNumItems = NumItems;
@@ -993,13 +994,13 @@ void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowH
 	pState->m_ListBoxItemActivated = false;
 
 	// handle input
-	int NewIndex = -1;
-	if(m_DownArrowPressed)
-		NewIndex = pState->m_ListBoxNewSelected + 1;
-	if(m_UpArrowPressed)
-		NewIndex = pState->m_ListBoxNewSelected - 1;
-	if(NewIndex > -1 && NewIndex < pState->m_ListBoxNumItems)
-		pState->m_ListBoxNewSelected = NewIndex;
+	if(!pActive || *pActive)
+	{
+		if(m_DownArrowPressed)
+			pState->m_ListBoxNewSelOffset += 1;
+		if(m_UpArrowPressed)
+			pState->m_ListBoxNewSelOffset -= 1;
+	}
 
 	// setup the scrollbar
 	pState->m_ScrollOffset = vec2(0, 0);
@@ -1010,15 +1011,19 @@ void CMenus::UiDoListboxStart(CListBoxState* pState, const void *pID, float RowH
 CMenus::CListboxItem CMenus::UiDoListboxNextRow(CListBoxState* pState)
 {
 	// static CUIRect s_RowView;
+	static CUIRect s_RowView; // teecomp: uses the attribute pState->s_RowView if Oy's fix doesn't work
 	CListboxItem Item = {0};
 
 	if(pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow == 0)
-		pState->m_ListBoxView.HSplitTop(pState->m_ListBoxRowHeight /*-2.0f*/, &pState->s_RowView, &pState->m_ListBoxView);
-	ScrollRegionAddRect(&pState->m_ScrollRegion, pState->s_RowView);
-	if(pState->m_ListBoxNewSelected != pState->m_ListBoxSelectedIndex && pState->m_ListBoxNewSelected == pState->m_ListBoxItemIndex)
+		pState->m_ListBoxView.HSplitTop(pState->m_ListBoxRowHeight /*-2.0f*/, &s_RowView, &pState->m_ListBoxView);
+	ScrollRegionAddRect(&pState->m_ScrollRegion, s_RowView);
+	if(pState->m_ListBoxUpdateScroll && pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex)
+	{
 		ScrollRegionScrollHere(&pState->m_ScrollRegion, CScrollRegion::SCROLLHERE_KEEP_IN_VIEW);
+		pState->m_ListBoxUpdateScroll = false;
+	}
 
-	pState->s_RowView.VSplitLeft(pState->s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, &pState->s_RowView);
+	/*pState->*/s_RowView.VSplitLeft(/*pState->*/s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, &pState->s_RowView);
 
 	if(pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex)
 		Item.m_Selected = 1;
@@ -1029,7 +1034,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextRow(CListBoxState* pState)
 	return Item;
 }
 
-CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const void *pId, bool Selected, bool* pActive)
+CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const void *pId, bool Selected, bool *pActive)
 {
 	int ThisItemIndex = pState->m_ListBoxItemIndex;
 	if(Selected)
@@ -1040,17 +1045,17 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const vo
 	}
 
 	CListboxItem Item = UiDoListboxNextRow(pState);
-	//static bool s_ItemClicked = false;
+	static bool s_ItemClicked = false;
 
 	if(Item.m_Visible && UI()->DoButtonLogic(pId, "", pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex, &Item.m_Rect))
 	{
-		pState->s_ItemClicked = true;
+		/*pState->*/s_ItemClicked = true;
 		pState->m_ListBoxNewSelected = ThisItemIndex;
 		if(pActive)
 			*pActive = true;
 	}
 	else
-		pState->s_ItemClicked = false;
+		/*pState->*/s_ItemClicked = false;
 
 	const bool ProcessInput = !pActive || *pActive;
 
@@ -1061,7 +1066,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const vo
 		{
 			pState->m_ListBoxDoneEvents = 1;
 
-			if(m_EnterPressed || (pState->s_ItemClicked && Input()->MouseDoubleClick()))
+			if(m_EnterPressed || (/*pState->*/s_ItemClicked && Input()->MouseDoubleClick()))
 			{
 				pState->m_ListBoxItemActivated = true;
 				UI()->SetActiveItem(0);
@@ -1083,6 +1088,11 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(CListBoxState* pState, const vo
 int CMenus::UiDoListboxEnd(CListBoxState* pState, bool *pItemActivated)
 {
 	EndScrollRegion(&pState->m_ScrollRegion);
+	if(pState->m_ListBoxNewSelOffset != 0 && pState->m_ListBoxSelectedIndex != -1 && pState->m_ListBoxSelectedIndex == pState->m_ListBoxNewSelected)
+	{
+		pState->m_ListBoxNewSelected = clamp(pState->m_ListBoxNewSelected + pState->m_ListBoxNewSelOffset, 0, pState->m_ListBoxNumItems - 1);
+		pState->m_ListBoxUpdateScroll = true;
+	}
 	if(pItemActivated)
 		*pItemActivated = pState->m_ListBoxItemActivated;
 	return pState->m_ListBoxNewSelected;
