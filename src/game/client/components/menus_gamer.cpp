@@ -24,7 +24,8 @@
 #include "items.h"
 #include "sounds.h"
 
- void CMenus::NewLine(CUIRect *pButton, CUIRect *pView)
+// some legacy UI helpers, no biggie
+void CMenus::NewLine(CUIRect *pButton, CUIRect *pView)
 {
 	pNewLineButton = pButton;
 	pNewLineView = pView;
@@ -43,17 +44,26 @@ void CMenus::NewLine()
 
 void CMenus::RenderSettingsGamer(CUIRect MainView)
 {
-	CUIRect Button, Tabbar, BottomView;
+	CUIRect Button, Tabbar, BottomView, HeaderFold;
 	
 	static int s_SettingsPage = 0;
 	
 	// Tabs (Teecomp pattern)
 	MainView.HSplitBottom(80.0f, &MainView, &BottomView);
-	if(this->Client()->State() != IClient::STATE_ONLINE)
+	if(Client()->State() != IClient::STATE_ONLINE)
 		MainView.HSplitTop(20.0f, 0, 0);
 	BottomView.HSplitTop(20.f, 0, &BottomView);
-	MainView.HSplitTop(14.0f, 0, &MainView);
+	MainView.HSplitTop(10.0f, &HeaderFold, &MainView);
+	MainView.HSplitTop(4.0f, 0, &MainView);
 	MainView.HSplitTop(24.0f, &Tabbar, &MainView);
+	if(Client()->State() == IClient::STATE_ONLINE)
+		RenderTools()->DrawUIRect4(&HeaderFold, 
+			vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/200.0f), 
+			vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), 
+			vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/200.0f), 
+			vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), 
+			Client()->State() == IClient::STATE_OFFLINE ? CUI::CORNER_ALL : CUI::CORNER_B, 5.0f);
+	
 
 	const char* pTabs[] = {"General", "Assets"/* , "Stats", "Credits" */};
 	int NumTabs = (int)(sizeof(pTabs)/sizeof(*pTabs));

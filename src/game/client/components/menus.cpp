@@ -1331,7 +1331,6 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 		Box.VSplitLeft(Spacing, 0, &Box); // little space
 		Box.VSplitLeft(ButtonWidth, &Button, &Box);
-		// TODO put this inside Gamer?
 		static CButtonContainer s_TeecompButton;
 		if(DoButton_MenuTabTop(&s_TeecompButton, Localize("Teecomp"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage==SETTINGS_TEECOMP, &Button,
 			g_Config.m_UiSettingsPage == SETTINGS_TEECOMP ? 1.0f : NotActiveAlpha, 1.0f, Corners))
