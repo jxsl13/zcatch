@@ -4,6 +4,7 @@
 #include <engine/serverbrowser.h>
 #include <game/client/animstate.h>
 #include <game/client/components/announcers.h>
+#include <game/client/components/menus.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
 #include <generated/client_data.h>
@@ -225,6 +226,10 @@ void CStats::OnRender()
 		}
 	}
 
+	// don't render scoreboard if menu is open
+	if(m_pClient->m_pMenus->IsActive())
+		return;
+
 	if(!IsActive())
 		return;
 
@@ -252,24 +257,27 @@ void CStats::OnRender()
 		{
 			if((1<<i) == (TC_STATS_DEATHS) && g_Config.m_ClStatboardInfos & TC_STATS_FRAGS)
 			{
-				w += 20;
+				w += 60; // some extra for the merge
 				continue;
 			}
-			if((1<<i) == (TC_STATS_BESTSPREE))
+			else if((1<<i) == (TC_STATS_BESTSPREE))
 			{
 				if(!(g_Config.m_ClStatboardInfos & TC_STATS_SPREE))
 					w += 140; // Best spree is a long column name, add a bit more
 				else
-					w += 20; // The combined colunms are a bit long, add some extra
+					w += 40; // The combined colunms are a bit long, add some extra
+				continue;
 			}
-			else
-				w += 100;
+			else if((1<<i) == (TC_STATS_FLAGGRABS) && !(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS))
+				continue;
+			w += 100;
 		}
 
-	if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
+	if((m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS) && (g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES))
 		w += 100;
 
 	bool aDisplayWeapon[NUM_WEAPONS] = {false};
+	bool NoDisplayedWeapon = true;
 	if(g_Config.m_ClStatboardInfos & TC_STATS_WEAPS)
 	{
 		for(i=0; i<NumPlayers; i++)
@@ -280,8 +288,12 @@ void CStats::OnRender()
 		}
 		for(i=0; i<NUM_WEAPONS; i++)
 			if(aDisplayWeapon[i])
+			{
 				w += 80;
-		// w += 10;
+				NoDisplayedWeapon = false;
+			}
+		if(!NoDisplayedWeapon)
+			w += 10;
 	}
 
 	float x = Width/2-w/2;
@@ -298,7 +310,7 @@ void CStats::OnRender()
 	float tw;
 	int px = 325;
 
-	TextRender()->Text(0, x+10, y-5, 24.0f, Localize("Name"), -1.0f);
+	TextRender()->Text(0, x+10, y-5, 20.0f, Localize("Name"), -1.0f);
 	const char *apHeaders[] = { "K", "D", Localize("Suicides"), Localize("Ratio"), Localize("Net", "Net score"), Localize("FPM"), Localize("Spree"), Localize("Best spree"), Localize("Grabs", "Flag grabs") };
 	for(i=0; i<9; i++)
 		if(g_Config.m_ClStatboardInfos & (1<<i))
@@ -308,7 +320,7 @@ void CStats::OnRender()
 			if(1<<i == TC_STATS_FRAGS && g_Config.m_ClStatboardInfos & TC_STATS_DEATHS)
 			{
 				pText = "K:D";
-				px += 20.0f; // some extra for the merge
+				px += 60.0f; // some extra for the merge
 			}
 			else if(1<<i == TC_STATS_DEATHS && g_Config.m_ClStatboardInfos & TC_STATS_FRAGS)
 				continue;
@@ -320,11 +332,11 @@ void CStats::OnRender()
 				px += 40.0f; // some extra for the long name
 			}
 			else if(1<<i == TC_STATS_SPREE && g_Config.m_ClStatboardInfos & TC_STATS_BESTSPREE)
-				px += 20.0f; // some extra for the merge
+				px += 40.0f; // some extra for the merge
 			if(1<<i == TC_STATS_FLAGGRABS && !(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS))
 				continue;
-			tw = TextRender()->TextWidth(0, 24.0f, pText, -1, -1.0f);
-			TextRender()->Text(0, x+px-tw, y-5, 24.0f, pText, -1.0f);
+			tw = TextRender()->TextWidth(0, 20.0f, pText, -1, -1.0f);
+			TextRender()->Text(0, x+px-tw, y-5, 20.0f, pText, -1.0f);
 			px += 100;
 		}
 
@@ -346,7 +358,8 @@ void CStats::OnRender()
 			px += 80;
 		}
 		Graphics()->QuadsEnd();
-		// px += 10;
+		if(!NoDisplayedWeapon)
+			px += 10;
 	}
 
 	if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
@@ -417,7 +430,7 @@ void CStats::OnRender()
 		{
 			if(g_Config.m_ClStatboardInfos & TC_STATS_DEATHS)
 			{
-				px += 20;
+				px += 60;
 				str_format(aBuf, sizeof(aBuf), "%d:%d", pStats->m_Frags, pStats->m_Deaths);
 			}
 			else
@@ -469,7 +482,7 @@ void CStats::OnRender()
 		{
 			if(g_Config.m_ClStatboardInfos & TC_STATS_BESTSPREE)
 			{
-				px += 20; // extra space
+				px += 40; // extra space
 				str_format(aBuf, sizeof(aBuf), "%d (%d)", pStats->m_CurrentSpree, pStats->m_BestSpree);
 			}
 			else
@@ -520,12 +533,12 @@ void CStats::OnRender()
 				static const vec4 Colors[NUM_WEAPONS] =
 				{
 					// crosshair colors
-					vec4(0.792f, 0.761f, 0.815f, 1.0f),
-					vec4(0.696f, 0.706f, 0.307f, 1.0f),
-					vec4(0.459f, 0.341f, 0.102f, 1.0f),
-					vec4(0.802f, 0.034f, 0.068f, 1.0f),
-					vec4(0.113f, 0.331f, 0.774f, 1.0f),
-					vec4(0.832f, 0.587f, 0.041f, 1.0f),
+					vec4(201/255.0f, 197/255.0f, 205/255.0f, 1.0f),
+					vec4(156/255.0f, 158/255.0f, 100/255.0f, 1.0f),
+					vec4(98/255.0f, 80/255.0f, 46/255.0f, 1.0f),
+					vec4(163/255.0f, 51/255.0f, 56/255.0f, 1.0f),
+					vec4(65/255.0f, 97/255.0f, 161/255.0f, 1.0f),
+					vec4(182/255.0f, 137/255.0f, 40/255.0f, 1.0f),
 				};
 				if(pStats->m_aFragsWith[i])
 				{
@@ -537,7 +550,8 @@ void CStats::OnRender()
 				}
 			}
 			px = EndX + Offset;
-			// px += 10;
+			if(!NoDisplayedWeapon)
+				px += 10;
 		}
 
 		if(m_pClient->m_Snap.m_pGameData && m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_FLAGS && g_Config.m_ClStatboardInfos&TC_STATS_FLAGCAPTURES)
