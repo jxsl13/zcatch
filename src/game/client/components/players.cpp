@@ -733,32 +733,21 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 			
 			if(!Skip)
 			{
-				float Corners = 2.0f;
-				if(ElementIndex == 2)
+				if(ElementIndex == 2) // bullets
 				{
-					// bullets
-					r.h--;
-					r.y++;
-					r.w = 4;
-					r.x += 1.5f;
-					int i;
-					for(i = 0; i < Value; i++)
+					CUIRect BulletRect = {r.x + 1.5f, r.y + 1, 4, r.h - 1};
+					for(int i = 0; i < 10; i++)
 					{
-						RenderTools()->DrawUIRect(&r, AmmoColor, CUI::CORNER_ALL, 2.0f);
-						r.x += 7;
-					}
-					for(; i < 10; i++)
-					{
-						RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, 2.0f);
-						r.x += 7;
+						RenderTools()->DrawUIRect(&BulletRect, i < Value ? AmmoColor : ShadowColor, CUI::CORNER_ALL, 2.0f);
+						BulletRect.x += 7;
 					}
 				}
 				else
 				{
 					r.w = 70.0f;
-					RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, Corners);
+					RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, 2.0f);
 					r.w = 70.0f * Value/10.f;
-					RenderTools()->DrawUIRect(&r, aColors[ElementIndex], CUI::CORNER_ALL, Corners);
+					RenderTools()->DrawUIRect(&r, aColors[ElementIndex], CUI::CORNER_ALL, 2.0f);
 				}
 			}
 			r.y -= r.h;
