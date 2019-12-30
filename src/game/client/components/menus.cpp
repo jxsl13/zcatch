@@ -1395,7 +1395,8 @@ void CMenus::RenderMenubar(CUIRect Rect)
 			Left.VSplitLeft(Spacing, 0, &Left); // little space
 			Left.VSplitLeft(ButtonWidth, &Button, &Left);
 			static CButtonContainer s_FavButton;
-			if(DoButton_MenuTabTop(&s_FavButton, Localize("Favorites"), m_ActivePage==PAGE_FAVORITES, &Button) || CheckHotKey(KEY_F))
+			if(DoButton_MenuTabTop(&s_FavButton, Localize("Favorites"), m_ActivePage==PAGE_FAVORITES && Client()->State() == IClient::STATE_OFFLINE, &Button,
+				m_ActivePage==PAGE_FAVORITES ? 1.0f : NotActiveAlpha, 1.0f, Corners) || CheckHotKey(KEY_F))
 			{
 				m_pClient->m_pCamera->ChangePosition(CCamera::POS_LAN);
 				ServerBrowser()->SetType(IServerBrowser::TYPE_INTERNET);
