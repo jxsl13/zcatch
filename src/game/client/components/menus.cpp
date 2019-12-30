@@ -1358,7 +1358,7 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		float NotActiveAlpha = Client()->State() == IClient::STATE_ONLINE ? 0.5f : 1.0f;
 
 		CUIRect Left;
-		const int TabCount = g_Config.m_ClGBrowser ? 3 : 2;
+		const int TabCount = g_Config.m_UiWideview ? 3 : 2;
 		Box.VSplitLeft(ButtonWidth*TabCount+(TabCount-1)*Spacing, &Left, 0);
 
 		// render header backgrounds
@@ -1390,7 +1390,7 @@ void CMenus::RenderMenubar(CUIRect Rect)
 			g_Config.m_UiBrowserPage = PAGE_LAN;
 		}
 
-		if(g_Config.m_ClGBrowser)
+		if(g_Config.m_UiWideview)
 		{
 			Left.VSplitLeft(Spacing, 0, &Left); // little space
 			Left.VSplitLeft(ButtonWidth, &Button, &Left);

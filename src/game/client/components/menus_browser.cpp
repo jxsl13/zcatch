@@ -1136,7 +1136,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 	for(int s = 0; s < m_lFilters.size(); s++)
 	{
 		CBrowserFilter *pFilter = &m_lFilters[s];
-		if (g_Config.m_ClGBrowser)
+		if (g_Config.m_UiWideview)
 		{
 			if (m_ActivePage == PAGE_FAVORITES)
 			{
@@ -1161,7 +1161,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 
 		// filter header
 		CUIRect Row;
-		if(!g_Config.m_ClGBrowser)
+		if(!g_Config.m_UiWideview)
 		{
 			View.HSplitTop(20.0f, &Row, &View);
 			ScrollRegionAddRect(&s_ScrollRegion, Row);
@@ -1170,7 +1170,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 				RenderFilterHeader(Row, s);
 		}
 
-		if(pFilter->Extended() || g_Config.m_ClGBrowser)
+		if(pFilter->Extended() || g_Config.m_UiWideview)
 		{
 			for (int i = 0; i < pFilter->NumSortedServers(); i++)
 			{
@@ -1348,29 +1348,23 @@ void CMenus::RenderServerbrowserSidebar(CUIRect View)
 	// header
 	View.HSplitTop(GetListHeaderHeight(), &Header, &View);
 	float Width = Header.w;
-	Header.VSplitLeft(Width*(0.30f+0.30f*(g_Config.m_ClGBrowser==2)), &Button, &Header);
+	Header.VSplitLeft(Width*0.30f, &Button, &Header);
 	static CButtonContainer s_TabInfo;
 	if(DoButton_SpriteID(&s_TabInfo, IMAGE_SIDEBARICONS, m_SidebarTab!=0?SPRITE_SIDEBAR_INFO_A: SPRITE_SIDEBAR_INFO_B, m_SidebarTab==0 , &Button, CUI::CORNER_TL, 5.0f, true))
 	{
 		m_SidebarTab = 0;
 	}
-	if(g_Config.m_ClGBrowser != 2)
+	Header.VSplitLeft(Width*0.30f, &Button, &Header);
+	static CButtonContainer s_TabFilter;
+	if(DoButton_SpriteID(&s_TabFilter, IMAGE_SIDEBARICONS, m_SidebarTab!=1?SPRITE_SIDEBAR_FILTER_A: SPRITE_SIDEBAR_FILTER_B, m_SidebarTab==1, &Button, 0, 0.0f, true))
 	{
-		Header.VSplitLeft(Width*0.30f, &Button, &Header);
-		static CButtonContainer s_TabFilter;
-		if(DoButton_SpriteID(&s_TabFilter, IMAGE_SIDEBARICONS, m_SidebarTab!=1?SPRITE_SIDEBAR_FILTER_A: SPRITE_SIDEBAR_FILTER_B, m_SidebarTab==1, &Button, 0, 0.0f, true))
-		{
-			m_SidebarTab = 1;
-		}
+		m_SidebarTab = 1;
 	}
 	static CButtonContainer s_TabFriends;
 	if(DoButton_SpriteID(&s_TabFriends, IMAGE_SIDEBARICONS, m_SidebarTab!=2?SPRITE_SIDEBAR_FRIEND_A:SPRITE_SIDEBAR_FRIEND_B, m_SidebarTab == 2, &Header, CUI::CORNER_TR, 5.0f, true))
 	{
 		m_SidebarTab = 2;
 	}
-
-	if(g_Config.m_ClGBrowser == 2 && m_SidebarTab == 1)
-		m_SidebarTab = 2;
 
 	// tabs
 	switch(m_SidebarTab)
@@ -2274,13 +2268,6 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	if(Client()->State() == IClient::STATE_OFFLINE)
 		MainView.HSplitTop(20.0f, 0, &MainView);
 	MainView.HSplitBottom(80.0f, &MainView, &BottomBox);
-	
-	if(g_Config.m_ClGBrowser == 2)
-	{
-		MainView.VSplitRight(150.0f, &MainView, &Filterbar);
-		MainView.VSplitRight(30.0f, &MainView, 0); // Margin
-		// ServerList.VSplitRight(150.0f, &ServerList, &Sidebar);
-	}
 
 	MainView.VSplitRight(20.0f, &ServerList, &SidebarButton);
 	if(m_SidebarActive)
@@ -2292,8 +2279,6 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	// sidebar
 	if(m_SidebarActive)
 		RenderServerbrowserSidebar(Sidebar);
-	if(g_Config.m_ClGBrowser == 2)
-		RenderServerbrowserFilterbar(Filterbar);
 
 	// sidebar button
 	SidebarButton.HMargin(150.0f, &SidebarButton);
