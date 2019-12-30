@@ -403,7 +403,6 @@ int CMenus::FontsScan(const char *pName, int IsDir, int DirType, void *pUser)
 
 void CMenus::RenderSettingsGamerEntitiesFont(CUIRect MainView)
 {
-	char aBuf[512];	
 	static int s_FontList = 0;
 	static int s_SelectedFont = -1;
 	static CListBoxState s_ListBoxState;

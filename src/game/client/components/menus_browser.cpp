@@ -2263,7 +2263,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		s_Init = false;
 	}
 
-	CUIRect ServerList, Sidebar, Filterbar, BottomBox, SidebarButton;
+	CUIRect ServerList, Sidebar, BottomBox, SidebarButton;
 
 	if(Client()->State() == IClient::STATE_OFFLINE)
 		MainView.HSplitTop(20.0f, 0, &MainView);

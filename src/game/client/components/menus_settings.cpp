@@ -154,7 +154,7 @@ void CMenus::SaveSkinfile()
 
 void CMenus::RenderSkinHSLPicker(CUIRect MainView)
 {
-	CUIRect Label, Button;
+	CUIRect Button;
 
 	// background
 	float Spacing = 2.0f;
