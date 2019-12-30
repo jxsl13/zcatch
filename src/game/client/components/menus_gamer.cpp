@@ -209,6 +209,7 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	NewLine();
 	NewLine();
 	UI()->DoLabel(&Button, Localize("Misc"), 14.0f, CUI::ALIGN_LEFT);
+	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClPingGraph, "Show network graph next to ping in scoreboard", &Button);
 	NewLine();
 	DoButton_BinaryCheckBox(&g_Config.m_ClClientRecognition, "Enable gamer client recognition", &Button);

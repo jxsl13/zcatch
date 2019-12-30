@@ -239,7 +239,7 @@ int CMenus::DoButton_MenuTab(const void *pID, const char *pText, int Checked, co
 	return UI()->DoButtonLogic(pID, pText, Checked, pRect);
 }
 
-int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Checked, const CUIRect *pRect, float Alpha, float FontAlpha, int Corners, float r, float FontFactor)
+int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Checked, const CUIRect *pRect, float Alpha, float FontAlpha, int Corners, float r, float FontFactor, vec3 RectColor)
 {
 	if(UI()->MouseInside(pRect))
 		Alpha = 1.0f;
@@ -247,7 +247,7 @@ int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Ch
 	float Fade = ButtonFade(pBC, Seconds, Checked);
 	float FadeVal = (Fade/Seconds)*FontAlpha;
 
-	RenderTools()->DrawUIRect(pRect, vec4(0.0f+FadeVal, 0.0f+FadeVal, 0.0f+FadeVal, g_Config.m_ClMenuAlpha/100.0f*Alpha+FadeVal*0.5f), Corners, r);
+	RenderTools()->DrawUIRect(pRect, vec4(0.0f+RectColor.r*FadeVal, 0.0f+RectColor.g*FadeVal, 0.0f+RectColor.b*FadeVal, g_Config.m_ClMenuAlpha/100.0f*Alpha+FadeVal*0.5f), Corners, r);
 	CUIRect Temp;
 	pRect->HMargin(pRect->h>=20.0f?2.0f:1.0f, &Temp);
 	Temp.HMargin((Temp.h*FontFactor)/2.0f, &Temp);
@@ -1023,7 +1023,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextRow(CListBoxState* pState)
 		pState->m_ListBoxUpdateScroll = false;
 	}
 
-/*pState->*/s_RowView.VSplitLeft(/*pState->*/s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect /* &pState->s_RowView */);
+/*pState->*/s_RowView.VSplitLeft(/*pState->*/s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, /* &pState-> */&s_RowView);
 
 	if(pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex)
 		Item.m_Selected = 1;
@@ -1344,9 +1344,9 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		Box.VSplitLeft(ButtonWidth, &Button, &Box);
 		static CButtonContainer s_GamerButton;
 		if(DoButton_MenuTabTop(&s_GamerButton, Localize("Gamer"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage==SETTINGS_GAMER, &Button,
-			g_Config.m_UiSettingsPage == SETTINGS_GAMER ? 1.0f : NotActiveAlpha, 1.0f, Corners))
+			g_Config.m_UiSettingsPage == SETTINGS_GAMER ? 1.0f : NotActiveAlpha, 1.0f, Corners, 5, 0, vec3(0.93f, 0.74f, 0.13f)))
 		{
-			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_SOUND);
+			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_TEECOMP);
 			g_Config.m_UiSettingsPage = SETTINGS_GAMER;
 		}
 	}
