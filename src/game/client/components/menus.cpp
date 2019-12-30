@@ -1344,7 +1344,7 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		Box.VSplitLeft(ButtonWidth, &Button, &Box);
 		static CButtonContainer s_GamerButton;
 		if(DoButton_MenuTabTop(&s_GamerButton, Localize("Gamer"), Client()->State() == IClient::STATE_OFFLINE && g_Config.m_UiSettingsPage==SETTINGS_GAMER, &Button,
-			g_Config.m_UiSettingsPage == SETTINGS_GAMER ? 1.0f : NotActiveAlpha, 1.0f, Corners, 5, 0, vec3(0.93f, 0.74f, 0.13f)))
+			g_Config.m_UiSettingsPage == SETTINGS_GAMER ? 1.0f : NotActiveAlpha, 1.0f, Corners, 5, 0, vec3(0.965f, 0.87f, 0.565f))) //vec3(0.93f, 0.74f, 0.13f)))
 		{
 			m_pClient->m_pCamera->ChangePosition(CCamera::POS_SETTINGS_TEECOMP);
 			g_Config.m_UiSettingsPage = SETTINGS_GAMER;
