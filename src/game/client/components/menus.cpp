@@ -1200,8 +1200,8 @@ void CMenus::RenderMenubar(CUIRect Rect)
 
 		// render header backgrounds
 		CUIRect Left, Right;
-		Box.VSplitLeft(ButtonWidth*5.0f + Spacing * 4.0f, &Left, 0);
-		Box.VSplitRight(ButtonWidth, 0, &Right);
+		Box.VSplitLeft(ButtonWidth*4.0f + Spacing*3.0f, &Left, 0);
+		Box.VSplitRight(ButtonWidth*1.5f + Spacing, 0, &Right);
 		RenderTools()->DrawUIRect4(&Left, vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
 		RenderTools()->DrawUIRect4(&Right, vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, 0.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), vec4(0.0f, 0.0f, 0.0f, g_Config.m_ClMenuAlpha/100.0f), CUI::CORNER_B, 5.0f);
 
@@ -1231,16 +1231,16 @@ void CMenus::RenderMenubar(CUIRect Rect)
 		if(DoButton_MenuTabTop(&s_CallVoteButton, Localize("Call vote"), m_ActivePage == PAGE_CALLVOTE, &Button, Alpha, Alpha) || CheckHotKey(KEY_V))
 			NewPage = PAGE_CALLVOTE;
 
-		Left.VSplitLeft(Spacing, 0, &Left); // little space
-		Left.VSplitLeft(ButtonWidth, &Button, &Left);
-		static CButtonContainer s_ServerBrowserButton;
-		if(DoButton_SpriteID(&s_ServerBrowserButton, IMAGE_SIDEBARICONS, (m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN || m_GamePage == PAGE_FAVORITES) ? SPRITE_SIDEBAR_REFRESH_B : SPRITE_SIDEBAR_REFRESH_A,
-			m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN || m_GamePage == PAGE_FAVORITES, &Button, Alpha, Alpha) || CheckHotKey(KEY_B))
-			NewPage = PAGE_INTERNET;
-
+		Right.VSplitRight(ButtonWidth, &Right, &Button);
 		static CButtonContainer s_SettingsButton;
-		if(DoButton_MenuTabTop(&s_SettingsButton, Localize("Settings"), m_GamePage == PAGE_SETTINGS, &Right) || CheckHotKey(KEY_S))
+		if(DoButton_MenuTabTop(&s_SettingsButton, Localize("Settings"), m_GamePage == PAGE_SETTINGS, &Button) || CheckHotKey(KEY_S))
 			NewPage = PAGE_SETTINGS;
+
+		Right.VSplitRight(Spacing, &Right, 0); // little space
+		Right.VSplitRight(ButtonWidth/2.0f, &Right, &Button);
+		static CButtonContainer s_ServerBrowserButton;
+		if(DoButton_SpriteID(&s_ServerBrowserButton, IMAGE_BROWSER, UI()->MouseInside(&Button) ? SPRITE_BROWSER_B : SPRITE_BROWSER_A, m_GamePage == PAGE_INTERNET || m_GamePage == PAGE_LAN, &Button) || CheckHotKey(KEY_B))
+			NewPage = PAGE_INTERNET;
 
 		Rect.HSplitTop(Spacing, 0, &Rect);
 		Rect.HSplitTop(25.0f, &Box, &Rect);
@@ -1403,41 +1403,13 @@ void CMenus::RenderMenubar(CUIRect Rect)
 				g_Config.m_UiBrowserPage = PAGE_FAVORITES;
 			}
 		}
-
+		
 		if(Client()->State() == IClient::STATE_OFFLINE)
 		{
 			CUIRect Right, Button;
 			Box.VSplitRight(20.0f, &Box, 0);
 			Box.VSplitRight(60.0f, 0, &Right);
 			Right.HSplitBottom(20.0f, 0, &Button);
-			
-			// gamer: do fading button with two icons
-			{
-				static CButtonContainer s_SwitchViewButton;
-				float Seconds = 0.6f; //  0.6 seconds for fade
-				float FadeVal = ButtonFade(&s_SwitchViewButton, Seconds, 0) / Seconds;
-
-				RenderTools()->DrawUIRect(&Button, vec4(0.0f + FadeVal, 0.0f + FadeVal, 0.0f + FadeVal, 0.25f + FadeVal * 0.5f), CUI::CORNER_ALL, 5.0f);
-
-				for(int IconId = 0; IconId < 2; IconId++)
-				{
-					// rewrites CMenus::DoButton_SpriteID
-					CUIRect Icon = Button;
-					Icon.VMargin(Icon.w/4.0f, &Icon);
-					Icon.x += IconId*Icon.w*0.50f;
-					Icon.w *= 0.50f;
-					if(Icon.w > Icon.h)
-						Icon.VMargin((Icon.w - Icon.h) / 2, &Icon);
-					else if(Icon.w < Icon.h)
-						Icon.HMargin((Icon.h - Icon.w) / 2, &Icon);
-					Icon.Margin(2.0f, &Icon);
-					DoIcon(IMAGE_ARROWICONS, (IconId ^ g_Config.m_ClGBrowser) ? SPRITE_ARROW_RIGHT_A:SPRITE_ARROW_LEFT_A, &Icon);
-				}
-				if(UI()->DoButtonLogic(s_SwitchViewButton.GetID(), "", 0, &Button))
-				{
-					g_Config.m_ClGBrowser = (g_Config.m_ClGBrowser + 1) % 2;
-				}
-			}
 		}
 	}
 	else if(Client()->State() == IClient::STATE_OFFLINE)
@@ -1826,8 +1798,8 @@ int CMenus::Render()
 			else if(Client()->State() == IClient::STATE_ONLINE && m_GamePage >= PAGE_INTERNET && m_GamePage <= PAGE_LAN)
 				BarHeight += 3.0f + 25.0f;
 			float VMargin = Screen.w/2-365.0f;
-			if(g_Config.m_ClGBrowser)
-				VMargin = 40.0f;
+			if(g_Config.m_UiWideview)
+				VMargin = min(VMargin, 60.0f);
 
 			Screen.VMargin(VMargin, &MainView);
 			MainView.HSplitTop(BarHeight, &TabBar, &MainView);
@@ -1873,6 +1845,11 @@ int CMenus::Render()
 						m_MenuPage = PAGE_SETTINGS;
 					}
 				}
+				Row.VSplitRight(5.0f, &Row, 0);
+				Row.VSplitRight(TopOffset, &Row, &Button);
+				static CButtonContainer s_WideButton;
+				if((m_MenuPage == PAGE_INTERNET || m_MenuPage == PAGE_LAN || m_MenuPage == PAGE_DEMOS) && DoButton_MenuTabTop(&s_WideButton, g_Config.m_UiWideview ? "\xe2\x96\xaa" : "\xe2\x96\xac", false, &Button, 1.0f, 1.0f, CUI::CORNER_B))
+					g_Config.m_UiWideview ^= 1;
 			}
 
 			// render current page

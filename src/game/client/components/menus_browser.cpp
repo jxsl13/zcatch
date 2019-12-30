@@ -435,8 +435,6 @@ int CMenus::DoBrowserEntry(const void *pID, CUIRect View, const CServerInfo *pEn
 			if(pEntry->m_FriendState != CContactInfo::CONTACT_NO)
 			{
 				Icon.Margin(2.0f, &Icon);
-				// DoIcon(IMAGE_BROWSEICONS, Selected ? SPRITE_BROWSE_HEART_B : SPRITE_BROWSE_HEART_A, &Icon);
-				// pink heart
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BROWSEICONS].m_Id);
 				Graphics()->QuadsBegin();
 				Graphics()->SetColor(1.0f, 0.75f, 1.0f, 1.0f);
