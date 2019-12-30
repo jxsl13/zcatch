@@ -1023,7 +1023,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextRow(CListBoxState* pState)
 		pState->m_ListBoxUpdateScroll = false;
 	}
 
-	/*pState->*/s_RowView.VSplitLeft(/*pState->*/s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect, &pState->s_RowView);
+/*pState->*/s_RowView.VSplitLeft(/*pState->*/s_RowView.w/(pState->m_ListBoxItemsPerRow-pState->m_ListBoxItemIndex%pState->m_ListBoxItemsPerRow), &Item.m_Rect /* &pState->s_RowView */);
 
 	if(pState->m_ListBoxSelectedIndex == pState->m_ListBoxItemIndex)
 		Item.m_Selected = 1;
