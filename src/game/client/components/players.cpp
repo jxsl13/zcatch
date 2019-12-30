@@ -645,7 +645,6 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 
 		const vec4 HealthColor = vec4(color.r, color.g, color.b, 1.0f);
 		const vec4 ArmorColor = vec4(0.9f, 0.6f, 0.1f, 1.0f);
-		const vec4 AmmoColor = vec4(0.6f, 0.6f, 0.9f, 1.0f);
 		bool HasBorders = g_Config.m_GfxHealthBar == 1; 
 		// draw the below bar
 		if(true)
@@ -734,16 +733,10 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 			
 			if(!Skip)
 			{
-				float Corners = 4.0f;
+				float Corners = 2.0f;
 				if(ElementIndex == 2)
 				{
-					// r.y += 2;
-					// r.h = 3;
-					// Corners = 3.0f;
-					// r.y = r.h*2;
-
 					// bullets
-					// r.w = 70.0f;
 					r.h--;
 					r.y++;
 					r.w = 4;
@@ -751,23 +744,14 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 					int i;
 					for(i = 0; i < Value; i++)
 					{
-						RenderTools()->DrawUIRect(&r, AmmoColor, CUI::CORNER_ALL, 2);
+						RenderTools()->DrawUIRect(&r, AmmoColor, CUI::CORNER_ALL, 2.0f);
 						r.x += 7;
 					}
 					for(; i < 10; i++)
 					{
-						RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, 2);
+						RenderTools()->DrawUIRect(&r, ShadowColor, CUI::CORNER_ALL, 2.0f);
 						r.x += 7;
 					}
-
-					// r.w = 5;
-					// r.x -= r.w;
-					// r.h = r.h*2;
-					// r.y += r.h;
-					// RenderTools()->DrawUIRect(&r, ShadowColor, 0, 0);
-					// r.y += r.h * Value/10.f;
-					// r.h = r.h * Value/10.f;
-					// RenderTools()->DrawUIRect(&r, aColors[ElementIndex], 0, 0);
 				}
 				else
 				{
