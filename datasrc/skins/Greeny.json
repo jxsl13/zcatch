@@ -1,0 +1,39 @@
+{"skin": {
+	"body": {
+		"filename": "standard",
+		"custom_colors": "true",
+		"hue": 108,
+		"sat": 59,
+		"lgt": 87
+	},
+	"marking": {
+		"filename": "veestripes",
+		"custom_colors": "true",
+		"hue": 107,
+		"sat": 69,
+		"lgt": 45,
+		"alp": 255
+	},
+	"decoration": {
+		"filename": "hair2",
+		"custom_colors": "false"
+	},
+	"hands": {
+		"filename": "standard",
+		"custom_colors": "true",
+		"hue": 86,
+		"sat": 93,
+		"lgt": 28
+	},
+	"feet": {
+		"filename": "standard",
+		"custom_colors": "true",
+		"hue": 107,
+		"sat": 106,
+		"lgt": 45
+	},
+	"eyes": {
+		"filename": "standard",
+		"custom_colors": "false"
+	}}
+}

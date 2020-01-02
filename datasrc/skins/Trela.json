@@ -1,0 +1,35 @@
+{"skin": {
+	"body": {
+		"filename": "trela",
+		"custom_colors": "true",
+		"hue": 27,
+		"sat": 186,
+		"lgt": 99
+	},
+	"marking": {
+		"filename": "trelastripe",
+		"custom_colors": "true",
+		"hue": 32,
+		"sat": 255,
+		"lgt": 173,
+		"alp": 255
+	},
+	"hands": {
+		"filename": "standard",
+		"custom_colors": "true",
+		"hue": 27,
+		"sat": 186,
+		"lgt": 99
+	},
+	"feet": {
+		"filename": "standard",
+		"custom_colors": "true",
+		"hue": 28,
+		"sat": 195,
+		"lgt": 106
+	},
+	"eyes": {
+		"filename": "standard",
+		"custom_colors": "false"
+	}}
+}

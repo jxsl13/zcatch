@@ -485,6 +485,16 @@ void CMenus::RenderSkinSelection(CUIRect MainView)
 			}
 
 			Info.m_Size = 50.0f;
+			{ // background
+				static const char* s_apSonixSkins[] = { "Eviltee", "Flokes", "Greeny", "Grey_flokes", "Puar", "Toykeb", "Trela" };
+				static const char* s_apDefaultSkins[] = { "Eviltee", "Flokes", "Greeny", "Grey_flokes", "Puar", "Toykeb", "Trela" };
+				for(int j = 0; j < sizeof(s_apSonixSkins)/sizeof(const char*); j++)
+					if(str_comp(s->m_aName, s_apSonixSkins[j]) == 0)
+					{
+						RenderTools()->DrawUIRect(&(Item.m_Rect), vec4(0.17f, 0.46f, 0.975f, 0.5f), CUI::CORNER_ALL, 5.0f);
+						break;
+					}
+			}
 			Item.m_Rect.HSplitTop(5.0f, 0, &Item.m_Rect); // some margin from the top
 			RenderTools()->RenderTee(CAnimState::GetIdle(), &Info, 0, vec2(1.0f, 0.0f), vec2(Item.m_Rect.x+Item.m_Rect.w/2, Item.m_Rect.y+Item.m_Rect.h/2));
 		}
