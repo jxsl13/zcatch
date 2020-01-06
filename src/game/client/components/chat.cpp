@@ -21,27 +21,6 @@
 #include "chat.h"
 #include "binds.h"
 
-CChat::CChat()
-{
-	// init chat commands (must be in alphabetical order)
-	static CChatCommand s_aapCommands[] = {
-		{"/all", " - Switch to all chat", &Com_All},
-		{"/friend", " <player name>", &Com_Befriend},
-		{"/m", " <player name>", &Com_Mute},
-		{"/mute", " <player name>", &Com_Mute},
-		{"/r", " - Reply to a whisper", &Com_Reply},
-		{"/team", " - Switch to team chat", &Com_Team},
-		{"/w", " <player name>", &Com_Whisper},
-		{"/whisper", " <player name>", &Com_Whisper},
-	};
-	const int CommandsCount = sizeof(s_aapCommands) / sizeof(CChatCommand);
-	m_pCommands = new CChatCommands(s_aapCommands, CommandsCount);
-}
-
-CChat::~CChat()
-{
-	delete m_pCommands;
-}
 
 void CChat::OnReset()
 {
@@ -50,8 +29,7 @@ void CChat::OnReset()
 		for(int i = 0; i < MAX_LINES; i++)
 		{
 			m_aLines[i].m_Time = 0;
-			m_aLines[i].m_Size[0].y = -1.0f;
-			m_aLines[i].m_Size[1].y = -1.0f;
+			m_aLines[i].m_Size.y = -1.0f;
 			m_aLines[i].m_aText[0] = 0;
 			m_aLines[i].m_aName[0] = 0;
 		}
@@ -73,7 +51,7 @@ void CChat::OnReset()
 		m_PendingChatCounter = 0;
 		m_LastChatSend = 0;
 		m_IgnoreCommand = false;
-		m_pCommands->Reset();
+		m_Commands.Reset();
 
 		for(int i = 0; i < CHAT_NUM; ++i)
 			m_aLastSoundPlayed[i] = 0;
@@ -82,10 +60,22 @@ void CChat::OnReset()
 	{
 		for(int i = 0; i < MAX_LINES; i++)
 		{
-			m_aLines[i].m_Size[0].y = -1.0f;
-			m_aLines[i].m_Size[1].y = -1.0f;
+			m_aLines[i].m_Size.y = -1.0f;
 		}
 	}
+
+	m_CurrentLineWidth = -1.0f;
+
+	// init chat commands (must be in alphabetical order)
+	m_Commands.ClearCommands();
+	m_Commands.AddCommand("all", "", "Switch to all chat", &Com_All);
+	m_Commands.AddCommand("friend", "p", "Add player as friend", &Com_Befriend);
+	m_Commands.AddCommand("m", "p", "Mute a player", &Com_Mute);
+	m_Commands.AddCommand("mute", "p", "Mute a player", &Com_Mute);
+	m_Commands.AddCommand("r", "", "Reply to a whisper", &Com_Reply);
+	m_Commands.AddCommand("team", "", "Switch to team chat", &Com_Team);
+	m_Commands.AddCommand("w", "p", "Whisper another player", &Com_Whisper);
+	m_Commands.AddCommand("whisper", "p", "Whisper another player", &Com_Whisper);
 }
 
 void CChat::OnMapLoad()
@@ -252,7 +242,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 	}
 	else if(Event.m_Flags&IInput::FLAG_PRESS && (Event.m_Key == KEY_RETURN || Event.m_Key == KEY_KP_ENTER))
 	{
-		if(IsTypingCommand() && ExecuteCommand())
+		if(IsTypingCommand() && ExecuteCommand(true))
 		{
 			// everything is handled within
 		}
@@ -287,7 +277,11 @@ bool CChat::OnInput(IInput::CEvent Event)
 	}
 	if(Event.m_Flags&IInput::FLAG_PRESS && Event.m_Key == KEY_TAB)
 	{
-		if (m_Mode == CHAT_WHISPER)
+		if(IsTypingCommand() && ExecuteCommand(false))
+		{
+			// everything is handled within
+		}
+		else if (m_Mode == CHAT_WHISPER)
 		{
 			// change target
 			for(int i = 0; i < MAX_CLIENTS; i++)
@@ -353,11 +347,11 @@ bool CChat::OnInput(IInput::CEvent Event)
 				bool Found = false;
 				if(SearchType == 1)
 				{
-					if(str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)) &&
+					if(!str_startswith_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer) &&
 						str_find_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer))
 						Found = true;
 				}
-				else if(!str_comp_nocase_num(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer, str_length(m_aCompletionBuffer)))
+				else if(str_startswith_nocase(m_pClient->m_aClients[Index].m_aName, m_aCompletionBuffer))
 					Found = true;
 
 				if(Found)
@@ -420,7 +414,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 	{
 		if(IsTypingCommand())
 		{
-			m_pCommands->SelectPreviousCommand();
+			m_Commands.SelectPreviousCommand();
 		}
 		else
 		{
@@ -442,7 +436,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 	{
 		if(IsTypingCommand())
 		{
-			m_pCommands->SelectNextCommand();
+			m_Commands.SelectNextCommand();
 		}
 		else
 		{
@@ -500,7 +494,7 @@ void CChat::ClearInput()
 	m_CompletionChosen = -1;
 
 	m_IgnoreCommand = false;
-	m_pCommands->Reset();
+	m_Commands.Reset();
 }
 
 void CChat::OnMessage(int MsgType, void *pRawMsg)
@@ -509,6 +503,27 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 		AddLine(pMsg->m_ClientID, pMsg->m_Mode, pMsg->m_pMessage, pMsg->m_TargetID);
+	}
+	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
+	{
+		CNetMsg_Sv_CommandInfo *pMsg = (CNetMsg_Sv_CommandInfo *)pRawMsg;
+		if(!m_Commands.GetCommandByName(pMsg->m_pName))
+		{
+			dbg_msg("chat_commands", "adding server chat command: name='%s' args='%s' help='%s'", pMsg->m_pName, pMsg->m_ArgsFormat, pMsg->m_HelpText);
+			m_Commands.AddCommand(pMsg->m_pName, pMsg->m_ArgsFormat, pMsg->m_HelpText, 0);
+		}
+	}
+	else if(MsgType == NETMSGTYPE_SV_COMMANDINFOREMOVE)
+	{
+		CNetMsg_Sv_CommandInfoRemove *pMsg = (CNetMsg_Sv_CommandInfoRemove *)pRawMsg;
+		
+		CChatCommand *pCommand = m_Commands.GetCommandByName(pMsg->m_pName);
+
+		if(pCommand)
+		{
+			mem_zero(pCommand, sizeof(CChatCommand));
+			dbg_msg("chat_commands", "removed chat command: name='%s'", pMsg->m_pName);
+		}
 	}
 }
 
@@ -575,13 +590,14 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 		}
 
 		m_CurrentLine = (m_CurrentLine+1)%MAX_LINES;
-		m_aLines[m_CurrentLine].m_Time = time_get();
-		m_aLines[m_CurrentLine].m_Size[0].y = -1.0f;
-		m_aLines[m_CurrentLine].m_Size[1].y = -1.0f;
-		m_aLines[m_CurrentLine].m_ClientID = ClientID;
-		m_aLines[m_CurrentLine].m_TargetID = TargetID;
-		m_aLines[m_CurrentLine].m_Mode = Mode;
-		m_aLines[m_CurrentLine].m_NameColor = -2;
+		CLine *pCurLine = &m_aLines[m_CurrentLine];
+
+		pCurLine->m_Time = time_get();
+		pCurLine->m_Size.y = -1.0f;
+		pCurLine->m_ClientID = ClientID;
+		pCurLine->m_TargetID = TargetID;
+		pCurLine->m_Mode = Mode;
+		pCurLine->m_NameColor = -2;
 
 		// check for highlighted name
 		Highlighted = false;
@@ -603,7 +619,7 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 			}
 		}
 
-		m_aLines[m_CurrentLine].m_Highlighted =  Highlighted;
+		pCurLine->m_Highlighted =  Highlighted;
 
 		int NameCID = ClientID;
 		if(Mode == CHAT_WHISPER && ClientID == m_pClient->m_LocalClientID && TargetID >= 0)
@@ -611,29 +627,29 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 
 		if(ClientID == SERVER_MSG)
 		{
-			m_aLines[m_CurrentLine].m_aName[0] = 0;
-			str_format(m_aLines[m_CurrentLine].m_aText, sizeof(m_aLines[m_CurrentLine].m_aText), "*** %s", pLine);
+			pCurLine->m_aName[0] = 0;
+			str_format(pCurLine->m_aText, sizeof(pCurLine->m_aText), "*** %s", pLine);
 		}
 		else if(ClientID == CLIENT_MSG)
 		{
-			m_aLines[m_CurrentLine].m_aName[0] = 0;
-			str_format(m_aLines[m_CurrentLine].m_aText, sizeof(m_aLines[m_CurrentLine].m_aText), "— %s", pLine);
+			pCurLine->m_aName[0] = 0;
+			str_format(pCurLine->m_aText, sizeof(pCurLine->m_aText), "— %s", pLine);
 		}
 		else
 		{
 			if(m_pClient->m_aClients[ClientID].m_Team == TEAM_SPECTATORS)
-				m_aLines[m_CurrentLine].m_NameColor = TEAM_SPECTATORS;
+				pCurLine->m_NameColor = TEAM_SPECTATORS;
 
 			if(m_pClient->m_GameInfo.m_GameFlags&GAMEFLAG_TEAMS)
 			{
 				if(m_pClient->m_aClients[ClientID].m_Team == TEAM_RED)
-					m_aLines[m_CurrentLine].m_NameColor = TEAM_RED;
+					pCurLine->m_NameColor = TEAM_RED;
 				else if(m_pClient->m_aClients[ClientID].m_Team == TEAM_BLUE)
-					m_aLines[m_CurrentLine].m_NameColor = TEAM_BLUE;
+					pCurLine->m_NameColor = TEAM_BLUE;
 			}
 
-			str_format(m_aLines[m_CurrentLine].m_aName, sizeof(m_aLines[m_CurrentLine].m_aName), "%s", m_pClient->m_aClients[NameCID].m_aName);
-			str_format(m_aLines[m_CurrentLine].m_aText, sizeof(m_aLines[m_CurrentLine].m_aText), "%s", pLine);
+			str_format(pCurLine->m_aName, sizeof(pCurLine->m_aName), "%s", m_pClient->m_aClients[NameCID].m_aName);
+			str_format(pCurLine->m_aText, sizeof(pCurLine->m_aText), "%s", pLine);
 		}
 
 		char aBuf[1024];
@@ -645,7 +661,7 @@ void CChat::AddLine(int ClientID, int Mode, const char *pLine, int TargetID)
 		else
 			str_copy(aBufMode, "chat", sizeof(aBufMode));
 
-		str_format(aBuf, sizeof(aBuf), "%2d: %s: %s", NameCID, m_aLines[m_CurrentLine].m_aName, m_aLines[m_CurrentLine].m_aText);
+		str_format(aBuf, sizeof(aBuf), "%2d: %s: %s", NameCID, pCurLine->m_aName, pCurLine->m_aText);
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, aBufMode, aBuf, Highlighted || Mode == CHAT_WHISPER);
 	}
 
@@ -714,7 +730,7 @@ const char* CChat::GetCommandName(int Mode)
 
 void CChat::OnRender()
 {
-	if(Client()->State() == Client()->STATE_LOADING)
+	if(Client()->State() <= Client()->STATE_LOADING)
 		return;
 
 	// send pending chat messages
@@ -930,6 +946,18 @@ void CChat::OnRender()
 
 			TextRender()->TextEx(&Marker, "|", -1);
 			TextRender()->TextEx(&Cursor, m_Input.GetString()+m_Input.GetCursorOffset(), -1);
+
+			if(ChatMode == CHAT_WHISPER)
+			{
+				//render helper annotation
+				CTextCursor InfoCursor;
+				TextRender()->SetCursor(&InfoCursor, 2.0f, y+12.0f, CategoryFontSize*0.75, TEXTFLAG_RENDER);
+
+				char aInfoText[128];
+				str_format(aInfoText, sizeof(aInfoText), Localize("Press Tab to cycle chat recipients"));
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
+				TextRender()->TextEx(&InfoCursor, aInfoText, -1);
+			}
 		}
 	}
 
@@ -942,7 +970,7 @@ void CChat::OnRender()
 	const int64 TimeFreq = time_freq();
 
 	// get scoreboard data
-	const bool IsScoreboardActive = m_pClient->m_pScoreboard->Active();
+	const bool IsScoreboardActive = m_pClient->m_pScoreboard->IsActive();
 	CUIRect ScoreboardRect = m_pClient->m_pScoreboard->GetScoreboardRect();
 	const CUIRect ScoreboardScreen = *UI()->Screen();
 	CUIRect ScoreboardRectFixed;
@@ -967,43 +995,49 @@ void CChat::OnRender()
 			HeightLimit = ReducedHeightLimit;
 	}
 
+	if(m_CurrentLineWidth != LineWidth)
+	{
+		for(int i = 0; i < MAX_LINES; i++)
+		{
+			m_aLines[i].m_Size.y = -1.0f;
+		}
+		m_CurrentLineWidth = LineWidth;
+	}
+
 	float Begin = x;
 	float FontSize = 6.0f;
 	CTextCursor Cursor;
-	int OffsetType = IsScoreboardActive ? 1 : 0;
 
 	// get the y offset (calculate it if we haven't done that yet)
 	for(int i = 0; i < MAX_LINES; i++)
 	{
 		int r = ((m_CurrentLine-i)+MAX_LINES)%MAX_LINES;
-		CLine& Line = m_aLines[r];
+		CLine *pLine = &m_aLines[r];
 
-		if(m_aLines[r].m_aText[0] == 0) break;
+		if(pLine->m_aText[0] == 0) break;
 
-		if(Line.m_Size[OffsetType].y < 0.0f)
+		if(pLine->m_Size.y < 0.0f)
 		{
 			TextRender()->SetCursor(&Cursor, Begin, 0.0f, FontSize, 0);
 			Cursor.m_LineWidth = LineWidth;
 
 			char aBuf[768] = {0};
-			if(Line.m_Mode == CHAT_TEAM)
-				str_format(aBuf, sizeof(aBuf), "[%s] ", Localize("Team"));
-			else if(Line.m_Mode == CHAT_WHISPER)
-				str_format(aBuf, sizeof(aBuf), "[%s] ", Localize("Whisper"));
-
-			if(Line.m_ClientID >= 0)
+			if(pLine->m_Mode == CHAT_WHISPER)
 			{
-				Cursor.m_X += RenderTools()->GetClientIdRectSize(Cursor.m_FontSize);
-				str_append(aBuf, Line.m_aName, sizeof(aBuf));
-				str_append(aBuf, ": ", sizeof(aBuf));
+				Cursor.m_X += 12.5f;
 			}
 
-			str_append(aBuf, Line.m_aText, sizeof(aBuf));
+			if(pLine->m_ClientID >= 0)
+			{
+				Cursor.m_X += RenderTools()->GetClientIdRectSize(Cursor.m_FontSize);
+				str_format(aBuf, sizeof(aBuf), "%s: ", pLine->m_aName);
+			}
+
+			str_append(aBuf, pLine->m_aText, sizeof(aBuf));
 
 			TextRender()->TextEx(&Cursor, aBuf, -1);
-			// FIXME: sometimes an empty line will pop here when the cursor reaches the end of line
-			Line.m_Size[OffsetType].y = Cursor.m_LineCount * Cursor.m_FontSize;
-			Line.m_Size[OffsetType].x = Cursor.m_LineCount == 1 ? Cursor.m_X - Cursor.m_StartX : LineWidth;
+			pLine->m_Size.y = Cursor.m_LineCount * Cursor.m_FontSize;
+			pLine->m_Size.x = Cursor.m_LineCount == 1 ? Cursor.m_X - Cursor.m_StartX : LineWidth;
 		}
 	}
 
@@ -1038,18 +1072,18 @@ void CChat::OnRender()
 			for(; l < MAX_LINES; l++)
 			{
 				int r = ((m_CurrentLine-l)+MAX_LINES)%MAX_LINES;
-				CLine& Line = m_aLines[r];
+				const CLine *pLine = &m_aLines[r];
 
-				if(Line.m_aText[0] == 0)
+				if(pLine->m_aText[0] == 0)
 				{
 					endReached = true;
 					break;
 				}
-				if(Line.m_ClientID >= 0 && m_pClient->m_aClients[Line.m_ClientID].m_ChatIgnore)
+				if(pLine->m_ClientID >= 0 && m_pClient->m_aClients[pLine->m_ClientID].m_ChatIgnore)
 					continue;
 				if(PageY < HeightLimit)
 					break;
-				PageY -= Line.m_Size[OffsetType].y;
+				PageY -= pLine->m_Size.y;
 			}
 			if(endReached)
 				break;
@@ -1075,29 +1109,29 @@ void CChat::OnRender()
 	for(int i = StartLine; i < MAX_LINES; i++)
 	{
 		int r = ((m_CurrentLine-i)+MAX_LINES)%MAX_LINES;
-		CLine& Line = m_aLines[r];
+		const CLine *pLine = &m_aLines[r];
 
-		if(Line.m_aText[0] == 0)
+		if(pLine->m_aText[0] == 0)
 			break;
 
-		if(Line.m_ClientID >= 0 && m_pClient->m_aClients[Line.m_ClientID].m_ChatIgnore)
+		if(pLine->m_ClientID >= 0 && m_pClient->m_aClients[pLine->m_ClientID].m_ChatIgnore)
 			continue;
 
-		if(Now > Line.m_Time+16*TimeFreq && !m_Show)
+		if(Now > pLine->m_Time+16*TimeFreq && !m_Show)
 			break;
 
-		y -= Line.m_Size[OffsetType].y;
+		y -= pLine->m_Size.y;
 
 		// cut off if msgs waste too much space
 		if(y < HeightLimit)
 			break;
 
-		float Blend = Now > Line.m_Time+14*TimeFreq && !m_Show ? 1.0f-(Now-Line.m_Time-14*TimeFreq)/(2.0f*TimeFreq) : 1.0f;
+		float Blend = Now > pLine->m_Time+14*TimeFreq && !m_Show ? 1.0f-(Now-pLine->m_Time-14*TimeFreq)/(2.0f*TimeFreq) : 1.0f;
 
 		const float HlTimeFull = 1.0f;
 		const float HlTimeFade = 1.0f;
 
-		float Delta = (Now - Line.m_Time) / (float)TimeFreq;
+		float Delta = (Now - pLine->m_Time) / (float)TimeFreq;
 		const float HighlightBlend = 1.0f - clamp(Delta - HlTimeFull, 0.0f, HlTimeFade) / HlTimeFade;
 
 		// reset the cursor
@@ -1109,7 +1143,7 @@ void CChat::OnRender()
 		const vec4 ShadowBlack(0, 0, 0, Blend * 0.9f);
 		vec4 ShadowColor = ShadowBlack;
 
-		if(Line.m_Mode == CHAT_WHISPER)
+		if(pLine->m_Mode == CHAT_WHISPER)
 			ShadowColor = ShadowWhisper;
 
 
@@ -1124,17 +1158,17 @@ void CChat::OnRender()
 		const vec4 ColorTeamText(0.6f, 1.0f, 0.6f, Blend);
 		const vec4 ColorHighlightBg(0.0f, 0.27f, 0.9f, 0.5f * HighlightBlend);
 		const vec4 ColorHighlightOutline(0.0f, 0.4f, 1.0f,
-			mix(Line.m_Mode == CHAT_TEAM ? 0.6f : 0.5f, 1.0f, HighlightBlend));
+			mix(pLine->m_Mode == CHAT_TEAM ? 0.6f : 0.5f, 1.0f, HighlightBlend));
 
 		vec4 TextColor = ColorAllText;
 
-		if(Line.m_Highlighted && ColorHighlightBg.a > 0.001f)
+		if(pLine->m_Highlighted && ColorHighlightBg.a > 0.001f)
 		{
 			CUIRect BgRect;
 			BgRect.x = Cursor.m_X;
 			BgRect.y = Cursor.m_Y + 2.0f;
-			BgRect.w = Line.m_Size[OffsetType].x - 2.0f;
-			BgRect.h = Line.m_Size[OffsetType].y;
+			BgRect.w = pLine->m_Size.x - 2.0f;
+			BgRect.h = pLine->m_Size.y;
 
 			vec4 LeftColor = ColorHighlightBg * ColorHighlightBg.a;
 			LeftColor.a = ColorHighlightBg.a;
@@ -1151,7 +1185,7 @@ void CChat::OnRender()
 		}
 
 		char aBuf[48];
-		if(Line.m_Mode == CHAT_WHISPER)
+		if(pLine->m_Mode == CHAT_WHISPER)
 		{
 			const float LineBaseY = TextRender()->TextGetLineBaseY(&Cursor);
 
@@ -1167,9 +1201,9 @@ void CChat::OnRender()
 
 			// image orientation
 			const int LocalCID = m_pClient->m_LocalClientID;
-			if(Line.m_ClientID == LocalCID && Line.m_TargetID >= 0)
+			if(pLine->m_ClientID == LocalCID && pLine->m_TargetID >= 0)
 				Graphics()->QuadsSetSubset(1, 0, 0, 1); // To
-			else if(Line.m_TargetID == LocalCID)
+			else if(pLine->m_TargetID == LocalCID)
 				Graphics()->QuadsSetSubset(0, 0, 1, 1); // From
 			else
 				dbg_break();
@@ -1192,46 +1226,46 @@ void CChat::OnRender()
 		}
 
 		// render name
-		if(Line.m_ClientID < 0)
+		if(pLine->m_ClientID < 0)
 			TextColor = ColorSystem;
-		else if(Line.m_Mode == CHAT_WHISPER)
+		else if(pLine->m_Mode == CHAT_WHISPER)
 			TextColor = ColorWhisper;
-		else if(Line.m_Mode == CHAT_TEAM)
+		else if(pLine->m_Mode == CHAT_TEAM)
 			TextColor = ColorTeamPre;
-		else if(Line.m_NameColor == TEAM_RED)
+		else if(pLine->m_NameColor == TEAM_RED)
 			TextColor = ColorRed;
-		else if(Line.m_NameColor == TEAM_BLUE)
+		else if(pLine->m_NameColor == TEAM_BLUE)
 			TextColor = ColorBlue;
-		else if(Line.m_NameColor == TEAM_SPECTATORS)
+		else if(pLine->m_NameColor == TEAM_SPECTATORS)
 			TextColor = ColorSpec;
 		else
 			TextColor = ColorAllPre;
 
-		if(Line.m_ClientID >= 0)
+		if(pLine->m_ClientID >= 0)
 		{
-			int NameCID = Line.m_ClientID;
-			if(Line.m_Mode == CHAT_WHISPER && Line.m_ClientID == m_pClient->m_LocalClientID && Line.m_TargetID >= 0)
-				NameCID = Line.m_TargetID;
+			int NameCID = pLine->m_ClientID;
+			if(pLine->m_Mode == CHAT_WHISPER && pLine->m_ClientID == m_pClient->m_LocalClientID && pLine->m_TargetID >= 0)
+				NameCID = pLine->m_TargetID;
 
 			vec4 IdTextColor = vec4(0.1f*Blend, 0.1f*Blend, 0.1f*Blend, 1.0f*Blend);
 			vec4 BgIdColor = TextColor;
 			BgIdColor.a = 0.5f*Blend;
 			RenderTools()->DrawClientID(TextRender(), &Cursor, NameCID, BgIdColor, IdTextColor);
-			str_format(aBuf, sizeof(aBuf), "%s: ", Line.m_aName);
+			str_format(aBuf, sizeof(aBuf), "%s: ", pLine->m_aName);
 			TextRender()->TextShadowed(&Cursor, aBuf, -1, ShadowOffset, ShadowColor, TextColor);
 		}
 
 		// render line
-		if(Line.m_ClientID < 0)
+		if(pLine->m_ClientID < 0)
 			TextColor = ColorSystem;
-		else if(Line.m_Mode == CHAT_WHISPER)
+		else if(pLine->m_Mode == CHAT_WHISPER)
 			TextColor = ColorWhisper;
-		else if(Line.m_Mode == CHAT_TEAM)
+		else if(pLine->m_Mode == CHAT_TEAM)
 			TextColor = ColorTeamText;
 		else
 			TextColor = ColorAllText;
 
-		if(Line.m_Highlighted)
+		if(pLine->m_Highlighted)
 		{
 			TextRender()->TextColor(TextColor.r, TextColor.g, TextColor.b, TextColor.a);
 
@@ -1240,10 +1274,10 @@ void CChat::OnRender()
 										   ColorHighlightOutline.b,
 										   ColorHighlightOutline.a);
 
-			TextRender()->TextEx(&Cursor, Line.m_aText, -1);
+			TextRender()->TextEx(&Cursor, pLine->m_aText, -1);
 		}
 		else
-			TextRender()->TextShadowed(&Cursor, Line.m_aText, -1, ShadowOffset, ShadowColor, TextColor);
+			TextRender()->TextShadowed(&Cursor, pLine->m_aText, -1, ShadowOffset, ShadowColor, TextColor);
 	}
 
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1279,8 +1313,8 @@ void CChat::HandleCommands(float x, float y, float w)
 		const float LineWidth = w;
 		const float LineHeight = 8.0f;
 
-		m_pCommands->Filter(m_Input.GetString()); // flag active commands, update selected command
-		const int ActiveCount = m_pCommands->CountActiveCommands();
+		m_Commands.Filter(m_Input.GetString()); // flag active commands, update selected command
+		const int ActiveCount = m_Commands.CountActiveCommands();
 
 		if(ActiveCount > 0) // at least one command to display
 		{
@@ -1293,7 +1327,10 @@ void CChat::HandleCommands(float x, float y, float w)
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, Rect.x + 5.0f, y, 5.0f, TEXTFLAG_RENDER);
 				TextRender()->TextColor(0.5f, 0.5f, 0.5f, 1.0f);
-				TextRender()->TextEx(&Cursor, Localize("Press Enter to confirm or Esc to cancel"), -1);
+				if(m_Commands.GetSelectedCommand() && str_startswith(m_Input.GetString() + 1, m_Commands.GetSelectedCommand()->m_aName))
+					TextRender()->TextEx(&Cursor, Localize("Press Enter to confirm or Esc to cancel"), -1);
+				else
+					TextRender()->TextEx(&Cursor, Localize("Press Tab to select or Esc to cancel"), -1);
 			}
 
 			// render commands
@@ -1303,53 +1340,95 @@ void CChat::HandleCommands(float x, float y, float w)
 				CUIRect HighlightRect = {Rect.x, y, LineWidth, LineHeight-1};
 
 				// retrieve command
-				const CChatCommand* pCommand = m_pCommands->GetCommand(i);
+				const CChatCommand* pCommand = m_Commands.GetCommand(i);
+
+				if(!pCommand->m_pfnCallback)
+					RenderTools()->DrawUIRect(&HighlightRect,  vec4(0.0f, 0.6f, 0.6f, 0.2f), CUI::CORNER_ALL, 0);
 
 				// draw selection box
-				if(pCommand == m_pCommands->GetSelectedCommand())
+				if(pCommand == m_Commands.GetSelectedCommand())
 					RenderTools()->DrawUIRect(&HighlightRect,  vec4(0.25f, 0.25f, 0.6f, Alpha), CUI::CORNER_ALL, 2.0f);
 
 				// print command
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, Rect.x + 5.0f, y, 5.0f, TEXTFLAG_RENDER);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-				TextRender()->TextEx(&Cursor, pCommand->m_pCommandText, -1);
+				TextRender()->TextEx(&Cursor, pCommand->m_aName, -1);
+				TextRender()->TextEx(&Cursor, " ", -1);
+
+				TextRender()->TextColor(0.0f, 0.5f, 0.5f, 1.0f);
+				for(const char *c = pCommand->m_aArgsFormat; *c; c++)
+				{
+					// Integer argument
+					if(*c == 'i')
+					{
+						TextRender()->TextEx(&Cursor, "<number> ", -1);
+					}
+					// Player name argument
+					else if(*c == 'p')
+					{
+						TextRender()->TextEx(&Cursor, "<playername> ", -1);
+					}
+					// String argument
+					else if(*c == 's')
+					{
+						TextRender()->TextEx(&Cursor, "<text> ", -1);
+					}
+					// Subcommand argument
+					else if(*c == 'c')
+					{
+						TextRender()->TextEx(&Cursor, "<subcommand> ", -1);
+					}
+				}
 				TextRender()->TextColor(0.5f, 0.5f, 0.5f, 1.0f);
-				TextRender()->TextEx(&Cursor, pCommand->m_pHelpText, -1);
+				TextRender()->TextEx(&Cursor, pCommand->m_aHelpText, -1);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
 	}
 }
 
-bool CChat::ExecuteCommand()
+bool CChat::ExecuteCommand(bool Execute)
 {
-	if(m_pCommands->CountActiveCommands() == 0)
+	if(m_Commands.CountActiveCommands() == 0)
 		return false;
 
 	const char* pCommandStr = m_Input.GetString();
-	const CChatCommand* pCommand = m_pCommands->GetSelectedCommand();
+	const CChatCommand* pCommand = m_Commands.GetSelectedCommand();
 	dbg_assert(pCommand != 0, "selected command does not exist");
-	bool IsFullMatch = str_find(pCommandStr, pCommand->m_pCommandText); // if the command text is fully inside pCommandStr (aka, not a shortcut)
+	bool IsFullMatch = str_find(pCommandStr + 1, pCommand->m_aName); // if the command text is fully inside pCommandStr (aka, not a shortcut)
 
-	if(IsFullMatch)
+	if(IsFullMatch && Execute)
 	{
 		// execute command
-		if(pCommand->m_pfnFunc != 0)
-			pCommand->m_pfnFunc(this, pCommandStr);
+		if(pCommand->m_pfnCallback)
+			pCommand->m_pfnCallback(this, pCommandStr);
+		else
+		{
+			// Send server-side command.
+			CNetMsg_Cl_Command Msg;
+			Msg.m_Name = pCommand->m_aName;
+			Msg.m_Arguments = pCommandStr;
+			Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+			m_Mode = CHAT_NONE;
+			m_pClient->OnRelease();
+		}
+		return true;
 	}
-	else
+	else if(!IsFullMatch && !Execute)
 	{
 		// autocomplete command
 		char aBuf[128];
-		str_copy(aBuf, pCommand->m_pCommandText, sizeof(aBuf));
+		str_copy(aBuf, "/", sizeof(aBuf));
+		str_append(aBuf, pCommand->m_aName, sizeof(aBuf));
 		str_append(aBuf, " ", sizeof(aBuf));
 
 		m_Input.Set(aBuf);
 		m_Input.SetCursorOffset(str_length(aBuf));
 		m_InputUpdate = true;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 // returns -1 if not found or duplicate
@@ -1390,29 +1469,25 @@ int CChat::IdentifyNameParameter(const char* pCommand) const
 void CChat::Com_All(CChat *pChatData, const char* pCommand)
 {
 	const char* pParameter = str_skip_to_whitespace_const(pCommand);
-	char *pBuf = 0x0;
+	pChatData->m_ChatCmdBuffer[0] = 0;
 	if(pParameter++ && *pParameter) // skip the first space
 	{
 		// save the parameter in a buffer before EnableMode clears it
-		pBuf = (char*)mem_alloc(str_length(pParameter) + 1, 1);
-		str_copy(pBuf, pParameter, str_length(pParameter) + 1);
+		str_copy(pChatData->m_ChatCmdBuffer, pParameter, sizeof(pChatData->m_ChatCmdBuffer));
 	}
-	pChatData->EnableMode(CHAT_ALL, pBuf);
-	mem_free(pBuf);
+	pChatData->EnableMode(CHAT_ALL, pChatData->m_ChatCmdBuffer);
 }
 
 void CChat::Com_Team(CChat *pChatData, const char* pCommand)
 {
 	const char* pParameter = str_skip_to_whitespace_const(pCommand);
-	char *pBuf = 0x0;
+	pChatData->m_ChatCmdBuffer[0] = 0;
 	if(pParameter++ && *pParameter) // skip the first space
 	{
 		// save the parameter in a buffer before EnableMode clears it
-		pBuf = (char*)mem_alloc(str_length(pParameter) + 1, 1);
-		str_copy(pBuf, pParameter, str_length(pParameter) + 1);
+		str_copy(pChatData->m_ChatCmdBuffer, pParameter, sizeof(pChatData->m_ChatCmdBuffer));
 	}
-	pChatData->EnableMode(CHAT_TEAM, pBuf);
-	mem_free(pBuf);
+	pChatData->EnableMode(CHAT_TEAM, pChatData->m_ChatCmdBuffer);
 }
 
 void CChat::Com_Reply(CChat *pChatData, const char* pCommand)
@@ -1424,15 +1499,13 @@ void CChat::Com_Reply(CChat *pChatData, const char* pCommand)
 		pChatData->m_WhisperTarget = pChatData->m_LastWhisperFrom;
 
 		const char* pParameter = str_skip_to_whitespace_const(pCommand);
-		char *pBuf = 0x0;
+		pChatData->m_ChatCmdBuffer[0] = 0;
 		if(pParameter++ && *pParameter) // skip the first space
 		{
 			// save the parameter in a buffer before EnableMode clears it
-			pBuf = (char*)mem_alloc(str_length(pParameter) + 1, 1);
-			str_copy(pBuf, pParameter, sizeof(pBuf));
+			str_copy(pChatData->m_ChatCmdBuffer, pParameter, sizeof(pChatData->m_ChatCmdBuffer));
 		}
-		pChatData->EnableMode(CHAT_WHISPER, pBuf);
-		mem_free(pBuf);
+		pChatData->EnableMode(CHAT_WHISPER, pChatData->m_ChatCmdBuffer);
 	}
 }
 
@@ -1464,6 +1537,8 @@ void CChat::Com_Mute(CChat *pChatData, const char* pCommand)
 		str_format(aMsg, sizeof(aMsg), !isMuted ? Localize("'%s' was muted") : Localize("'%s' was unmuted"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
 		pChatData->AddLine(CLIENT_MSG, CHAT_ALL, aMsg, -1);
 	}
+	pChatData->m_Mode = CHAT_NONE;
+	pChatData->m_pClient->OnRelease();
 }
 
 void CChat::Com_Befriend(CChat *pChatData, const char* pCommand)
@@ -1484,54 +1559,103 @@ void CChat::Com_Befriend(CChat *pChatData, const char* pCommand)
 		str_format(aMsg, sizeof(aMsg), !isFriend ? Localize("'%s' was added as a friend") : Localize("'%s' was removed as a friend"), pChatData->m_pClient->m_aClients[TargetID].m_aName);
 		pChatData->AddLine(CLIENT_MSG, CHAT_ALL, aMsg, -1);
 	}
+	pChatData->m_Mode = CHAT_NONE;
+	pChatData->m_pClient->OnRelease();
 }
 
 
 // CChatCommands methods
-CChat::CChatCommands::CChatCommands(CChatCommand apCommands[], int Count) : m_apCommands(apCommands), m_Count(Count), m_pSelectedCommand(0x0) { }
-CChat::CChatCommands::~CChatCommands() { }
+CChat::CChatCommands::CChatCommands() : m_pSelectedCommand(0)
+{
+	mem_zero(m_aCommands, sizeof(m_aCommands));
+}
+CChat::CChatCommands::~CChatCommands() {}
 
 // selection
 void CChat::CChatCommands::Reset()
 {
-	m_pSelectedCommand = 0x0;
+	m_pSelectedCommand = 0;
+}
+
+void CChat::CChatCommands::AddCommand(const char *pName, const char *pArgsFormat, const char *pHelpText, COMMAND_CALLBACK pfnCallback)
+{
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		if(!m_aCommands[i].m_Used)
+		{
+			mem_zero(&m_aCommands[i], sizeof(CChatCommand));
+
+			str_copy(m_aCommands[i].m_aName, pName, sizeof(m_aCommands[i].m_aName));
+			str_copy(m_aCommands[i].m_aHelpText, pHelpText, sizeof(m_aCommands[i].m_aHelpText));
+			str_copy(m_aCommands[i].m_aArgsFormat, pArgsFormat, sizeof(m_aCommands[i].m_aArgsFormat));
+
+			m_aCommands[i].m_pfnCallback = pfnCallback;
+			m_aCommands[i].m_aFiltered = false;
+			m_aCommands[i].m_Used = true;
+			break;
+		}
+	}
+}
+
+void CChat::CChatCommands::ClearCommands()
+{
+	mem_zero(m_aCommands, sizeof(m_aCommands));
 }
 
 // Example: /whisper command will match "/whi", "/whisper" and "/whisper tee"
 void CChat::CChatCommands::Filter(const char* pLine)
 {
 	char aCommandStr[64];
-	str_copy(aCommandStr, pLine, sizeof(aCommandStr));
+
+	// Ignore first char "/" when filtering.
+	str_copy(aCommandStr, pLine + 1, sizeof(aCommandStr));
+
 	// truncate the string at the first whitespace to get the command
 	char* pFirstWhitespace = str_skip_to_whitespace(aCommandStr);
 	if(pFirstWhitespace)
 		*pFirstWhitespace = 0;
 
-	for(int i = 0; i < m_Count; i++)
-		m_apCommands[i].m_aFiltered = (str_find_nocase(m_apCommands[i].m_pCommandText, aCommandStr) != m_apCommands[i].m_pCommandText);
+	for(int i = 0; i < MAX_COMMANDS; i++)
+		if(m_aCommands[i].m_Used)
+			m_aCommands[i].m_aFiltered = (str_find_nocase(m_aCommands[i].m_aName, aCommandStr) != m_aCommands[i].m_aName);
 
 	// also update selected command
 	if(!GetSelectedCommand() || GetSelectedCommand()->m_aFiltered)
 	{
 		if(CountActiveCommands() > 0)
-			m_pSelectedCommand = &m_apCommands[GetActiveIndex(0)]; // default to first command
+			m_pSelectedCommand = &m_aCommands[GetActiveIndex(0)]; // default to first command
 		else
-			m_pSelectedCommand = 0x0;
+			m_pSelectedCommand = 0;
 	}
 }
 
 // this will not return a correct value if we are not writing a command (m_Input.GetString()[0] == '/')
 int CChat::CChatCommands::CountActiveCommands() const
 {
-	int n = m_Count;
-	for(int i = 0; i < m_Count; i++)
-		n -= m_apCommands[i].m_aFiltered;
+	int n = 0;
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		if(m_aCommands[i].m_Used && !m_aCommands[i].m_aFiltered)
+			n++;
+	}
 	return n;
 }
 
-const CChat::CChatCommand* CChat::CChatCommands::GetCommand(int index) const
+const CChat::CChatCommand* CChat::CChatCommands::GetCommand(int Index) const
 {
-	return &m_apCommands[GetActiveIndex(index)];
+	int RealIndex = GetActiveIndex(Index);
+	return RealIndex != -1 ? &m_aCommands[RealIndex] : 0;
+}
+
+CChat::CChatCommand *CChat::CChatCommands::GetCommandByName(const char *pName)
+{
+	for(int i = 0; i < MAX_COMMANDS; i++)
+	{
+		if(m_aCommands[i].m_Used && str_comp(m_aCommands[i].m_aName, pName) == 0)
+			return &m_aCommands[i];
+	}
+
+	return 0;
 }
 
 const CChat::CChatCommand* CChat::CChatCommands::GetSelectedCommand() const
@@ -1542,45 +1666,45 @@ const CChat::CChatCommand* CChat::CChatCommands::GetSelectedCommand() const
 void CChat::CChatCommands::SelectPreviousCommand()
 {
 	CChatCommand* LastCommand = 0x0;
-	for(int i = 0; i < m_Count; i++)
+	for(int i = 0; i < MAX_COMMANDS; i++)
 	{
-		if(m_apCommands[i].m_aFiltered)
+		if(!m_aCommands[i].m_Used || m_aCommands[i].m_aFiltered)
 			continue;
-		if(&m_apCommands[i] == m_pSelectedCommand)
+		if(&m_aCommands[i] == m_pSelectedCommand)
 		{
 			m_pSelectedCommand = LastCommand;
 			return;
 		}
-		LastCommand = &m_apCommands[i];
+		LastCommand = &m_aCommands[i];
 	}
 }
 
 void CChat::CChatCommands::SelectNextCommand()
 {
 	bool FoundSelected = false;
-	for(int i = 0; i < m_Count; i++)
+	for(int i = 0; i < MAX_COMMANDS; i++)
 	{
-		if(m_apCommands[i].m_aFiltered)
+		if(!m_aCommands[i].m_Used || m_aCommands[i].m_aFiltered)
 			continue;
 		if(FoundSelected)
 		{
-			m_pSelectedCommand = &m_apCommands[i];
+			m_pSelectedCommand = &m_aCommands[i];
 			return;
 		}
-		if(&m_apCommands[i] == m_pSelectedCommand)
+		if(&m_aCommands[i] == m_pSelectedCommand)
 			FoundSelected = true;
 	}
 }
 
-int CChat::CChatCommands::GetActiveIndex(int index) const
+int CChat::CChatCommands::GetActiveIndex(int Index) const
 {
-	for(int i = 0; i < m_Count; i++)
+	for(int i = 0; i < MAX_COMMANDS; i++)
 	{
-		if(m_apCommands[i].m_aFiltered)
-			index++;
-		if(i == index)
+		if(!m_aCommands[i].m_Used || m_aCommands[i].m_aFiltered)
+			Index++;
+		if(i == Index)
 			return i;
 	}
-	dbg_break();
+	
 	return -1;
 }

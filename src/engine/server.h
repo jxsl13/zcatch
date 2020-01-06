@@ -110,6 +110,8 @@ public:
 
 	virtual void SendServerMessage(int To, const char *pText) = 0;
 	virtual void SendServerMessageText(int To, const char *pText) = 0;
+
+	virtual bool TimeScore() const { return false; }
 };
 
 extern IGameServer *CreateGameServer();
