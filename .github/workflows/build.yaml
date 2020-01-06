@@ -50,6 +50,7 @@ jobs:
     - name: Prepare Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
+        sudo add-apt-repository ppa:george-edison55/cmake-3.x
         sudo apt-get update -y
         sudo apt-get install pkg-config cmake libfreetype6-dev libsdl2-dev -y
 
@@ -124,6 +125,7 @@ jobs:
     - name: Prepare Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
+        sudo add-apt-repository ppa:george-edison55/cmake-3.x
         sudo apt-get update -y
         sudo apt-get install libfreetype6-dev libsdl2-dev -y
         cd bam
