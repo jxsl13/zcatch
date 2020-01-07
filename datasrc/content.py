@@ -245,6 +245,10 @@ container.sounds.Add(SoundSet("spree_holyshit", ["audio/holyshit.wv"]))
 
 
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
+container.sounds.Add(SoundSet("button_hover", ["audio/button_hover.wv"]))
+container.sounds.Add(SoundSet("button_click", ["audio/button_click.wv"]))
+container.sounds.Add(SoundSet("race_checkpoint_fast", ["audio/race_checkpoint_fast.wv"]))
+container.sounds.Add(SoundSet("race_checkpoint_slow", ["audio/race_checkpoint_slow.wv"]))
 
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
