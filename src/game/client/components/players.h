@@ -23,8 +23,39 @@ class CPlayers : public CComponent
 	);
 	void RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int m_Weapon);
 
+	class CHealthBarStartInfo
+	{
+	private:
+		enum
+		{
+			UNINITIALIZED = -1,
+			CHANGED = -2,
+		};
+		int m_HealthAtStart;
+		int m_ArmorAtStart;
+		int m_AmmoAtStart;
+
+	public:
+		CHealthBarStartInfo() { m_HealthAtStart = UNINITIALIZED; m_ArmorAtStart = UNINITIALIZED; m_AmmoAtStart = UNINITIALIZED; }
+		bool HealthHasChanged() { return m_HealthAtStart == CHANGED; }
+		bool ArmorHasChanged() { return m_ArmorAtStart == CHANGED; }
+		bool AmmoHasChanged() { return m_AmmoAtStart == CHANGED; }
+		void Feed(int Health, int Armor, int Ammo) {
+			Update(&m_HealthAtStart, Health);
+			Update(&m_ArmorAtStart, Armor);
+			Update(&m_AmmoAtStart, Ammo);
+		}
+	private:
+		void Update(int* pItem, int NewValue) { 
+			NewValue = clamp(NewValue, 0, 10);
+			if(*pItem == UNINITIALIZED) *pItem = NewValue;
+			if(*pItem != NewValue) *pItem = CHANGED;
+		}
+	} m_HealthBarStartInfo;
+
 public:
 	virtual void OnRender();
+	virtual void OnEnterGame();
 };
 
 #endif

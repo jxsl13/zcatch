@@ -697,6 +697,7 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 		const vec4 ShadowColor = vec4(0.1f, 0.1f, 0.1f, 0.4f);
 		const vec4 (&aColors)[] = {HealthColor, ArmorColor, AmmoColor};
 
+		m_HealthBarStartInfo.Feed(hp, armor, Ammo);
 		for(int ElementIndex = 0; ElementIndex < 3; ElementIndex++) // health -> armor -> ammo
 		{
 			bool Skip;
@@ -705,19 +706,19 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 			{
 				// health
 				Value = hp;
-				Skip = hp == 10;
+				Skip = hp == 10 || !m_HealthBarStartInfo.HealthHasChanged();
 			}
 			else if(ElementIndex == 1)
 			{
 				// armor
 				Value = armor;
-				Skip = armor == 0;
+				Skip = armor == 0 || !m_HealthBarStartInfo.ArmorHasChanged();
 			}
 			else
 			{
 				// ammo
 				Value = Ammo;
-				Skip = Ammo == 10;
+				Skip = Ammo == 10  || !m_HealthBarStartInfo.AmmoHasChanged();
 				if(Weapon == WEAPON_HAMMER)
 					Skip = true;
 				else if(!Ammo)
@@ -753,6 +754,12 @@ void CPlayers::RenderHealthBar(vec2 Position, int hp, int armor, int Ammo, int W
 			r.y -= r.h;
 		}
 	}	
+}
+
+// for healthbar
+void CPlayers::OnEnterGame()
+{
+	m_HealthBarStartInfo = CHealthBarStartInfo();
 }
 
 void CPlayers::OnRender()
