@@ -2102,6 +2102,15 @@ void CMenus::RenderSettingsSound(CUIRect MainView)
 		Sound.HSplitTop(Spacing, 0, &Sound);
 		Sound.HSplitTop(ButtonHeight, &Button, &Sound);
 		Button.VSplitLeft(ButtonHeight, 0, &Button);
+		static int s_ButtonSndEnableUI = 0;
+		if(DoButton_CheckBox(&s_ButtonSndEnableUI, Localize("Enable interface sounds"), g_Config.m_SndEnableUI, &Button))
+		{
+			g_Config.m_SndEnableUI ^= 1;
+		}
+
+		Sound.HSplitTop(Spacing, 0, &Sound);
+		Sound.HSplitTop(ButtonHeight, &Button, &Sound);
+		Button.VSplitLeft(ButtonHeight, 0, &Button);
 		static int s_ButtonSndMusic = 0;
 		if(DoButton_CheckBox(&s_ButtonSndMusic, Localize("Play background music"), g_Config.m_SndMusic, &Button))
 		{
