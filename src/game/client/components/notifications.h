@@ -15,6 +15,7 @@ class CNotifications : public CComponent
 public:
 	CNotifications();
 	virtual void OnRender();
+	virtual void OnMessage(int MsgType, void *pRawMsg);
 };
 
 #endif

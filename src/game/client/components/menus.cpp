@@ -202,7 +202,16 @@ int CMenus::DoButton_Menu(CButtonContainer *pBC, const char *pText, int Checked,
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
-	return UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
+
+	// UI sounds
+	const void* pLastActiveItem = UI()->GetActiveItem();
+	int Logic = UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
+	if(UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
+	if(UI()->GetActiveItem() == pBC->GetID() && pLastActiveItem != pBC->GetID())
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
+
+	return Logic;
 }
 
 void CMenus::DoButton_KeySelect(CButtonContainer *pBC, const char *pText, int Checked, const CUIRect *pRect)
@@ -236,7 +245,15 @@ int CMenus::DoButton_MenuTab(const void *pID, const char *pText, int Checked, co
 	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight, CUI::ALIGN_CENTER);
 
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-	return UI()->DoButtonLogic(pID, pText, Checked, pRect);
+	
+	// UI sounds
+	const void* pLastActiveItem = UI()->GetActiveItem();
+	int Logic = UI()->DoButtonLogic(pID, pText, Checked, pRect);
+	if(UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
+	if(UI()->GetActiveItem() == pID && pLastActiveItem != pID)
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
+	return Logic;
 }
 
 int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Checked, const CUIRect *pRect, float Alpha, float FontAlpha, int Corners, float r, float FontFactor, vec3 RectColor)
@@ -256,7 +273,16 @@ int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Ch
 	UI()->DoLabel(&Temp, pText, Temp.h*ms_FontmodHeight*0.8f, CUI::ALIGN_CENTER);
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
-	return UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
+	// return UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
+
+	// UI sounds
+	const void* pLastActiveItem = UI()->GetActiveItem();
+	int Logic = UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
+	if(UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
+	if(UI()->GetActiveItem() == pBC->GetID() && pLastActiveItem != pBC->GetID())
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
+	return Logic;
 }
 
 void CMenus::DoButton_MenuTabTop_Dummy(const char *pText, int Checked, const CUIRect *pRect, float Alpha)
@@ -356,7 +382,16 @@ int CMenus::DoButton_CheckBox_Common(const void *pID, const char *pText, const c
 	t.y += 1.0f; // lame fix
 	UI()->DoLabel(&c, pBoxText, pRect->h*ms_FontmodHeight*0.6f, CUI::ALIGN_CENTER);
 	UI()->DoLabel(&t, pText, pRect->h*ms_FontmodHeight*0.8f, CUI::ALIGN_LEFT);
-	return UI()->DoButtonLogic(pID, pText, 0, pRect);
+	// return UI()->DoButtonLogic(pID, pText, 0, pRect);
+
+	// UI sounds
+	const void* pLastActiveItem = UI()->GetActiveItem();
+	int Logic = UI()->DoButtonLogic(pID, pText, 0, pRect);
+	// if(UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
+	// 	m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
+	if(UI()->GetActiveItem() == pID && pLastActiveItem != pID)
+		m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
+	return Logic;
 }
 
 int CMenus::DoButton_CheckBox(const void *pID, const char *pText, int Checked, const CUIRect *pRect, bool Locked)
