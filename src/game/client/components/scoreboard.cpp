@@ -497,10 +497,10 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			{
 				const CGameClient::CPlayerInfoItem *pInfo = &m_pClient->m_Snap.m_aInfoByScore[RenderScoreIDs[i]];
 				if(m_pClient->m_LocalClientID != pInfo->m_ClientID && (
-					   !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
-					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")
-					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
-					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!")))
+					   str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+					|| str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!")
+					|| str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
+					|| str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!")))
 				{
 					hasRecognizedClients = true;
 					break;
@@ -565,8 +565,8 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 			if(g_Config.m_ClClientRecognition && 
 				(m_pClient->m_LocalClientID != pInfo->m_ClientID || hasRecognizedClients)) // not for the local client, except if there are others
 			{
-				if(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
-				|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!"))
+				if(str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "gamer!")
+				|| str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "gamer!"))
 				{
 					// gamer symbol
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CLIENTICONS].m_Id);
@@ -579,8 +579,8 @@ float CScoreboard::RenderScoreboard(float x, float y, float w, int Team, const c
 					Graphics()->QuadsEnd();
 				}
 				// zilly detection
-				else if(!str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
-					|| !str_comp(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!"))
+				else if(str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-1], "zilly!")
+					|| str_find(m_pClient->m_aClients[pInfo->m_ClientID].m_aaSkinPartNames[NUM_SKINPARTS-2], "zilly!"))
 				{
 					// zilly symbol
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_CLIENTICONS].m_Id);
