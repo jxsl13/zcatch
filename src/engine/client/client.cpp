@@ -2579,7 +2579,12 @@ void CClient::ConnectOnStart(const char *pAddress)
 void CClient::DoVersionSpecificActions()
 {
 	if(g_Config.m_ClLastVersionPlayed <= 0x0703)
+	{
 		str_copy(g_Config.m_ClMenuMap, "winter", sizeof(g_Config.m_ClMenuMap));
+		if(!(g_Config.m_ClStatboardInfos&/* TC_STATS_WEAPS */512))
+			g_Config.m_ClStatboardInfos += /* TC_STATS_WEAPS */512;
+		g_Config.m_GfxHealthBar = 3;
+	}
 	g_Config.m_ClLastVersionPlayed = CLIENT_VERSION;
 }
 

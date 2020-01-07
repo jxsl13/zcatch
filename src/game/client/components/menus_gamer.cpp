@@ -132,9 +132,10 @@ void CMenus::RenderSettingsGamerGeneral(CUIRect MainView)
 	DoButton_BinaryCheckBox(&g_Config.m_ClNoHud, "Disable HUD", &Button);
 		
 	NewLine();
-	DoButton_BinaryCheckBox(&g_Config.m_GfxHealthBar, "Display healthbar", &Button);
+	if(DoButton_CheckBox(&g_Config.m_GfxHealthBar, "Display healthbar", g_Config.m_GfxHealthBar, &Button))
+		g_Config.m_GfxHealthBar = g_Config.m_GfxHealthBar ? 0 : 3;
 	
-	if(g_Config.m_GfxHealthBar)
+	if(g_Config.m_GfxHealthBar > 0 && g_Config.m_GfxHealthBar != 3)
 	{
 		NewLine();
 		Button.VSplitLeft(20.0f, 0, &Button);
