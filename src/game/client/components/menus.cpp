@@ -208,7 +208,7 @@ int CMenus::DoButton_Menu(CButtonContainer *pBC, const char *pText, int Checked,
 	int Logic = UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
 	if(g_Config.m_SndEnableUI)
 	{
-		if(UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
+		if(g_Config.m_SndEnableUIHover && UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
 		if(UI()->GetActiveItem() == pBC->GetID() && pLastActiveItem != pBC->GetID())
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
@@ -254,7 +254,7 @@ int CMenus::DoButton_MenuTab(const void *pID, const char *pText, int Checked, co
 	int Logic = UI()->DoButtonLogic(pID, pText, Checked, pRect);
 	if(g_Config.m_SndEnableUI)
 	{
-		if(UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
+		if(g_Config.m_SndEnableUIHover && UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
 		if(UI()->GetActiveItem() == pID && pLastActiveItem != pID)
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
@@ -286,7 +286,7 @@ int CMenus::DoButton_MenuTabTop(CButtonContainer *pBC, const char *pText, int Ch
 	int Logic = UI()->DoButtonLogic(pBC->GetID(), pText, Checked, pRect);
 	if(g_Config.m_SndEnableUI)
 	{
-		if(UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
+		if(g_Config.m_SndEnableUIHover && UI()->NextHotItem() == pBC->GetID() && UI()->NextHotItem() != UI()->HotItem())
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
 		if(UI()->GetActiveItem() == pBC->GetID() && pLastActiveItem != pBC->GetID())
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
@@ -398,7 +398,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pID, const char *pText, const c
 	int Logic = UI()->DoButtonLogic(pID, pText, 0, pRect);
 	if(g_Config.m_SndEnableUI)
 	{
-		// if(UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
+		// g_Config.m_SndEnableUIHover && if(UI()->NextHotItem() == pID && UI()->NextHotItem() != UI()->HotItem())
 		// 	m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_HOVER, 1);
 		if(UI()->GetActiveItem() == pID && pLastActiveItem != pID)
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_BUTTON_CLICK, 0);
