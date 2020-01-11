@@ -1355,9 +1355,9 @@ list(APPEND TARGETS_OWN engine-shared game-shared)
 if(CLIENT)
   # Sources
 
-  file(GLOB ENGINE_CLIENT "src/engine/client/*.cpp" "src/engine/client/*.h" CONFIGURE_DEPENDS)
-  file(GLOB GAME_CLIENT "src/game/client/*.cpp" "src/game/client/*.h" "src/game/client/components/*.cpp" "src/game/client/components/*.h" CONFIGURE_DEPENDS)
-  file(GLOB GAME_EDITOR "src/game/editor/*.cpp" "src/game/editor/*.h" CONFIGURE_DEPENDS)
+  file(GLOB ENGINE_CLIENT "src/engine/client/*.cpp" "src/engine/client/*.h")
+  file(GLOB GAME_CLIENT "src/game/client/*.cpp" "src/game/client/*.h" "src/game/client/components/*.cpp" "src/game/client/components/*.h")
+  file(GLOB GAME_EDITOR "src/game/editor/*.cpp" "src/game/editor/*.h")
   set(GAME_GENERATED_CLIENT
     src/generated/client_data.cpp
     src/generated/client_data.h
