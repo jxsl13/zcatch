@@ -75,7 +75,7 @@ void CNotifications::OnRender()
 void CNotifications::OnMessage(int MsgType, void *pRawMsg)
 {
 	// UI sounds
-	if(MsgType == NETMSGTYPE_SV_CHECKPOINT)
+	if(g_Config.m_SndEnableRace && MsgType == NETMSGTYPE_SV_CHECKPOINT)
 	{
 		CNetMsg_Sv_Checkpoint *pMsg = (CNetMsg_Sv_Checkpoint *)pRawMsg;
 		if(pMsg->m_Diff < 0)
