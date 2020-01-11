@@ -134,7 +134,7 @@ if include_data and not use_bundle:
 		shutil.copy(source_package_dir+"freetype.dll", package_dir)
 
 if include_exe and not use_bundle:
-	shutil.copy(source_package_dir+name+exe_ext, package_dir)
+	shutil.copy(source_package_dir+name+"_gamer"+exe_ext, package_dir)
 	shutil.copy(source_package_dir+name+"_srv"+exe_ext, package_dir)
 	
 if include_src:
@@ -145,7 +145,7 @@ if include_src:
 	shutil.copy("configure.lua", package_dir)
 
 if use_bundle:
-	bins = [name, name+'_srv', 'serverlaunch']
+	bins = [name+'_gamer', name+'_srv', 'serverlaunch']
 	platforms = ('x86_64')
 	for bin in bins:
 		to_lipo = []

@@ -35,6 +35,14 @@ public:
 		};
 	};
 
+	enum
+	{
+		LEVEL_CASUAL = 0,
+		LEVEL_NORMAL = 1,
+		LEVEL_COMPETITIVE = 2,
+		NUM_SERVER_LEVELS = 3
+	};
+
 	//int m_SortedIndex;
 	int m_ServerIndex;
 
@@ -75,6 +83,21 @@ public:
 	int m_ServerLevel;
 	char m_aGametype[MAX_GAMETYPES][16];
 	char m_aAddress[NETADDR_MAXSTRSIZE];
+
+	void ToggleLevel(int Level)
+	{
+		m_ServerLevel ^= 1 << Level;
+		if(m_ServerLevel == (1 << CServerInfo::NUM_SERVER_LEVELS)-1)
+		{
+			// Prevent filter that excludes everything
+			m_ServerLevel = 0;
+		}
+	}
+
+	int IsLevelFiltered(int Level)
+	{
+		return m_ServerLevel & (1 << Level);
+	}
 };
 
 class IServerBrowser : public IInterface
@@ -99,6 +122,7 @@ public:
 		QUICK_SERVERNAME=1,
 		QUICK_PLAYER=2,
 		QUICK_MAPNAME=4,
+		QUICK_GAMETYPE=8,
 
 		TYPE_INTERNET=0,
 		TYPE_LAN,
