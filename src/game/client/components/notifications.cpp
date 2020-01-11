@@ -101,7 +101,6 @@ void CNotifications::OnMessage(int MsgType, void *pRawMsg)
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_RACE_CHECKPOINT_SLOW, 0);
 		else
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_RACE_CHECKPOINT_FAST, 0);
-		}
     }
     else if(g_Config.m_SndEnableRace && MsgType == NETMSGTYPE_SV_RACEFINISH)
     {
