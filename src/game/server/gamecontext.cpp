@@ -1630,7 +1630,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("unmute", "i", CFGFLAG_SERVER, ConUnmute, this, "Unmutes a player by #Index");
 	Console()->Register("mutes", "", CFGFLAG_SERVER, ConMutes, this, "Show all mutes");
 
-	Console()->Register("punish", "i?i", CFGFLAG_SERVER, ConPunishPlayer, this, "Prevent player from killing other players.");
+	Console()->Register("punish", "i?i", CFGFLAG_SERVER, ConPunishPlayer, this, "Punish player for cheating, prevents him from killing others.");
 	Console()->Register("unpunish", "i", CFGFLAG_SERVER, ConUnPunishPlayer, this, "Allow player to play normally again.");
 	Console()->Register("punishments", "", CFGFLAG_SERVER, ConPunishedPlayers, this, "Show punished players.");
 }
@@ -1987,8 +1987,18 @@ const std::vector<int>& CGameContext::PlayerIDs()
 void CGameContext::ConPunishPlayer(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext*)pUserData;
+
+	if(pResult->NumArguments() < 0 || 2 < pResult->NumArguments())
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "invalid usage, please pass one or two arguments");
+		return;
+	}
+		
 	int ClientID = pResult->GetInteger(0);
-	int Level = pResult->GetInteger(1);
+	int Level = 1;	// default punishment level
+
+	if(pResult->NumArguments() == 2)
+		Level = pResult->GetInteger(1);
 
 	if(!pSelf->m_apPlayers[ClientID])
 	{
