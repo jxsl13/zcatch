@@ -680,7 +680,7 @@ void CCharacter::TickDefered()
 	}
 	else if(m_Core.m_Death)
 	{
-		//handle death-tiles
+		// handle death-tiles
 		Die(m_pPlayer->GetCID(), WEAPON_WORLD);
 	}
 
