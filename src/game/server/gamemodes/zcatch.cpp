@@ -1536,11 +1536,9 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 {
 	CPlayer* pPlayer = GameServer()->m_apPlayers[LeavingID];
-	dbg_msg("DEBUG_CACHE", "Leaving Player ID: %d", LeavingID);
 	if (pPlayer)
 	{
 		int caughtByID = pPlayer->GetIDCaughtBy();
-		dbg_msg("DEBUG_CACHE", "Leaving Player was caught by ID:: %d", caughtByID);
 		if (caughtByID >= 0)
 		{
 			char aBuf[NETADDR_MAXSTRSIZE];
@@ -1550,20 +1548,13 @@ void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 			int expirationTick = Server()->Tick() + (Server()->TickSpeed() * 60);
 			std::string IP = {aBuf};
 			m_LeftCaughtCache.emplace_back(IP, caughtByID, expirationTick);
-			dbg_msg("DEBUG_CACHE", "Added leaving player IP: %s caught by ID: %d and ExpTick: %d", IP.c_str(), caughtByID, expirationTick);
 		}
 	}
-	else
-	{
-		dbg_msg("DEBUG_CACHE", "Player is a nullptr:");
-	}
-	
 }
 void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
 {
 	if (m_LeftCaughtCache.size() == 0)
 	{
-		dbg_msg("DEBUG_CACHE", "RemovePlayerIDFromCaughtCache size = 0");
 		return;
 	}
 
@@ -1578,7 +1569,6 @@ void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
 					(void) expirationTick;
 					if (DyingOrLeavingID == caughtByID)
 					{
-						dbg_msg("DEBUG_CACHE", "Clearing cache of ID: %d", caughtByID);
 						return true;
 					}
 					else
@@ -1594,7 +1584,6 @@ void CGameControllerZCATCH::RemoveIPOfJoiningPlayerFromCaughtCache(std::string& 
 {
 	if (m_LeftCaughtCache.size() == 0)
 	{
-		dbg_msg("DEBUG_CACHE", "RemoveIPOfJoiningPlayerFromCaughtCache size = 0, IP: %s", IP.c_str());
 		return;
 	}
 
@@ -1610,7 +1599,6 @@ void CGameControllerZCATCH::RemoveIPOfJoiningPlayerFromCaughtCache(std::string& 
 					{
 						(void)caughtByID;
 						(void)expirationTick;
-						dbg_msg("DEBUG_CACHE", "IP removed on join: %s, caught by ID: %d", cachedIP.c_str(), caughtByID);
 						return true;
 					}
 					else
@@ -1626,7 +1614,6 @@ int CGameControllerZCATCH::IsInCaughtCache(int JoiningID)
 {
 	if (m_LeftCaughtCache.size() == 0)
 	{
-		dbg_msg("DEBUG_CACHE", "IsInCaughtCache, not in cache, cuz cache is empty");
 		return -1;
 	}
 		
@@ -1641,14 +1628,11 @@ int CGameControllerZCATCH::IsInCaughtCache(int JoiningID)
 	{
 		if (joiningIP == cachedIP && currentTick < expirationTick)
 		{
-			dbg_msg("DEBUG_CACHE", "IP: %s was found in cache, ID: %d", cachedIP.c_str(), caughtByID);
 			return caughtByID;
 		}	
 	}
 	
-	dbg_msg("DEBUG_CACHE", "IP is not in CaughtCache IP: %s", joiningIP.c_str());
-	return -1;
-	
+	return -1;	
 }
 
 void CGameControllerZCATCH::CleanLeftCaughtCache()
@@ -1667,7 +1651,6 @@ void CGameControllerZCATCH::CleanLeftCaughtCache()
 					const auto& [cachedIP, caughtByID, expirationTick] = element;
 					if (currentTick >= expirationTick)
 					{
-						dbg_msg("DEBUG_CACHE", "IP expired: %s ID: %d", cachedIP.c_str(), caughtByID);
 						return true;
 					}
 					else
@@ -1693,7 +1676,6 @@ void CGameControllerZCATCH::CleanLeftCaughtCache()
 
 void CGameControllerZCATCH::HandleLeavingPlayerCaching(int LeavingID)
 {
-	dbg_msg("DEBUG_CACHE", "HandleLeavingPlayerCaching ID: %d", LeavingID);
 	class CPlayer& Player = *GameServer()->m_apPlayers[LeavingID];
 
 	if (Player.IsCaught())
@@ -1701,11 +1683,6 @@ void CGameControllerZCATCH::HandleLeavingPlayerCaching(int LeavingID)
 		// if player is caught, his ip will be added to the cache assiciated to the id
 		AddLeavingPlayerIPToCaughtCache(LeavingID);
 	}
-	else
-	{
-		dbg_msg("DEBUG_CACHE", "Leaving Player ID: %d is not caught", LeavingID);
-	}
-	
 
 	// player leaves -> nobody that previously left 
 	// can be caught by that player 
@@ -1715,7 +1692,6 @@ void CGameControllerZCATCH::HandleLeavingPlayerCaching(int LeavingID)
 
 void CGameControllerZCATCH::HandleDyingPlayerCaching(int DyingPlayerID)
 {
-	dbg_msg("DEBUG_CACHE", "HandleDyingPlayerCaching ID: %d", DyingPlayerID);
 	RemovePlayerIDFromCaughtCache(DyingPlayerID);	
 }
 
@@ -1723,7 +1699,6 @@ void CGameControllerZCATCH::HandleDyingPlayerCaching(int DyingPlayerID)
 bool CGameControllerZCATCH::HandleJoiningPlayerCaching(int JoiningPlayerID)
 {
 	int CaughtByID  = IsInCaughtCache(JoiningPlayerID);
-	dbg_msg("DEBUG_CACHE", "HandleJoiningPlayerCaching ID: %d CaughtByID: %d", JoiningPlayerID, CaughtByID);
 	if (CaughtByID >= 0)
 	{
 		class CPlayer* pKiller = GameServer()->m_apPlayers[CaughtByID];
@@ -1741,11 +1716,6 @@ bool CGameControllerZCATCH::HandleJoiningPlayerCaching(int JoiningPlayerID)
 			RemoveIPOfJoiningPlayerFromCaughtCache(IP);
 			return true;
 		}
-		else
-		{
-			dbg_msg("DEBUG_CACHE", "HandleJoiningPlayerCaching, Killer with ID: %d is invalid", CaughtByID);
-		}
-		
 	}
 	
 	// bool : IsAlreadyCaught
@@ -1794,7 +1764,6 @@ void CGameControllerZCATCH::KickCountdownOnTick()
 			}
 			else if(m_PlayerKickTicksCountdown[ID] == 0)
 			{
-				dbg_msg("DEBUG", "KickCountdownOnTick: ID: %d", ID);
 				AddKickedPlayerIPToCache(ID);
 				Server()->Kick(ID, g_Config.m_SvBeginnerServerKickReason);
 				m_PlayerKickTicksCountdown[ID] = NO_KICK;
