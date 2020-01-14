@@ -223,9 +223,10 @@ void CCharacter::HandleNinja()
 					continue;
 
 				// Hit a player, give him damage and stuffs...
-				bool IsPunished = GetPlayer() && GetPlayer()->GetPunishmentLevel() > CPlayer::PunishmentLevel::NONE;
-				if(!IsPunished)
-					GameServer()->CreateSound(aEnts[i]->m_Pos, SOUND_NINJA_HIT);
+				using PunishmentLevel = CPlayer::PunishmentLevel;
+				bool IsPunished = GetPlayer() && GetPlayer()->GetPunishmentLevel() > PunishmentLevel::NONE;
+				
+				GameServer()->CreateSound(aEnts[i]->m_Pos, SOUND_NINJA_HIT, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 				// set his velocity to fast upward (for now)
 				if(m_NumObjectsHit < 10)
 					m_apHitObjects[m_NumObjectsHit++] = aEnts[i];
@@ -346,8 +347,8 @@ void CCharacter::FireWeapon()
 		{
 			// reset objects Hit
 			m_NumObjectsHit = 0;
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
+			// create sound only for punished player, for everyone otherwise
+			GameServer()->CreateSound(m_Pos, SOUND_HAMMER_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 
 			CCharacter *apEnts[MAX_CLIENTS];
 			int Hits = 0;
@@ -362,13 +363,10 @@ void CCharacter::FireWeapon()
 					continue;
 
 				// set his velocity to fast upward (for now)
-				if(!IsPunished)
-				{
-					if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
-						GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*GetProximityRadius()*0.5f);
-					else
-						GameServer()->CreateHammerHit(ProjStartPos);
-				}
+				if(length(pTarget->m_Pos-ProjStartPos) > 0.0f)
+ 					GameServer()->CreateHammerHit(pTarget->m_Pos-normalize(pTarget->m_Pos-ProjStartPos)*GetProximityRadius()*0.5f, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
+ 				else
+ 					GameServer()->CreateHammerHit(ProjStartPos, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 
 
 				vec2 Dir;
@@ -400,8 +398,7 @@ void CCharacter::FireWeapon()
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GunLifetime),
 				g_pData->m_Weapons.m_Gun.m_pBase->m_Damage, false, 0, -1, WEAPON_GUN);
 			
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 		} break;
 
 		case WEAPON_SHOTGUN:
@@ -423,8 +420,8 @@ void CCharacter::FireWeapon()
 					g_pData->m_Weapons.m_Shotgun.m_pBase->m_Damage, false, 0, -1, WEAPON_SHOTGUN);
 			}
 
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
+			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
+
 		} break;
 
 		case WEAPON_GRENADE:
@@ -436,16 +433,14 @@ void CCharacter::FireWeapon()
 				(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_GrenadeLifetime),
 				g_pData->m_Weapons.m_Grenade.m_pBase->m_Damage, true, 0, SOUND_GRENADE_EXPLODE, WEAPON_GRENADE);
 			
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
+			GameServer()->CreateSound(m_Pos, SOUND_GRENADE_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 		} break;
 
 		case WEAPON_LASER:
 		{
 			new CLaser(GameWorld(), m_Pos, Direction, GameServer()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
 			
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+			GameServer()->CreateSound(m_Pos, SOUND_LASER_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 		} break;
 
 		case WEAPON_NINJA:
@@ -457,8 +452,7 @@ void CCharacter::FireWeapon()
 			m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
 			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
 
-			if(!IsPunished)
-				GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
+			GameServer()->CreateSound(m_Pos, SOUND_NINJA_FIRE, IsPunished ? CmaskOne(m_pPlayer->GetCID()) : -1);
 		} break;
 
 	}
