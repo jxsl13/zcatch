@@ -3,7 +3,10 @@
 
 #include "playerstats.h"
 
+#ifndef CONF_FAMILY_WINDOWS
 #include <cpp_redis/cpp_redis>
+#endif // CONF_FAMILY_WINDOWS
+
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <functional>
 #include <future>
