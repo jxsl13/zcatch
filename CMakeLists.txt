@@ -500,12 +500,16 @@ endif()
 ########################################################################
 
 ############ cpp_redis ############
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
 
-target_include_directories(cpp_redis PUBLIC 
-    ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
-    ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
-)
+if(NOT (TARGET_OS STREQUAL "windows"))
+  add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
+
+  target_include_directories(cpp_redis PUBLIC 
+      ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
+      ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
+  )
+endif()
+
 ############ cpp_redis ############
 
 
@@ -1696,12 +1700,15 @@ endif()
 
 # Libraries
 set(LIBS_SERVER 
-  cpp_redis
   SQLiteCpp
   sqlite3
   ${CMAKE_DL_LIBS}
   ${LIBS}
 )
+
+if(NOT (TARGET_OS STREQUAL "windows"))
+  set(LIBS_SERVER ${LIBS_SERVER} cpp_redis)
+endif()
 
 # Target
 set(TARGET_SERVER ${SERVER_EXECUTABLE})
