@@ -655,7 +655,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
-	else if(m_IngamePlayerCount >= MAX_PLAYERS)
+	else if(m_IngamePlayerCount > MAX_PLAYERS)
 	{
 		// if the server is full, we do not want the 
 		// joining player to be caught by anyone, 
@@ -663,7 +663,7 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 		dbg_msg("DEBUG", "Player %d joined the TEAM: %d", ID, player.GetTeam());
 
 		// force into spec
-		pPlayer->SetTeam(TEAM_SPECTATORS, false);
+		DoTeamChange(pPlayer, TEAM_SPECTATORS);
 		IGameController::OnPlayerConnect(pPlayer);
 		return;
 	}
@@ -822,6 +822,8 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 	}
 	else if(Weapon < 0 && victimID == killerID)
 	{
+		// killed by non-character enemy
+
 		switch (Weapon)
 		{
 		case WEAPON_WORLD: // death tiles etc.
@@ -958,6 +960,7 @@ void CGameControllerZCATCH::Tick()
 void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool DoChatMsg)
 {
 	CPlayer& player = (*pPlayer);
+	
 
 	// toggle state, whether player wants or doesn't want to joint spec.
 	if (player.IsCaught() && Team == TEAM_SPECTATORS)
@@ -985,26 +988,31 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		// player is not caught and wants to join the spectators.
 		player.ReleaseAllCaughtPlayers(CPlayer::REASON_PLAYER_JOINED_SPEC);
 	}
-	else if (player.GetTeam() == TEAM_SPECTATORS && 
-			Team != TEAM_SPECTATORS && 
-			m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && 
-			!player.IsAuthed())
-	{
-		// player that's not allowed to play on the beginner server cannot join the game.
-		GameServer()->SendServerMessage(player.GetCID(), g_Config.m_SvBeginnerServerKickWarning);
-		return;
-	}
 	
 	else if(player.GetTeam() == TEAM_SPECTATORS && Team != TEAM_SPECTATORS)
 	{
-		// players joins the game after being in spec
+		if (m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && !player.IsAuthed())
+		{
+			// player that's not allowed to play on the beginner server cannot join the game.
+			GameServer()->SendServerMessage(player.GetCID(), g_Config.m_SvBeginnerServerKickWarning);
+			return;
+		}
+		else if(m_IngamePlayerCount > MAX_PLAYERS)
+		{
+			GameServer()->SendServerMessage(player.GetCID(), "The server is currently full, you cannot join the game.");
+			return;
+		}
+		else
+		{
+			// players joins the game after being in spec
 
-		// do vanilla respawn stuff
-		IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
+			// do vanilla respawn stuff
+			IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
 
-		// force player to spawn
-		player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
-		return;
+			// force player to spawn
+			player.BeReleased(CPlayer::REASON_PLAYER_JOINED_GAME_AGAIN);
+			return;
+		}
 	}
 	
 	IGameController::DoTeamChange(pPlayer, Team, DoChatMsg);
