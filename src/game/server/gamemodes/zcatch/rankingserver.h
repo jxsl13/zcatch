@@ -128,6 +128,7 @@ class IRankingServer
     void AwaitFutures();
 };
 
+#ifndef CONF_FAMILY_WINDOWS
 class CRedisRankingServer : public IRankingServer
 {
    private:
@@ -177,6 +178,7 @@ class CRedisRankingServer : public IRankingServer
     // might take as much time as the reconnect_ms(see the constructor parameter) to finish its tasks.
     virtual ~CRedisRankingServer();
 };
+#endif // CONF_FAMILY_WINDOWS
 
 class CSQLiteRankingServer : public IRankingServer
 {

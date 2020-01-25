@@ -57,7 +57,13 @@ void CGameControllerZCATCH::InitRankingServer()
 
 	if(DatabaseType == "redis")
 	{
+#ifndef CONF_FAMILY_WINDOWS
 		m_pRankingServer = new CRedisRankingServer{g_Config.m_SvDatabaseHost, static_cast<size_t>(g_Config.m_SvDatabasePort)};
+#else 
+		m_pRankingServer = nullptr;
+		dbg_msg("[redis_error]: %s", "Redis is not supported on Windows!");
+#endif
+		
 	}
 	else if (DatabaseType == "sqlite" || DatabaseType == "sqlite3")
 	{
