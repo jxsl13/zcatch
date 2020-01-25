@@ -1,13 +1,6 @@
 #ifndef GAME_SERVER_RANKINGSERVER_H
 #define GAME_SERVER_RANKINGSERVER_H
 
-#include "playerstats.h"
-
-#ifndef CONF_FAMILY_WINDOWS
-#include <cpp_redis/cpp_redis>
-#endif // CONF_FAMILY_WINDOWS
-
-#include <SQLiteCpp/SQLiteCpp.h>
 #include <functional>
 #include <future>
 #include <mutex>
@@ -15,6 +8,16 @@
 #include <tuple>
 #include <vector>
 #include <deque>
+
+#include <base/detect.h> // contains OS detection
+
+#ifndef CONF_FAMILY_WINDOWS
+    #include <cpp_redis/cpp_redis>
+#endif // CONF_FAMILY_WINDOWS
+
+#include <SQLiteCpp/SQLiteCpp.h>
+
+#include "playerstats.h"
 
 class IRankingServer
 {
