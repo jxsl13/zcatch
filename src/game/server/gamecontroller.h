@@ -9,6 +9,8 @@
 #include <generated/protocol.h>
 #include <engine/shared/config.h>
 
+#include <functional>
+
 /*
 	Class: Game Controller
 		Controls the main game logic. Keeping track of team and player score,
@@ -125,7 +127,7 @@ protected:
 
 	void UpdateGameInfo(int ClientID);
 
-	typedef void (*COMMAND_CALLBACK)(class CPlayer *pPlayer, const char *pArgs);
+	using COMMAND_CALLBACK = std::function<void(class CPlayer *pPlayer, const char *pArgs)>;
 
 	//static void Com_Example(class CPlayer *pPlayer, const char *pArgs);
 

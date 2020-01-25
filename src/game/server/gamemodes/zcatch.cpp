@@ -40,7 +40,8 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	{
 		m_PlayerKickTicksCountdown[i] = NO_KICK;
 	}
-	
+
+	ChatCommandsOnInit();
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -64,6 +65,33 @@ void CGameControllerZCATCH::InitRankingServer()
 	}
 	
 }
+
+void CGameControllerZCATCH::ChatCommandsOnInit()
+{
+	
+	// Add some important commands, client wont sort alphabetically!
+	CommandsManager()->AddCommand("help", "", "See a list of commands to help you with you questions.", [this](class CPlayer *pPlayer, const char *pArgs){
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, "/help");
+	});
+	CommandsManager()->AddCommand("info", "", "See some information about the zCatch mod.", [this](class CPlayer *pPlayer, const char *pArgs){
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, "/info");
+	});
+	CommandsManager()->AddCommand("rules", "", "A quick read about how zCatch is played.", [this](class CPlayer *pPlayer, const char *pArgs){
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, "/rules");
+	});
+	CommandsManager()->AddCommand("top", "", "See the server's top players.", [this](class CPlayer *pPlayer, const char *pArgs){
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, "/top");
+	});
+	CommandsManager()->AddCommand("rank", "", "See your own ranking data.", [this](class CPlayer *pPlayer, const char *pArgs){
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, "/rank");
+	});
+}
+
 
 CGameControllerZCATCH::~CGameControllerZCATCH()
 {
@@ -629,10 +657,30 @@ void CGameControllerZCATCH::OnCharacterSpawn(class CCharacter *pChr)
 	}
 }
 
+void CGameControllerZCATCH::ChatCommandsOnPlayerConnect(CPlayer *pPlayer)
+{
+	class IServer* pServer = Server();
+	int ID = pPlayer->GetCID();
+
+	// Remove the clientside commands (except w, whisper & r)
+	CommandsManager()->SendRemoveCommand(pServer, "all", ID);
+	CommandsManager()->SendRemoveCommand(pServer, "friend", ID);
+	CommandsManager()->SendRemoveCommand(pServer, "m", ID);
+	CommandsManager()->SendRemoveCommand(pServer, "mute", ID);
+	CommandsManager()->SendRemoveCommand(pServer, "team", ID);
+
+
+	// send the initially registered commands
+	CommandsManager()->OnPlayerConnect(pServer, pPlayer);
+}
+
 void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 {
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
+
+	// send chat commands
+	ChatCommandsOnPlayerConnect(pPlayer);
 
 	// no auto kick for player yet.
 	// people usually are forced to stay in spec, 

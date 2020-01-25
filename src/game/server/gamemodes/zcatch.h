@@ -229,11 +229,29 @@ private:
 		NO_KICK = -1,
 	};
 
+	// Kick player in x Seconds
 	void SetKickIn(int ClientID, int Seconds);
+
+	// executed on every tick, handles countdown og KickTimer
 	void KickCountdownOnTick();
+
+	// what prevents people from joining the server
 	void HandleBeginnerServerCondition(CPlayer* pPlayer);
+
+	// a kicked player or a player deemed as not allowed to play 
+	// on the server is added to the IP cache
 	void AddKickedPlayerIPToCache(int ClientID);
+
+	// Check if player is not allowed to play.
 	bool CheckIPInKickedBeginnerServerCache(int ClientID);
+
+
+	// Init the chat command that are to be sent to joining players
+	void ChatCommandsOnInit();
+
+	// send chat command messages
+	void ChatCommandsOnPlayerConnect(CPlayer* pPlayer);
+
 
 };
 
