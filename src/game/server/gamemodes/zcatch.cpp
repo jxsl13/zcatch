@@ -1416,11 +1416,12 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	}
 
 	// constants
-	constexpr int topNumber = 5; // constexpr, no need to capture
 	constexpr bool biggestFirst = true;
+	constexpr int topNumber = 5;
 
-	m_pRankingServer->GetTopRanking(topNumber, key, [this, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
+	m_pRankingServer->GetTopRanking(topNumber, key, [this, topNumber, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
 	
+
 	// messages that will be shown to the player
 	std::vector<std::string> messages;
 
@@ -1657,6 +1658,8 @@ void CGameControllerZCATCH::CleanLeftCaughtCache()
 			[currentTick](std::tuple<std::string, int, int>& element)-> bool 
 				{
 					const auto& [cachedIP, caughtByID, expirationTick] = element;
+					(void)cachedIP;	// silence warnings
+					(void)caughtByID;
 					if (currentTick >= expirationTick)
 					{
 						return true;
