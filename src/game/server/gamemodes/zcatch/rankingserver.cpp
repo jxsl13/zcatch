@@ -3,6 +3,7 @@
 #include <cctype>
 #include <chrono>
 #include <future>
+#include <sstream>
 #include <base/system.h>
 #include <engine/shared/protocol.h>
 
