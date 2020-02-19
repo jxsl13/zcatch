@@ -462,6 +462,12 @@ bool CGameControllerZCATCH::OnCallvoteBan(int ClientID, int KickID, const char* 
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "'%s'(ID: %d) tried to ban you. Reason: %s", Server()->ClientName(ClientID), ClientID, pReason);
 			GameServer()->SendServerMessage(KickID, aBuf);
+			return false;
+		}
+		else if(!g_Config.m_SvKickvoteOnWarmup && m_IngamePlayerCount < g_Config.m_SvPlayersToStartRound)
+		{
+			GameServer()->SendServerMessage(ClientID, "Not enough players to start a kickvote.");
+			return false;
 		}
 		else
 		{

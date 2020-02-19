@@ -139,6 +139,9 @@ MACRO_CONFIG_INT(SvVoteKickBantime, sv_vote_kick_bantime, 5, 0, 1440, CFGFLAG_SA
 MACRO_CONFIG_INT(SvPlayersToStartRound, sv_players_to_start_round, 5, 0, MAX_CLIENTS, CFGFLAG_SAVE|CFGFLAG_SERVER, "Players needed to end a round. Default: 5")
 MACRO_CONFIG_INT(SvWeaponMode, sv_weapon_mode, 3, 0, 6, CFGFLAG_SAVE|CFGFLAG_SERVER, "0: Hammer, 1: Gun, 2: Shotgun, 3:Grenade Launcher, 4: Laser Rifle, 5:Ninja, 6: Everything")
 
+MACRO_CONFIG_INT(SvKickvoteOnWarmup, sv_kickvote_on_warmup, 0, 0, 1, CFGFLAG_SAVE|CFGFLAG_SERVER, "Enable kickvotes while warmup is being played.")
+
+
 MACRO_CONFIG_INT(SvSuicidePenalty, sv_suicide_penalty, 5, 0, 50, CFGFLAG_SERVER, "How many deaths does one suicide cause.")
 MACRO_CONFIG_INT(SvSuicideCooldown, sv_suicide_cooldown, 15, 3, 60, CFGFLAG_SERVER, "How long a player needs to wait before it is able to do anoter suicide.")
 
