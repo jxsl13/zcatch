@@ -76,9 +76,9 @@ void CGameControllerZCATCH::ChatCommandsOnInit()
 {
 	
 	// Add some important commands, client wont sort alphabetically!
-	CommandsManager()->AddCommand("help", "", "See a list of commands to help you with you questions.", [this](class CPlayer *pPlayer, const char *pArgs){
+	CommandsManager()->AddCommand("help", "s", "See a list of commands to help you with you questions.", [this](class CPlayer *pPlayer, const char *pArgs){
 		int ID = pPlayer->GetCID();
-		OnChatMessage(ID, 0, ID, "/help");
+		OnChatMessage(ID, 0, ID, pArgs);
 	});
 	CommandsManager()->AddCommand("info", "", "See some information about the zCatch mod.", [this](class CPlayer *pPlayer, const char *pArgs){
 		int ID = pPlayer->GetCID();
@@ -88,14 +88,19 @@ void CGameControllerZCATCH::ChatCommandsOnInit()
 		int ID = pPlayer->GetCID();
 		OnChatMessage(ID, 0, ID, "/rules");
 	});
-	CommandsManager()->AddCommand("top", "", "See the server's top players.", [this](class CPlayer *pPlayer, const char *pArgs){
-		int ID = pPlayer->GetCID();
-		OnChatMessage(ID, 0, ID, "/top");
-	});
-	CommandsManager()->AddCommand("rank", "", "See your own ranking data.", [this](class CPlayer *pPlayer, const char *pArgs){
-		int ID = pPlayer->GetCID();
-		OnChatMessage(ID, 0, ID, "/rank");
-	});
+	
+	if (m_pRankingServer)
+	{
+		CommandsManager()->AddCommand("top", "", "See the server's top players.", [this](class CPlayer *pPlayer, const char *pArgs){
+			int ID = pPlayer->GetCID();
+			OnChatMessage(ID, 0, ID, "/top");
+		});
+
+		CommandsManager()->AddCommand("rank", "p", "See a player's ranking statistics.", [this](class CPlayer *pPlayer, const char *pArgs){
+			int ID = pPlayer->GetCID();
+			OnChatMessage(ID, 0, ID, pArgs);
+		});
+	}
 }
 
 
