@@ -31,7 +31,7 @@ public:
 	virtual int ClientCountry(int ClientID) const = 0;
 	virtual bool ClientIngame(int ClientID) const = 0;
 	virtual int GetClientInfo(int ClientID, CClientInfo *pInfo) const = 0;
-	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size, bool Port=false) const = 0;
+	virtual void GetClientAddr(int ClientID, char *pAddrStr, int Size) const = 0;
 	virtual int GetClientVersion(int ClientID) const = 0;
 
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID) = 0;

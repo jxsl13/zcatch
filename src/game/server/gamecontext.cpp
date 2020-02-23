@@ -683,15 +683,6 @@ void CGameContext::OnClientPredictedInput(int ClientID, void *pInput)
 
 void CGameContext::OnClientEnter(int ClientID)
 {
-	// log join message
-	char aBuf[256];
-	char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
-	
-	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr), true);
-	str_format(aBuf, sizeof(aBuf), "server_join ClientID=%d addr=%s '%s'", ClientID, aAddrStr, Server()->ClientName(ClientID));
-	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
-
-
 	m_pController->OnPlayerConnect(m_apPlayers[ClientID]);
 
 	m_VoteUpdate = true;
@@ -820,13 +811,6 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		if(g_Config.m_SvSilentSpectatorMode && pPlayer->GetTeam() == TEAM_SPECTATORS)
 			Msg.m_Silent = true;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, -1);
-
-		// log leave message
-		char aBuf[256];
-		char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
-		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr), true);
-		str_format(aBuf, sizeof(aBuf), "server_leave ClientID=%d addr=%s '%s'", ClientID, aAddrStr, Server()->ClientName(ClientID));
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 	}
 
 	// mark client's projectile has team projectile
