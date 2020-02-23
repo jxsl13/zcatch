@@ -473,10 +473,12 @@ int CServer::GetClientInfo(int ClientID, CClientInfo *pInfo) const
 	return 0;
 }
 
-void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size) const
+void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size, bool Port) const
 {
 	if(ClientID >= 0 && ClientID < MAX_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_INGAME)
-		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, false);
+	{
+		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, Port);
+	}	
 }
 
 int CServer::GetClientVersion(int ClientID) const
@@ -982,12 +984,6 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			if((pPacket->m_Flags&NET_CHUNKFLAG_VITAL) != 0 && m_aClients[ClientID].m_State == CClient::STATE_READY && GameServer()->IsClientReady(ClientID))
 			{
-				char aAddrStr[NETADDR_MAXSTRSIZE];
-				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
-
-				char aBuf[256];
-				str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%d addr=%s", ClientID, aAddrStr);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
 				SendServerInfo(ClientID);
 				GameServer()->OnClientEnter(ClientID);
