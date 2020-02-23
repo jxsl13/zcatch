@@ -688,7 +688,7 @@ void CGameContext::OnClientEnter(int ClientID)
 	char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
 	
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr), true);
-	str_format(aBuf, sizeof(aBuf), "server_join '%s' ClientID=%d addr=%s", Server()->ClientName(ClientID), ClientID, aAddrStr);
+	str_format(aBuf, sizeof(aBuf), "server_join ClientID=%d addr=%s '%s'", ClientID, aAddrStr, Server()->ClientName(ClientID));
 	Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
 
@@ -825,7 +825,7 @@ void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 		char aBuf[256];
 		char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
 		Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr), true);
-		str_format(aBuf, sizeof(aBuf), "server_leave '%s' ClientID=%d addr=%s", Server()->ClientName(ClientID), ClientID, aAddrStr);
+		str_format(aBuf, sizeof(aBuf), "server_leave ClientID=%d addr=%s '%s'", ClientID, aAddrStr, Server()->ClientName(ClientID));
 		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 	}
 
