@@ -940,7 +940,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 							ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
 							aDesc, pReason, aCmd, pMsg->m_Force
 						);
-						Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+						Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 						if(pMsg->m_Force)
 						{
 							Server()->SetRconCID(ClientID);
@@ -993,7 +993,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
 					KickID, Server()->ClientName(KickID), pReason, aCmd, pMsg->m_Force
 				);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 				if(pMsg->m_Force)
 				{
 					Server()->SetRconCID(ClientID);
@@ -1025,7 +1025,7 @@ void CGameContext::OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID)
 					ClientID, Server()->ClientName(ClientID), pMsg->m_Type,
 					SpectateID, Server()->ClientName(SpectateID), pReason, aCmd, pMsg->m_Force
 				);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 				if(pMsg->m_Force)
 				{
 					Server()->SetRconCID(ClientID);
