@@ -763,17 +763,6 @@ int CServer::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	{
 		pThis->m_aClients[ClientID].m_Quitting = true;
 		pThis->GameServer()->OnClientDrop(ClientID, pReason);
-
-		if (pThis->m_aClients[ClientID].m_State >= CClient::STATE_INGAME)
-		{
-			// log leave message
-			char aBuf[256];
-			char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
-			net_addr_str(pThis->m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
-			str_format(aBuf, sizeof(aBuf), "server_leave ClientID=%d addr=%s '%s'", ClientID, aAddrStr, pThis->ClientName(ClientID));
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
-		}
-		
 	}
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
@@ -999,11 +988,11 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				SendServerInfo(ClientID);
 				GameServer()->OnClientEnter(ClientID);
 
-				// log join message
-				char aBuf[256];
-				char aAddrStr[NETADDR_MAXSTRSIZE] = {0,};
-				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
-				str_format(aBuf, sizeof(aBuf), "server_join ClientID=%d addr=%s '%s'", ClientID, aAddrStr, ClientName(ClientID));
+				char aAddrStr[NETADDR_MAXSTRSIZE];
+ 				net_addr_str(m_NetServer.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
+
+ 				char aBuf[256];
+ 				str_format(aBuf, sizeof(aBuf), "player has entered the game. ClientID=%d addr=%s", ClientID, aAddrStr);
 				Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 			}
 		}
