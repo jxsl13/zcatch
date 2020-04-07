@@ -717,7 +717,7 @@ bool CPlayer::BeReleased(int reason)
 				// the player was previously willingly explicitly stectating.
 				break;
 			case REASON_PLAYER_LEFT:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' is leaving the game.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' has left the game.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_EVERYONE_RELEASED:
 				str_format(aBuf, sizeof(aBuf), "Everyone was released!");
