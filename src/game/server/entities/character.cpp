@@ -847,9 +847,9 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 	// create healthmod indicator
 	GameServer()->CreateDamage(m_Pos, m_pPlayer->GetCID(), Source, 10, 10, false);
 
-	// do damage Hit sound
 	if(From >= 0 && From != m_pPlayer->GetCID() && GameServer()->m_apPlayers[From])
 	{
+		// do damage Hit sound
 		int64 Mask = CmaskOne(From);
 		for(int i : GameServer()->PlayerIDs())
 		{
@@ -858,6 +858,15 @@ bool CCharacter::TakeDamage(vec2 Force, vec2 Source, int Dmg, int From, int Weap
 				Mask |= CmaskOne(i);
 		}
 		GameServer()->CreateSound(GameServer()->m_apPlayers[From]->m_ViewPos, SOUND_HIT, Mask);
+		// refill attacker nade
+		CCharacter *pChr = GameServer()->m_apPlayers[From]->GetCharacter();
+		if(pChr)
+		{
+			pChr->m_aWeapons[m_ActiveWeapon].m_Ammo = min(
+				pChr->m_aWeapons[m_ActiveWeapon].m_Ammo + 1,
+				g_pData->m_Weapons.m_aId[m_ActiveWeapon].m_Maxammo
+			);
+		}
 	}
 
 	// check for death
