@@ -517,6 +517,8 @@ endif()
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp/include)
+
+list(APPEND TARGETS_DEP SQLiteCpp sqlite3)
 ############ SQLiteCpp ############
 
 
