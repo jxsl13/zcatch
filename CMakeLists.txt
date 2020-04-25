@@ -519,6 +519,15 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp)
 include_directories(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp/include)
 
 list(APPEND TARGETS_DEP SQLiteCpp sqlite3)
+
+# Don't want to catch warnings in 3rd party code
+if (NOT MSVC)
+	target_compile_options(SQLiteCpp PRIVATE -Wno-error)
+	target_compile_options(sqlite3 PRIVATE -Wno-error)
+else(MSVC)
+	target_compile_options(SQLiteCpp PRIVATE /WX:NO)
+	target_compile_options(sqlite3 PRIVATE /WX:NO)
+endif(MSVC)
 ############ SQLiteCpp ############
 
 
