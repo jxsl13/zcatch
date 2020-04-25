@@ -508,6 +508,8 @@ if(NOT (TARGET_OS STREQUAL "windows"))
       ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
       ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
   )
+  
+  list(APPEND TARGETS_DEP cpp_redis)
 endif()
 
 ############ cpp_redis ############
@@ -520,14 +522,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp/include)
 
 list(APPEND TARGETS_DEP SQLiteCpp sqlite3)
 
-# Don't want to catch warnings in 3rd party code
-if (NOT MSVC)
-	target_compile_options(SQLiteCpp PRIVATE -Wno-error)
-	target_compile_options(sqlite3 PRIVATE -Wno-error)
-else(MSVC)
-	target_compile_options(SQLiteCpp PRIVATE /WX:NO)
-	target_compile_options(sqlite3 PRIVATE /WX:NO)
-endif(MSVC)
 ############ SQLiteCpp ############
 
 
@@ -2148,6 +2142,16 @@ macro(source_group_tree dir)
   endforeach()
 endmacro()
 source_group_tree(src)
+
+# Disable "treat warnings as errors" in 3rd party code
+foreach(target ${TARGETS_DEP})
+	if (MSVC)
+		target_compile_options(${target} PRIVATE /WX:NO)
+	else(MSVC)
+		target_compile_options(${target} PRIVATE -Wno-error)
+	endif(MSVC)
+endforeach()
+
 
 set(TARGETS ${TARGETS_OWN} ${TARGETS_DEP})
 
