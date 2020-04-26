@@ -2110,7 +2110,7 @@ set(PACKAGE_DEFAULT tar_xz)
 if(TARGET_OS STREQUAL "windows")
   set(PACKAGE_DEFAULT zip)
 elseif(TARGET_OS STREQUAL "mac")
-  set(PACKAGE_DEFAULT dmg)
+  set(PACKAGE_DEFAULT tar_xz)
 endif()
 add_custom_target(package_default DEPENDS package_${PACKAGE_DEFAULT})
 
