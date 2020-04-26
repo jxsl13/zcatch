@@ -500,17 +500,23 @@ endif()
 ########################################################################
 
 ############ cpp_redis ############
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
 
-if(NOT (TARGET_OS STREQUAL "windows"))
-  add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis)
+target_include_directories(cpp_redis INTERFACE 
+  ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
+  ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
+)
 
-  target_include_directories(cpp_redis PUBLIC 
-      ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
-      ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
+if (TARGET_OS STREQUAL "windows")
+  # There are conflict between IStorage in WinSDK and IStorage in zCatch code
+  # so, include less from Windows headers (also this define used in cpp_redis 
+  # build scripts)
+  target_compile_options(cpp_redis INTERFACE 
+    -DWIN32_LEAN_AND_MEAN
   )
-  
-  list(APPEND TARGETS_DEP cpp_redis)
-endif()
+endif(TARGET_OS STREQUAL "windows")
+
+list(APPEND TARGETS_DEP cpp_redis tacopie)
 
 ############ cpp_redis ############
 
@@ -1711,9 +1717,7 @@ set(LIBS_SERVER
   ${LIBS}
 )
 
-if(NOT (TARGET_OS STREQUAL "windows"))
-  set(LIBS_SERVER ${LIBS_SERVER} cpp_redis)
-endif()
+set(LIBS_SERVER ${LIBS_SERVER} cpp_redis)
 
 # Target
 set(TARGET_SERVER ${SERVER_EXECUTABLE})
