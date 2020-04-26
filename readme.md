@@ -28,7 +28,7 @@ For a nightly build you search for the top most operating system that you are lo
 Contributors
 ============
 
-[maximyurchuk](https://github.com/maximyurchuk) - giant thanks for fixing the Windows build!
+[bleeding](https://github.com/maximyurchuk) - giant thanks for fixing the Windows build!
 
 
 Teeworlds
