@@ -12,18 +12,18 @@ jobs:
         - os: ubuntu-latest
           cmake-args: -G "Unix Makefiles"
           build-args: --parallel
-          package-file: zCatch-*-linux_x86_64.tar.xz
+          package-file: teeworlds-*-linux_x86_64.tar.xz
         - os: ubuntu-18.04
           cmake-path: /usr/bin/
           cmake-args: -G "Unix Makefiles"
-          package-file: zCatch-*-linux_x86_64.tar.xz
+          package-file: teeworlds-*-linux_x86_64.tar.xz
         - os: macOS-latest
           cmake-args: -G "Unix Makefiles"
           build-args: --parallel
-          package-file: zCatch-*-osx.tar.xz
+          package-file: teeworlds-*-osx.tar.xz
         - os: windows-latest
           cmake-args: -G "Visual Studio 16 2019" -A x64
-          package-file: zCatch-*-win64.zip
+          package-file: teeworlds-*-win64.zip
 
     steps:
     - uses: actions/checkout@v2
@@ -88,7 +88,7 @@ jobs:
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: release/artifacts/zCatch*
+        files: release/artifacts/teeworlds*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
