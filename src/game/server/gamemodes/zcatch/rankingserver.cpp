@@ -346,7 +346,6 @@ void IRankingServer::AwaitFutures()
 }
 
 // ############################################################
-#ifndef CONF_FAMILY_WINDOWS
 CRedisRankingServer::CRedisRankingServer()
 {
     m_DefaultConstructed = true;
@@ -887,7 +886,6 @@ void CRedisRankingServer::DeleteRankingSync(std::string nickname, std::string pr
         return;
     }
 }
-#endif // CONF_FAMILY_WINDOWS
 
 
 // ############################################
