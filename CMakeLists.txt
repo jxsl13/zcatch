@@ -2143,16 +2143,6 @@ macro(source_group_tree dir)
 endmacro()
 source_group_tree(src)
 
-# Disable "treat warnings as errors" in 3rd party code
-foreach(target ${TARGETS_DEP})
-	if (MSVC)
-		target_compile_options(${target} PRIVATE /WX:NO)
-	else(MSVC)
-		target_compile_options(${target} PRIVATE -Wno-error)
-	endif(MSVC)
-endforeach()
-
-
 set(TARGETS ${TARGETS_OWN} ${TARGETS_DEP})
 
 foreach(target ${TARGETS})
