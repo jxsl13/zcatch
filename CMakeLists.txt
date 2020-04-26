@@ -508,6 +508,8 @@ if(NOT (TARGET_OS STREQUAL "windows"))
       ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/includes
       ${PROJECT_SOURCE_DIR}/src/engine/external/cpp_redis/tacopie/includes
   )
+  
+  list(APPEND TARGETS_DEP cpp_redis)
 endif()
 
 ############ cpp_redis ############
@@ -517,6 +519,9 @@ endif()
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/engine/external/SQLiteCpp/include)
+
+list(APPEND TARGETS_DEP SQLiteCpp sqlite3)
+
 ############ SQLiteCpp ############
 
 
@@ -2105,7 +2110,7 @@ set(PACKAGE_DEFAULT tar_xz)
 if(TARGET_OS STREQUAL "windows")
   set(PACKAGE_DEFAULT zip)
 elseif(TARGET_OS STREQUAL "mac")
-  set(PACKAGE_DEFAULT dmg)
+  set(PACKAGE_DEFAULT tar_xz)
 endif()
 add_custom_target(package_default DEPENDS package_${PACKAGE_DEFAULT})
 
