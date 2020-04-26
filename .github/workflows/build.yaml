@@ -47,7 +47,6 @@ jobs:
         brew install pkg-config freetype sdl2
 
     - name: Build in debug mode
-      env: ${{ matrix.env }}
       run: |
         mkdir debug
         cd debug
@@ -61,7 +60,6 @@ jobs:
         ./zcatch_srv shutdown
 
     - name: Build in release mode
-      env: ${{ matrix.env }}
       run: |
         mkdir release
         cd release
