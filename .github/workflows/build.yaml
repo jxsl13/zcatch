@@ -20,7 +20,7 @@ jobs:
         - os: macOS-latest
           cmake-args: -G "Unix Makefiles"
           build-args: --parallel
-          package-file: teeworlds-*-osx.dmg
+          package-file: teeworlds-*-osx.tar.xz
         - os: windows-latest
           cmake-args: -G "Visual Studio 16 2019" -A x64
           package-file: teeworlds-*-win64.zip
