@@ -1,4 +1,4 @@
- Teeworlds zCatch ![Build](https://github.com/jxsl13/zcatch/workflows/Build/badge.svg)
+ Teeworlds zCatch [![Build](https://github.com/jxsl13/zcatch/workflows/Build/badge.svg)](https://github.com/jxsl13/zcatch/actions?query=workflow%3ABuild)
 =========
 
 Description
