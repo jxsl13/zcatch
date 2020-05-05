@@ -165,7 +165,8 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 					GameServer()->SendServerMessage(ofID, "/rules - If you want to know about zCatch's ruleset.");
 					GameServer()->SendServerMessage(ofID, "/info - If to know about this mod's creators.");
 					GameServer()->SendServerMessage(ofID, "/help list - To see a list of all the help screens.");
-
+					GameServer()->SendServerMessage(ofID, "/julio - To see more informations about julio.");
+					GameServer()->SendServerMessage(ofID, "/hte");
 				}
 				else if (size >= 2)
 				{
@@ -278,13 +279,25 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 				GameServer()->SendServerMessage(ofID, "========== Info  ==========");
 				GameServer()->SendServerMessageText(ofID, "Welcome to zCatch, a completely newly created version for Teeworlds 0.7. The ground work was done erdbaer & Teetime and is used as reference. Teelevision did a great job maintaining the mod after the Instagib Laser era. Also a thank you to TeeSlayer, who ported a basic version of zCatch to Teeworlds 0.7, that has also been used as reference.");
 
-				GameServer()->SendServerMessage(ofID, "This zCatch modification is being created by jxsl13.");
+				GameServer()->SendServerMessage(ofID, "This zCatch modification is being created by jxsl13. Additional modification by Julio.");
 			}
 			else if(tokens[0] == "rules")
 			{  
 				GameServer()->SendServerMessage(ofID, "========== Rules ==========");
 				GameServer()->SendServerMessageText(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is considered as caught. If you die, all of your caught players are released. If you catch all of them, you win the round. As a measure of fair play, you are able to release your caught players manually in reverse order. Releasing players is optional in zCatch. Type '/help release' for more information.");
 				
+			}
+			else if (tokens[0] == "julio")
+			{
+			GameServer()->SendServerMessage(ofID, "========== Julio ==========");
+			GameServer()->SendServerMessageText(ofID, "This server is heberged by Julio ! Have fun and be kind.");
+
+			}
+			else if (tokens[0] == "hte")
+			{
+			GameServer()->SendServerMessage(ofID, "========== HTE ==========");
+			GameServer()->SendServerMessageText(ofID, "The best one <3");
+
 			}
 			else if(tokens[0] == "release" && size == 1)
 			{
