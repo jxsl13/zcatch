@@ -1098,7 +1098,12 @@ unsigned int CPlayer::GetColor()
 	else
 	{
 		// coloration when zCatch is running
-		color = max(0, 160 - GetNumTotalCaughtPlayers() * 10) * 0x010000 + 0xff00;
+		if (IsAuthed()) {
+			color = (GetNumCaughtPlayersInARow() % 2 == 0) ? 0xffffff : 0xff00 + 150 * 0xffffff;
+		}
+		else {
+			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
+		}
 	}
 	return color;
 }
