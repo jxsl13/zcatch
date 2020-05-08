@@ -1957,14 +1957,3 @@ bool CGameControllerZCATCH::CheckIPInKickedBeginnerServerCache(int ClientID)
 	return false;
 	
 }
-
-
-
-	
-
-
-
-
-
-
-

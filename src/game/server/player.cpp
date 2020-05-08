@@ -1087,7 +1087,13 @@ unsigned int CPlayer::GetColor()
 	if(GameServer()->m_pController->IsGameWarmup())
 	{
 		// coloration during warmup
-		color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
+		if (IsAuthed()) {
+			//ROUGE --> BLANC//color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0xffffff + 0xff00;
+			color = (GetNumCaughtPlayersInARow() % 2 == 0) ? 0xffffff : 0xff00 + 150 * 0xffffff;
+		}
+		else {
+			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
+		}
 	}
 	else
 	{
