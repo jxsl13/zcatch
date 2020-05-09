@@ -252,7 +252,8 @@ private:
 	// send chat command messages
 	void ChatCommandsOnPlayerConnect(CPlayer* pPlayer);
 
-
+	// Handle comand (/release, /help etc.)
+	void OnPlayerCommandImpl(class CPlayer* pPlayer, const char* pCommandName, const char* pArgs);
 };
 
 #endif
