@@ -317,8 +317,28 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 		{
 			if(size > 1)
 			{
-				std::string nickname = tokens[1];
-				// ofID requests the data of nickname(ss.str())
+				std::string nickname = pArgs;
+
+				// Note: we can't use tokens here, because need to handle 
+				// nicknames with spaces. 
+				// 
+				// There are two cases:
+				// 0.7.4 client sends pArgs = "/rank foo" 
+				// 0.7.5 client sends pArgs = "foo"
+				// 
+				// So, detect 0.7.4 case and make it 0.7.5 conformant. 
+				
+				
+				if (nickname.find("/rank ") == 0)
+				{
+					// 0.7.4 case 
+					// TODO: Remove this when 0.7.4 client becomes unpopular
+					// Sorry guy with nickname '/rank ':( 
+
+					auto pos = nickname.find_first_of(' ');
+					nickname = nickname.substr(pos + 1, std::string::npos);
+				}
+
 				RequestRankingData(ofID, nickname);
 			}
 			else
@@ -1441,7 +1461,8 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 {
 	if (m_pRankingServer == nullptr)
 	{
-		GameServer()->SendServerMessage(requestingID, "This server does not track any player statistics.");
+		std::string message = "Can't get ranking for " + ofNickname + ", because this server does not track any player statistics.";
+		GameServer()->SendServerMessage(requestingID, message.c_str());
 		return;
 	}
 	else if(!m_pRankingServer->IsValidNickname(ofNickname, GetDatabasePrefix()))
