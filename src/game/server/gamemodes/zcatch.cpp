@@ -139,6 +139,23 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 	{
 		tokens.push_back(tmpString);
 	}
+
+
+	// There is difference between 0.7.4 and 0.7.5 clients:
+	// 
+	// In 0.7.4 command name included in args (i.e. if someone type 
+	// "/help list" server got pCommandName=="help", pArgs="/help list")
+	// 
+	// In 0.7.5 command name not included in args (i.e. if someone type 
+	// "/help list" server got pCommandName=="help", pArgs="list")
+	//
+	// So, we fix here 0.7.4 behaviour to be 0.7.5 conformant
+	// TODO: remove this hack when 0.7.4 becomes unpopular. 
+	if ((tokens.size() >= 2) && ("/" + tokens[0]) == (tokens[1]))
+	{
+		tokens.erase(tokens.begin() + 1);
+	}
+
 	size_t size = tokens.size();
 
 	try
@@ -333,15 +350,39 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 		return;
 	}
 	
-	// If messages starts with /, player send some unexistent command. 
-	// So, help player with available commands. 
+	CPlayer* pPlayer = GameServer()->m_apPlayers[ofID];
+
+	// Handle commands
 	if(pText[0] == '/')
 	{
-		GameServer()->SendServerMessage(ofID, "No such command, please try /help");
+		// There are 2 possible cases then some command handled by this function:
+		// 1) This is unexistent command, so there is no appropriate handler
+		// 2) In version 0.7.3 and below there are no NETMSGTYPE_CL_COMMAND msgID,
+		//    so all commands are received as usual chat message
+		// 
+		// In both cases we can manually call OnPlayerCommandImpl to handle command.
+
+		std::string command;
+		// remove slash
+		++pText;
+		
+		// accumulate command
+		while (*pText && *pText != ' ')
+		{
+			command += *pText;
+			++pText;
+		}
+
+		// skip whitespaces
+		while (*pText && *pText == ' ')
+		{
+			++pText;
+		}
+
+		OnPlayerCommandImpl(pPlayer, command.c_str(), pText);
 		return;
 	}
 
-	CPlayer *pPlayer = GameServer()->m_apPlayers[ofID];
 
 	// check if player is allowed to chat handle auto mute.
 	// IsAllowedToChat also informs the player about him being muted.
