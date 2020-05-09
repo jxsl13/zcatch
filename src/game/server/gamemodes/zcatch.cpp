@@ -165,7 +165,6 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 			if (size == 1)
 			{
 				GameServer()->SendServerMessage(ofID, "========== Help ==========");
-				GameServer()->SendServerMessage(ofID, "/welcome - The message you get, when you join the server.");
 				GameServer()->SendServerMessage(ofID, "/rules - If you want to know about zCatch's ruleset.");
 				GameServer()->SendServerMessage(ofID, "/info - If to know about this mod's creators.");
 				GameServer()->SendServerMessage(ofID, "/help list - To see a list of all the help screens.");
