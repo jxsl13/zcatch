@@ -229,7 +229,7 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 					else
 						GameServer()->SendServerMessage(ofID, "There is currently no player ranking enabled.");
 
-					GameServer()->SendServerMessageText(ofID, "The player ranking saves some of your playing statistics in a database. You can see your own statistics by typing the command /rank in the chat. If you want to see somone else's statistics, write /rank <nickname> instead. In order to see the top players on the server, use the /top command.");
+					GameServer()->SendServerMessageText(ofID, "The player ranking saves some of your playing statistics in a database. You can see your own statistics by typing the command /rank in the chat. If you want to see someone else's statistics, write /rank <nickname> instead. In order to see the top players on the server, use the /top command.");
 				}
 				else if(tokens[1] == "definitions" && size == 2)
 				{
@@ -1052,7 +1052,7 @@ void CGameControllerZCATCH::Tick()
 	// we do not want WeaponModes to be changed mid game, as it is not supported
 	if (m_WeaponMode != g_Config.m_SvWeaponMode)
 	{
-		// reset weapon mode if somone tries to change it while the server is sunning
+		// reset weapon mode if someone tries to change it while the server is sunning
 		g_Config.m_SvWeaponMode = m_WeaponMode;
 		GameServer()->SendServerMessage(-1, "If you want to change the weapon mode, please update your configuration file and restart the server.");
 	}
@@ -1201,7 +1201,7 @@ void CGameControllerZCATCH::UpdateBroadcastOf(std::initializer_list<int> IDs)
 			else
 			{
 				// Spectating players should not receive any visible broadcasts
-				// this is basically updated, when somone joins the spectators
+				// this is basically updated, when someone joins the spectators
 				// in order to hide the enemies left counter
 				GameServer()->SendBroadcast("", ID);
 			}
@@ -1243,7 +1243,7 @@ void CGameControllerZCATCH::UpdateBroadcastOfEverybody()
 			else
 			{
 				// Spectating players should not receive any visible broadcasts
-				// this is basically updated, when somone joins the spectators
+				// this is basically updated, when someone joins the spectators
 				// in order to hide the enemies left counter
 				GameServer()->SendBroadcast("", i);
 			}
