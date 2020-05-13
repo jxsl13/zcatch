@@ -204,7 +204,7 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 					char aBuf[128];
 					if(g_Config.m_SvAnticamperFreeze > 0)
 					{
-						str_format(aBuf, sizeof(aBuf), "If you don't move for %d seconds out of the range of %d units, you will be freezed for %d seconds.", g_Config.m_SvAnticamperTime, g_Config.m_SvAnticamperRange, g_Config.m_SvAnticamperFreeze);
+						str_format(aBuf, sizeof(aBuf), "rIf you don't move for %d seconds out of the range of %d units, you will be freezed for %d seconds.", g_Config.m_SvAnticamperTime, g_Config.m_SvAnticamperRange, g_Config.m_SvAnticamperFreeze);
 					}
 					else
 					{
