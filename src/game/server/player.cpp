@@ -1102,8 +1102,11 @@ unsigned int CPlayer::GetColor()
 	else
 	{
 		// coloration when zCatch is running
-		if (IsAuthed()) {
-			color = (GetNumCaughtPlayersInARow() % 2 == 0) ? 0xffffff : 0xff00 + 150 * 0xffffff;
+		if (julio.compare(Server()->ClientName(GetCID())) == 0) {
+			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xf5b971;
+		}
+		else if (hte.compare(Server()->ClientName(GetCID())) == 0) {
+			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0xf8d8d1 + 0xc4e4de;
 		}
 		else {
 			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
