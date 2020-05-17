@@ -82,6 +82,10 @@ void CGameControllerZCATCH::ChatCommandsOnInit()
 		int ID = pPlayer->GetCID();
 		OnChatMessage(ID, 0, ID, "/rules");
 	});
+	CommandsManager()->AddCommand("color", "pii", "Change a player color", [this](class CPlayer* pPlayer, const char* pArgs) {
+		int ID = pPlayer->GetCID();
+		OnChatMessage(ID, 0, ID, pArgs);
+		});
 	
 	if (m_pRankingServer)
 	{
@@ -296,7 +300,7 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 			else if (tokens[0] == "hte")
 			{
 			GameServer()->SendServerMessage(ofID, "========== HTE ==========");
-			GameServer()->SendServerMessageText(ofID, "The best one <3");
+			GameServer()->SendServerMessageText(ofID, "<3");
 
 			}
 			else if(tokens[0] == "release" && size == 1)
@@ -342,6 +346,32 @@ void CGameControllerZCATCH::OnChatMessage(int ofID, int Mode, int toID, const ch
 			else if (tokens[0] == "top")
 			{
 				RequestTopRankingData(ofID, "Score");
+			}
+			else if (tokens[0] == "color")
+			{
+				if (size == 4)
+				{
+					std::string cmd{ pText + 1 };
+					std::string temp = cmd.substr(cmd.find(" ") + 1, cmd.length());
+					std::string nickname = temp.substr(0,temp.find(" "));
+					// ofID requests the data of nickname(ss.str())
+					if (tokens[2].length() > 6 && tokens[3].length() > 6) {
+						GameServer()->SendServerMessageText(ofID, "Invalid color code");
+					}
+					else {
+						unsigned int color_start;
+						unsigned int color_end;
+						std::stringstream ss;
+						ss << std::hex << tokens[2];;
+						ss >> color_start;
+						ss << std::hex << tokens[3];;
+						ss >> color_end;
+						RequestColorChange(ofID, nickname, color_start, color_end);
+					}
+				}
+				else {
+					GameServer()->SendServerMessageText(ofID, "Error! Did you write /color player color1 color2 ?");
+				}
 			}
 			else
 			{
@@ -1402,6 +1432,32 @@ void CGameControllerZCATCH::SaveRankingData(int ofID)
 		pPlayer->m_Fails,
 		pPlayer->m_Shots,
 	}, GetDatabasePrefix());
+}
+
+void CGameControllerZCATCH::RequestColorChange(int requestingID, std::string ofNickname, int color_start, int color_end)
+{
+	
+	CPlayer& votingPlayer = *(GameServer()->m_apPlayers[requestingID]);
+	CPlayer* player = nullptr;
+	if (!votingPlayer.IsAuthed()) {
+		GameServer()->SendServerMessage(requestingID, "You don't have the permission to change colors.");
+		return;
+	}
+	
+	for (int i : GameServer()->PlayerIDs())
+	{
+		if (ofNickname.compare(Server()->ClientName(i)) == 0) {
+			player = GameServer()->m_apPlayers[i];
+			player->SetColorStart(color_start);
+			player->SetColorEnd(color_end);
+			GameServer()->SendServerMessage(requestingID, "Color changed !");
+			return;
+		}
+	}
+	GameServer()->SendServerMessage(requestingID, "Error player not found.");
+	
+	return;
+	
 }
 
 void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofNickname)

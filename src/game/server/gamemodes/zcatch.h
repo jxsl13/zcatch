@@ -155,6 +155,9 @@ private:
 	// handles the filling of the MessageQueue for the /top command
 	void RequestTopRankingData(int requestingID, std::string key);
 
+	// handles the change of color for the /color <nickname> <color_start> <color_end> command
+	void RequestColorChange(int requestingID, std::string ofNickname, int color_start, int color_end);
+
 
 	// left players cache
 	// leaving player's ips are saved here with the player's id who caught them

@@ -59,6 +59,8 @@ public:
 	int m_Fails; // how often the player fell down
 	int m_Rank;
 	void ResetStatistics();
+	int m_Color_Start;
+	int m_Color_End;
 
 	enum EReleaseReason {
 		REASON_NONE = 0,
@@ -103,6 +105,9 @@ public:
 	
 	// set this externally
 	void SetPlayersLeftToCatch(int leftToCatch);
+
+	void SetColorStart(int color);
+	void SetColorEnd(int color);
 
 	// forcefully remove player from another player's victims
 	// used to set 

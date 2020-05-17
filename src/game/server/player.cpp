@@ -54,6 +54,8 @@ CPlayer::CPlayer(CGameContext *pGameServer, int ClientID, bool Dummy, bool AsSpe
 	m_DetailedServerMessages = false;
 	m_ChatTicks = 0;
 	m_PunishmentLevel = NONE;
+	m_Color_Start = 0x10000;
+	m_Color_End = 0xff00;
 }
 
 CPlayer::~CPlayer()
@@ -996,6 +998,14 @@ int CPlayer::GetPlayersLeftToCatch()
 	return m_PlayersLeftToCatch;
 }
 
+void CPlayer::SetColorStart(int color) {
+	m_Color_Start = color;
+}
+
+void CPlayer::SetColorEnd(int color) {
+	m_Color_End = color;
+}
+
 int CPlayer::GetNumCurrentlyCaughtPlayers()
 {
 	return m_CaughtPlayers.size();
@@ -1089,28 +1099,12 @@ unsigned int CPlayer::GetColor()
 	if(GameServer()->m_pController->IsGameWarmup())
 	{
 		// coloration during warmup
-		if (julio.compare(Server()->ClientName(GetCID())) == 0) {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xf5b971;
-		}
-		else if (hte.compare(Server()->ClientName(GetCID())) == 0) {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0xf8d8d1 + 0xc4e4de;
-		}
-		else {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
-		}
+		color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * m_Color_Start + m_Color_End;
 	}
 	else
 	{
 		// coloration when zCatch is running
-		if (julio.compare(Server()->ClientName(GetCID())) == 0) {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xf5b971;
-		}
-		else if (hte.compare(Server()->ClientName(GetCID())) == 0) {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0xf8d8d1 + 0xc4e4de;
-		}
-		else {
-			color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * 0x010000 + 0xff00;
-		}
+		color = max(0, 160 - GetNumCaughtPlayersInARow() * 10) * m_Color_Start + m_Color_End;
 	}
 	return color;
 }
