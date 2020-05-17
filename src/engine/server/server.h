@@ -237,7 +237,7 @@ public:
 	bool IsAuthed(int ClientID) const;
 	bool IsBanned(int ClientID);
 	int GetClientInfo(int ClientID, CClientInfo *pInfo) const;
-	void GetClientAddr(int ClientID, char *pAddrStr, int Size) const;
+	void GetClientAddr(int ClientID, char *pAddrStr, int Size, bool Port) const;
 	int GetClientVersion(int ClientID) const;
 	const char *ClientName(int ClientID) const;
 	const char *ClientClan(int ClientID) const;

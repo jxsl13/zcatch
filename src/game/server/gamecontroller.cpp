@@ -326,7 +326,7 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 	CommandsManager()->OnPlayerConnect(Server(), pPlayer);
 }
 
-void IGameController::OnPlayerDisconnect(CPlayer *pPlayer)
+void IGameController::OnPlayerDisconnect(CPlayer *pPlayer, const char *pReason)
 {
 	pPlayer->OnDisconnect();
 

@@ -468,11 +468,11 @@ int CServer::GetClientInfo(int ClientID, CClientInfo *pInfo) const
 	return 0;
 }
 
-void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size) const
+void CServer::GetClientAddr(int ClientID, char *pAddrStr, int Size, bool Port) const
 {
 	if(ClientID >= 0 && ClientID < MAX_CLIENTS && m_aClients[ClientID].m_State == CClient::STATE_INGAME)
 	{
-		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, false);
+		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, Port);
 	}	
 }
 

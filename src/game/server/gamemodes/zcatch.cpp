@@ -755,6 +755,19 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
 
+	char aClientAddr[NETADDR_MAXSTRSIZE];
+	Server()->GetClientAddr(ID, aClientAddr, NETADDR_MAXSTRSIZE, true);
+
+	int ClientVersion = Server()->GetClientVersion(ID);
+	int Country = Server()->ClientCountry(ID);
+	const char* Name = Server()->ClientName(ID);
+	const char* Clan = Server()->ClientClan(ID);
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf),"id=%d addr=%s version=%d name='%s' clan='%s' country=%d", ID, aClientAddr, ClientVersion, Name, Clan, Country);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client_enter", aBuf);
+
+
 	// send chat commands
 	ChatCommandsOnPlayerConnect(pPlayer);
 
@@ -831,10 +844,17 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 }
 
 
-void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
+void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason)
 {
 	CPlayer& player = (*pPlayer);
 	int ID = player.GetCID();
+
+	char aClientAddr[NETADDR_MAXSTRSIZE];
+	Server()->GetClientAddr(ID, aClientAddr, NETADDR_MAXSTRSIZE);
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "id=%d addr=%s reason='%s'", ID, aClientAddr, pReason);
+	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client_drop", aBuf);
+
 
 	// if player is caught, associate him iwth their killer for
 	// a specific time after disconnecting
@@ -864,7 +884,7 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer)
 	SaveRankingData(ID);
 
 	// needed to do the disconnect handling.
-	IGameController::OnPlayerDisconnect(pPlayer);
+	IGameController::OnPlayerDisconnect(pPlayer, pReason);
 }
 
 
