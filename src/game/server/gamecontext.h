@@ -80,6 +80,17 @@ class CGameContext : public IGameServer
 	static void ConUnPunishPlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConPunishedPlayers(IConsole::IResult *pResult, void *pUserData);
 
+
+	// Request reset of the ranking of a specific player ID
+	// Sends a confirmation or abort request
+	static void ConRankReset(IConsole::IResult *pResult, void *pUserData);
+	
+	// Confirm reset and reset the player's ranking
+	static void ConConfirmReset(IConsole::IResult *pResult, void *pUserData);
+
+	// Abort reset request.
+	static void ConAbortReset(IConsole::IResult *pResult, void *pUserData);
+
 	CGameContext(int Resetting);
 	void Construct(int Resetting);
 

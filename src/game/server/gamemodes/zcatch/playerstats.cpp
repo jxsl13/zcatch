@@ -22,7 +22,7 @@ void CPlayerStats::Invalidate() {
     m_IsValid = false; 
 }
 
-CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots) : m_IsValid{true}
+CPlayerStats::CPlayerStats(int kills, int deaths, int ticksCaught, int ticksIngame, int ticksWarmup, int score, int wins, int fails, int shots) : m_IsValid{true}, m_StatsHandlingMode{0}
 {
     m_Rank = -1;
     m_Data = {

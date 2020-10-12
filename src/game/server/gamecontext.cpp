@@ -1627,6 +1627,7 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 
+	
 	Console()->Register("mute", "ii?r", CFGFLAG_SERVER, ConMute, this, "Mutes a player ID for x seconds with reason.");
 	Console()->Register("unmute", "i", CFGFLAG_SERVER, ConUnmute, this, "Unmutes a player by #Index");
 	Console()->Register("mutes", "", CFGFLAG_SERVER, ConMutes, this, "Show all mutes");
@@ -1634,6 +1635,12 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("punish", "i?i", CFGFLAG_SERVER, ConPunishPlayer, this, "Punish player for cheating, prevents him from killing others.");
 	Console()->Register("unpunish", "i", CFGFLAG_SERVER, ConUnPunishPlayer, this, "Allow player to play normally again.");
 	Console()->Register("punishments", "", CFGFLAG_SERVER, ConPunishedPlayers, this, "Show punished players.");
+
+	Console()->Register("rank_reset", "i", CFGFLAG_SERVER, ConRankReset, this, "Request the reset of the 'score' & 'wins' of the player with <ID>.");
+
+	Console()->Register("confirm_reset", "", CFGFLAG_SERVER, ConConfirmReset, this, "Confirm the reset of the previously mentioned player by 'rank_reset'");
+	Console()->Register("abort_reset", "", CFGFLAG_SERVER, ConAbortReset, this, "Abort the reset of the previously mentioned player by 'rank_reset'");
+	
 }
 
 void CGameContext::OnInit()
@@ -2072,7 +2079,76 @@ void CGameContext::ConPunishedPlayers(IConsole::IResult *pResult, void *pUserDat
 			}
 		}	
 	}
+}
 
+// Only works in zCatch, as only registered for zCatch
+void CGameContext::ConRankReset(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	IServer *pServer = pSelf->Server();
+	CGameControllerZCATCH* pControllerZCATCH = static_cast<CGameControllerZCATCH*>(pSelf->m_pController);
+
+	int ClientID = pResult->GetInteger(0);
+
+	if(!pSelf->m_apPlayers[ClientID])
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		return;
+	}
+
+	std::string Nickname = std::string(pServer->ClientName(ClientID));
+	
+	pControllerZCATCH->m_DeletionRequest.RequestDeletion(
+		CRankDeletionRequest::DeletionType::SCORE_AND_WIN_RESET, 
+		Nickname, 
+		pServer->Tick()
+	);
+
+	std::stringstream ss;
+	ss << "Please 'confirm_reset' or 'abort_reset' the RESET of 'Score' and 'Wins' values of the player '" << Nickname << "'";
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", ss.str().c_str());
+	
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "You have 60 seconds to respond, this will be aborted automatically otherwise.");
+}
+
+void CGameContext::ConConfirmReset(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	IServer *pServer = pSelf->Server();
+	CGameControllerZCATCH* pControllerZCATCH = static_cast<CGameControllerZCATCH*>(pSelf->m_pController);
+
+	std::string Nickname = pControllerZCATCH->m_DeletionRequest.Nickname();	
+
+	try
+	{
+		pControllerZCATCH->m_DeletionRequest.Confirm(pServer->Tick());
+		std::stringstream ss;
+		ss << "Successfully reset the 'Score' and 'Wins' of '" << Nickname << "'";
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", ss.str().c_str());
+	}
+	catch(const std::exception& e)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", e.what());
+	}
+}
+
+void CGameContext::ConAbortReset(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	IServer *pServer = pSelf->Server();
+	CGameControllerZCATCH* pControllerZCATCH = static_cast<CGameControllerZCATCH*>(pSelf->m_pController);
+
+	std::string Nickname = pControllerZCATCH->m_DeletionRequest.Nickname();	
+
+	try
+	{
+		pControllerZCATCH->m_DeletionRequest.Abort(pServer->Tick());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Aborted rank reset!");
+	}
+	catch(const std::exception& e)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", e.what());
+	}
 }
 
 

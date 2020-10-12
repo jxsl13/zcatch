@@ -42,6 +42,114 @@ CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameC
 	}
 
 	ChatCommandsOnInit();
+
+
+	m_DeletionRequest = CRankDeletionRequest([this](CRankDeletionRequest::DeletionType Type, std::string Nickname){
+		if (m_pRankingServer == nullptr) {
+			return;
+		}
+
+		CPlayer* pIngamePlayer = nullptr;
+		int IngameID = -1;
+		auto RequestedNickCString = Nickname.c_str();
+		
+		// check if nickname is online
+		for (int ID : GameServer()->PlayerIDs())
+		{
+			if (!strcmp(RequestedNickCString, Server()->ClientName(ID)))
+			{	
+				pIngamePlayer = GameServer()->m_apPlayers[ID];
+				if (pIngamePlayer)
+				{
+					IngameID = ID;
+				}		
+			}
+		}
+		
+
+		// completely removes the player from the database.
+		if (Type == CRankDeletionRequest::DELETION) 
+		{
+			// delete database stats
+			m_pRankingServer->DeleteRanking(Nickname, GetDatabasePrefix());
+
+			if(!pIngamePlayer) 
+			{
+				return;
+			}
+
+			// reset ingame stats
+			pIngamePlayer->m_Kills = 0;
+			pIngamePlayer->m_Deaths = 0;
+			pIngamePlayer->m_TicksCaught = 0;
+			pIngamePlayer->m_TicksIngame = 0;
+			pIngamePlayer->m_TicksWarmup = 0;
+			pIngamePlayer->m_Score = 0;
+			pIngamePlayer->m_Wins = 0;
+			pIngamePlayer->m_Fails = 0;
+			pIngamePlayer->m_Shots = 0;
+			return;
+		}
+
+
+		// stats are valid by default
+		CPlayerStats ingameStats;
+
+		if (!pIngamePlayer) {
+			// player stats are invalid because player is offline
+			ingameStats.Invalidate();
+		} else {
+			// player stats are valid
+			ingameStats["Kills"] = pIngamePlayer->m_Kills;
+			ingameStats["Deaths"] = pIngamePlayer->m_Deaths;
+			ingameStats["TicksCaught"] = pIngamePlayer->m_TicksCaught;
+			ingameStats["TicksIngame"] = pIngamePlayer->m_TicksIngame;
+			ingameStats["TicksWarmup"] = pIngamePlayer->m_TicksWarmup;
+			ingameStats["Score"] = pIngamePlayer->m_Score;
+			ingameStats["Wins"] = pIngamePlayer->m_Wins;
+			ingameStats["Fails"] = pIngamePlayer->m_Fails;
+			ingameStats["Shots"] = pIngamePlayer->m_Shots;
+		}
+
+		// requires individual player data
+		m_pRankingServer->GetRanking(
+			Nickname, 
+			[this, IngameID, ingameStats, Type, Nickname](CPlayerStats& stats)
+			{	
+				// ingame stats are more up to date compared to database stats
+				if (ingameStats.IsValid())
+				{
+					stats = ingameStats;
+				}
+				
+				// manipulate player's stats
+				switch (Type)
+				{
+				case CRankDeletionRequest::SCORE_AND_WIN_RESET:
+					stats["Wins"] = 0;
+					[[fallthrough]];
+				case CRankDeletionRequest::SCORE_RESET:
+					stats["Score"] = 0;
+					break;
+				default:
+					break;
+				}
+
+				// update ingame player's stats if online
+				if (IngameID >= 0)
+				{	
+					// do not add, but explicitly set values.
+					stats.SetHandlingMode(CPlayerStats::STATS_UPDATE_SET);
+					std::lock_guard<std::mutex> lock(m_RankingRetrievalMessageQueueMutex);
+					m_RankingRetrievalMessageQueue.emplace_back(IngameID, stats);
+				}
+				
+				// update database player stats
+				m_pRankingServer->SetRanking(Nickname, stats, GetDatabasePrefix());
+			}, 
+			GetDatabasePrefix());
+
+	});
 }
 
 void CGameControllerZCATCH::InitRankingServer()
@@ -265,7 +373,6 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 						throw std::invalid_argument("");
 					}
 				}
-
 				else
 				{
 					throw std::invalid_argument("");
@@ -1095,7 +1202,12 @@ void CGameControllerZCATCH::Tick()
 		}
 		
 	}
-	
+
+	// process deletion requests every second.
+	if (Server()->Tick() % SERVER_TICK_SPEED == 0)
+	{
+		m_DeletionRequest.ProcessDeletion();
+	}
 	
 	IGameController::Tick();
 }
@@ -1551,7 +1663,6 @@ void CGameControllerZCATCH::RequestRankingData(int requestingID, std::string ofN
 	
 }
 
-
 void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string key)
 {
 	if (m_pRankingServer == nullptr)
@@ -1564,9 +1675,9 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 	constexpr bool biggestFirst = true;
 	constexpr int topNumber = 5;
 
-	m_pRankingServer->GetTopRanking(topNumber, key, [this, topNumber, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
+	m_pRankingServer->GetTopRanking(topNumber, key, 
+	[this, topNumber, requestingID, key](std::vector<std::pair<std::string, CPlayerStats> >& data){
 	
-
 	// messages that will be shown to the player
 	std::vector<std::string> messages;
 
@@ -1610,7 +1721,6 @@ void CGameControllerZCATCH::RequestTopRankingData(int requestingID, std::string 
 
 }
 
-
 void CGameControllerZCATCH::ProcessMessageQueue()
 {
 
@@ -1630,8 +1740,7 @@ void CGameControllerZCATCH::ProcessMessageQueue()
 			for (std::string& message : messages)
 			{
 				GameServer()->SendServerMessage(requestingID, message.c_str());
-			}
-			
+			}	
 		}
 
 		// delete all entries.
@@ -1660,8 +1769,29 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 		{
 			pPlayer = GameServer()->m_apPlayers[ID];
 
-			if(pPlayer)
+			if (!pPlayer)
 			{
+				continue;
+			}
+
+			switch (stats.GetHandlingMode())
+			{
+			case CPlayerStats::STATS_UPDATE_SET:
+				pPlayer->m_Wins = stats["Wins"];
+				pPlayer->m_Score = stats["Score"];
+				pPlayer->m_Kills = stats["Kills"];
+				pPlayer->m_Deaths = stats["Deaths"];
+				pPlayer->m_TicksCaught = stats["TicksCaught"];
+				pPlayer->m_TicksIngame = stats["TicksIngame"];
+				pPlayer->m_TicksWarmup = stats["TicksWarmup"];
+				pPlayer->m_Shots = stats["Shots"];
+				pPlayer->m_Fails = stats["Fails"];
+				pPlayer->m_Rank = stats.GetRank();
+				pPlayer->m_IsRankFetched = true;
+				break;
+			case CPlayerStats::STATS_UPDATE_ADD:
+				[[fallthrough]];
+			default:
 				pPlayer->m_Wins += stats["Wins"];
 				pPlayer->m_Score += stats["Score"];
 				pPlayer->m_Kills += stats["Kills"];
@@ -1673,10 +1803,10 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 				pPlayer->m_Fails += stats["Fails"];
 				pPlayer->m_Rank = stats.GetRank();
 				pPlayer->m_IsRankFetched = true;
-
-
-				HandleBeginnerServerCondition(pPlayer);
+				break;				
 			}
+
+			HandleBeginnerServerCondition(pPlayer);	
 		}
 
 		// delete all entries.
@@ -1685,7 +1815,6 @@ void CGameControllerZCATCH::ProcessRankingRetrievalMessageQueue()
 		m_RankingRetrievalMessageQueueMutex.unlock();
 	}
 }
-
 
 void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 {
@@ -1705,6 +1834,7 @@ void CGameControllerZCATCH::AddLeavingPlayerIPToCaughtCache(int LeavingID)
 		}
 	}
 }
+
 void CGameControllerZCATCH::RemovePlayerIDFromCaughtCache(int DyingOrLeavingID)
 {
 	if (m_LeftCaughtCache.size() == 0)

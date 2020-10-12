@@ -1687,6 +1687,8 @@ set_src(GAME_SERVER GLOB_RECURSE src/game/server
   gamemodes/tdm.h
   gamemodes/zcatch.cpp
   gamemodes/zcatch.h
+  gamemodes/zcatch/deletionrequest.cpp
+  gamemodes/zcatch/deletionrequest.h
   gamemodes/zcatch/playerstats.cpp
   gamemodes/zcatch/playerstats.h
   gamemodes/zcatch/rankingserver.cpp

@@ -14,13 +14,22 @@ struct CPlayerStats
      */
    private:
     bool m_IsValid;
-
     long m_Rank;
+    int m_StatsHandlingMode;
 
    public:
+   
+    enum {
+        STATS_UPDATE_ADD = 0, // default mode
+        STATS_UPDATE_SET = 1,
+    };
+
     std::map<std::string, int> m_Data;
     void Invalidate();
-    bool IsValid() { return m_IsValid; };
+    bool IsValid() const { return m_IsValid; };
+
+    void SetHandlingMode(int Mode) { m_StatsHandlingMode = Mode;};
+    int GetHandlingMode() { return m_StatsHandlingMode; };
 
     void Reset();
     CPlayerStats();

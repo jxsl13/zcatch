@@ -8,6 +8,8 @@
 #include  <deque>
 #include <game/server/gamecontroller.h>
 #include <game/server/gamemodes/zcatch/rankingserver.h>
+#include <game/server/gamemodes/zcatch/deletionrequest.h>
+
 
 class CGameControllerZCATCH : public IGameController
 {
@@ -46,6 +48,10 @@ public:
 
 
 	virtual void OnReset();
+
+	// Allow others to request the deletion of the given rank.
+	// also allows resetting of ranks.
+	CRankDeletionRequest m_DeletionRequest;
 
 private:
 
