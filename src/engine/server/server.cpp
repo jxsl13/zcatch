@@ -1,6 +1,8 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <csignal>
+#include <cctype>
+
 #include <base/math.h>
 #include <base/system.h>
 
@@ -1814,7 +1816,7 @@ void CServer::RegisterCommands()
 	Console()->Chain("console_output_level", ConchainConsoleOutputLevelUpdate, this);
 	Console()->Chain("sv_rcon_password", ConchainRconPasswordSet, this);
 
-	Console()->Register("voteban", "i?i", CFGFLAG_SERVER, ConVoteban, this, "Voteban a player by id");
+	Console()->Register("voteban", "s?i", CFGFLAG_SERVER, ConVoteban, this, "Voteban a player by IP/ID for i seconds.");
 	Console()->Register("unvoteban", "i", CFGFLAG_SERVER, ConUnvoteban, this, "Remove voteban by index in list votebans");
 	Console()->Register("unvoteban_client", "i", CFGFLAG_SERVER, ConUnvotebanClient, this, "Remove voteban by player id");
 	Console()->Register("votebans", "", CFGFLAG_SERVER, ConVotebans, this, "Show all votebans");
@@ -2000,8 +2002,9 @@ void CServer::AdjustVotebanTime(int offset)
 }
 
 // adds a new voteban for a specific address
-void CServer::AddVotebanAddr(const NETADDR *addr, int expire)
+void CServer::AddVotebanAddr(const NETADDR *addr, int time)
 {
+	int expire = Tick() + time * TickSpeed();
 	CVoteban **v = IsVotebannedAddr(addr);
 	// create new
 	if(!v)
@@ -2021,8 +2024,7 @@ void CServer::AddVotebanAddr(const NETADDR *addr, int expire)
 // adds a new voteban for a client's address
 void CServer::AddVoteban(int ClientID, int time)
 {
-	int expire = Tick() + time * TickSpeed();
-	AddVotebanAddr(m_NetServer.ClientAddr(ClientID), expire);
+	AddVotebanAddr(m_NetServer.ClientAddr(ClientID), time);
 }
 
 // removes a voteban from a client's address
@@ -2078,22 +2080,114 @@ void CServer::CleanVotebans()
 	}
 }
 
-void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser)
-{
+void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 	CServer* pThis = static_cast<CServer *>(pUser);
-	int ClientID = pResult->GetInteger(0);
-	if(ClientID < 0 || ClientID >= MAX_CLIENTS || pThis->m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+
+	if (pResult->NumArguments() == 0)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "voteban error: no arguments passed");
 		return;
 	}
+
+
+	char bannedIPStr[NETADDR_MAXSTRSIZE];
+	str_copy(bannedIPStr, pResult->GetString(0), sizeof(bannedIPStr));
+
+	// will be needed later on
 	int time = (pResult->NumArguments() > 1) ? pResult->GetInteger(1) : 300;
-	pThis->AddVoteban(ClientID, time);
-	// message to console and chat
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "'%s' has been banned from voting for %d:%02d min.", pThis->ClientName(ClientID), time/60, time%60);
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
-	pThis->GameServer()->SendServerMessage(-1, aBuf);
+	
+	// will contain the parsed IP
+	NETADDR Addr;
+
+	if(net_addr_from_str(&Addr, bannedIPStr) != 0)
+	{
+		// failed to parse IP
+		int length = str_length(bannedIPStr);
+
+		// all characters must be digits in order to be roperly parsed as ID
+		// negative values can and should not happen with IDs
+		for (int i = 0; i < length; i++)
+		{
+			if(!std::isdigit(bannedIPStr[i])) 
+			{
+				pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "voteban error: invalid network address or client id");
+				return;
+			}
+		}
+
+		// all characters are digits
+		int ClientID = atoi(bannedIPStr);
+
+		if(ClientID < 0 || ClientID >= MAX_CLIENTS || pThis->m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
+		{
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+			return;
+		}
+		// ID is a valid one and can be used to fetch IP and Name of the player as well as directly banned.
+		pThis->AddVoteban(ClientID, time);
+
+		char aName[MAX_NAME_LENGTH];
+		str_copy(aName, pThis->ClientName(ClientID) , sizeof(aName));
+		
+		char aIP [NETADDR_MAXSTRSIZE];
+		pThis->GetClientAddr(ClientID, aIP, sizeof(aIP), false);
+		
+		char aBuf[256];
+
+		// console message with IP	
+		str_format(aBuf, sizeof(aBuf), "'%s'(addr=%s) has been banned from voting for %d:%02d min.", aName, aIP,  time/60, time%60);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+
+		// server message without IP
+		str_format(aBuf, sizeof(aBuf), "'%s' has been banned from voting for %d:%02d min.", aName, time/60, time%60);
+		pThis->GameServer()->SendServerMessage(-1, aBuf);
+
+		return;
+	} 
+
+	// successfully parsed IP
+	pThis->AddVotebanAddr(&Addr, time);
+
+	// ID unknown, must find equal IPs in order to determine if player is ingame
+	char currentIPStr [NETADDR_MAXSTRSIZE];
+	char aName[MAX_NAME_LENGTH];
+	char aBuf[256];
+	bool consoleMessageSent = false;
+
+	for (int ClientID = 0; ClientID < MAX_CLIENTS; ClientID++)
+	{	
+		// player must be ingame
+		if(pThis->m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY) 
+		{
+			continue;
+		}
+
+		// get player's IP
+		pThis->GetClientAddr(ClientID, currentIPStr, sizeof(currentIPStr), false);
+		if (str_comp(bannedIPStr, currentIPStr) == 0)
+		{	
+			// fetch player's name
+			str_copy(aName, pThis->ClientName(ClientID) , sizeof(aName));
+			
+			// message to console
+			str_format(aBuf, sizeof(aBuf), "'%s'(addr=%s) has been banned from voting for %d:%02d min.", aName, currentIPStr,  time/60, time%60);
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+
+			// server message
+			str_format(aBuf, sizeof(aBuf), "'%s' has been banned from voting for %d:%02d min.", aName, time/60, time%60);
+			pThis->GameServer()->SendServerMessage(-1, aBuf);
+			
+			consoleMessageSent = true;
+		}
+	}
+
+	// could not find any player with the correct IP ingame
+	if (!consoleMessageSent)
+	{
+		// send only console message, no server message
+		str_format(aBuf, sizeof(aBuf), "'(unknown)'(addr=%s) has been banned from voting for %d:%02d min.", bannedIPStr,  time/60, time%60);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	}
 }
 
 void CServer::ConUnvoteban(IConsole::IResult *pResult, void *pUser)

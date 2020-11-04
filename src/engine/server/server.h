@@ -310,7 +310,7 @@ public:
 	CVoteban *m_Votebans;
 	virtual int ClientVotebannedTime(int ClientID);
 	void AdjustVotebanTime(int offset);
-	void AddVotebanAddr(const NETADDR *addr, int expire);
+	void AddVotebanAddr(const NETADDR *addr, int time);
 	virtual void AddVoteban(int ClientID, int time);
 	void RemoveVoteban(CVoteban **v);
 	void RemoveVotebanAddr(const NETADDR *addr);
