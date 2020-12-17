@@ -614,10 +614,10 @@ bool CPlayer::BeCaught(int byID, int reason)
 			switch (reason)
 			{
 			case REASON_PLAYER_CAUGHT:
-				str_format(aBuf, sizeof(aBuf), "You will be released, when '%s' dies.", Server()->ClientName(byID));
+				str_format(aBuf, sizeof(aBuf), "You will be released when '%s' dies.", Server()->ClientName(byID));
 				break;
 			case REASON_PLAYER_JOINED:
-				str_format(aBuf, sizeof(aBuf), "You were added to \"%s\"'s victims. You will be released, once \"%s\" dies.", Server()->ClientName(byID), Server()->ClientName(byID));
+				str_format(aBuf, sizeof(aBuf), "You were added to \"%s\"'s victims. You will be released once \"%s\" dies.", Server()->ClientName(byID), Server()->ClientName(byID));
 				break;
 			case REASON_PLAYER_WARMUP_CAUGHT:
 				sendReasonMessage = false;
