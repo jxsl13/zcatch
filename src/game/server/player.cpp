@@ -688,7 +688,7 @@ bool CPlayer::BeReleased(int reason)
 				if(m_DetailedServerMessages)
 				{
 					// this happens too often, as that it should be displayed on every death.
-					str_format(aBuf, sizeof(aBuf), "You were released, because '%s' died.", Server()->ClientName(m_CaughtBy));
+					str_format(aBuf, sizeof(aBuf), "You were released because '%s' died.", Server()->ClientName(m_CaughtBy));
 				}
 				else
 				{
@@ -696,19 +696,19 @@ bool CPlayer::BeReleased(int reason)
 				}
 				break;
 			case REASON_PLAYER_FAILED:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' failed miserably.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released because '%s' failed miserably.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_PLAYER_RELEASED:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' is a generous player.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released because '%s' is a generous player.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_PLAYER_WARMUP_RELEASED:
 				sendServerMessage = false;
 				break;
 			case REASON_PLAYER_JOINED:
-				str_format(aBuf, sizeof(aBuf), "You were released, because nobody has caught any players yet.");
+				str_format(aBuf, sizeof(aBuf), "You were released because nobody has caught any players yet.");
 				break;
 			case REASON_PLAYER_JOINED_SPEC:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' joined the spectators.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released because '%s' joined the spectators.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_PLAYER_JOINED_GAME_AGAIN:
 				sendServerMessage = false;
@@ -717,7 +717,7 @@ bool CPlayer::BeReleased(int reason)
 				// the player was previously willingly explicitly stectating.
 				break;
 			case REASON_PLAYER_LEFT:
-				str_format(aBuf, sizeof(aBuf), "You were released, because '%s' has left the game.", Server()->ClientName(m_CaughtBy));
+				str_format(aBuf, sizeof(aBuf), "You were released because '%s' has left the game.", Server()->ClientName(m_CaughtBy));
 				break;
 			case REASON_EVERYONE_RELEASED:
 				str_format(aBuf, sizeof(aBuf), "Everyone was released!");
@@ -1146,7 +1146,7 @@ int CPlayer::Anticamper()
 		if(g_Config.m_SvAnticamperFreeze)
 		{
 			m_pCharacter->Freeze(Server()->TickSpeed()*g_Config.m_SvAnticamperFreeze);
-			GameServer()->SendServerMessage(m_ClientID, "You have been freezed due to camping");
+			GameServer()->SendServerMessage(m_ClientID, "You have been frozen due to camping");
 		}
 		else
 			m_pCharacter->Die(m_ClientID, WEAPON_GAME);
