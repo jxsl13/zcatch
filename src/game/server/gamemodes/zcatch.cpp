@@ -458,6 +458,9 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 		{
 			RequestTopRankingData(ofID, "Score");
 		}
+		else if (tokens[0] == "hair") {
+			GameServer()->SendServerMessageText(ofID, "In zCatch there is a single golden rule that anyone should know of. It is easily written down but is so profound that people will need years to comprehend it: No hair, no win! You will not win a round of zCatch unless your Tee has hair or another kind of decoration on top of its head.");	
+		}
 		else
 		{
 			throw std::invalid_argument("");
