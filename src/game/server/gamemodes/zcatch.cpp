@@ -569,7 +569,7 @@ bool CGameControllerZCATCH::OnCallvoteOption(int ClientID, const char* pDescript
 		if(pDominatingPlayer)
 		{
 			int NumCaughtPlayers = pDominatingPlayer->GetNumTotalCaughtPlayers();
-			int Limit = (int)(((m_IngamePlayerCount - 1) * 0.5)); // 50% of players scaught
+			int Limit = (int)(((m_IngamePlayerCount - 1) * 0.5)); // 50% of players caught
 
 			// can only change map if less than 50% are caught.
 			dbg_msg("DEBUG", "IngamePlayers: %d, TotalCaughtPlayers: %d, CurrentlyCaughtPlayers: %d, treshold(50%%): %d", m_IngamePlayerCount, NumCaughtPlayers, pDominatingPlayer->GetNumCurrentlyCaughtPlayers(),  Limit);
@@ -1246,7 +1246,8 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 	}
 	
 	else if(player.GetTeam() == TEAM_SPECTATORS && Team != TEAM_SPECTATORS)
-	{
+	{	
+		// player wants to join the game
 		if (m_PlayerKickTicksCountdown[player.GetCID()] != NO_KICK && !player.IsAuthed())
 		{
 			// player that's not allowed to play on the beginner server cannot join the game.
@@ -1260,6 +1261,24 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 		}
 		else
 		{
+			CPlayer* pDominatingPlayer = ChooseDominatingPlayer();
+			if (pDominatingPlayer) {
+				int caughtPlayers = pDominatingPlayer->GetNumTotalCaughtPlayers();
+				int playersLeftToCatch = pDominatingPlayer->GetPlayersLeftToCatch();
+				if (caughtPlayers >= MAX_PLAYERS - 2  &&  playersLeftToCatch == 1) {
+					// edge case where leaving caught players allow spectators to join, 
+					// be caught, leave and allowing the next spectator to join.
+					// the exploit can be done until the player has caught up to 15 players in total
+					// if MAX_PLAYERS == 16
+					char aBuf[128];
+					str_format(aBuf, sizeof(aBuf), "You can join the game once '%s' wins or dies.", Server()->ClientName(pDominatingPlayer->GetCID()));
+					GameServer()->SendServerMessage(player.GetCID(), aBuf);
+					return;
+				}
+			}
+			
+
+
 			// players joins the game after being in spec
 
 			// do vanilla respawn stuff
@@ -1509,6 +1528,8 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 	// if invalid number
 	if (tmpMaxCaughtPlayers <= 0)
 	{
+		// players that do not have anyone caught are considered not dominating
+		// this behavior is explicitly used, do not change <= to <
 		return nullptr;
 	}
 	
@@ -1525,7 +1546,7 @@ CPlayer* CGameControllerZCATCH::ChooseDominatingPlayer(int excludeID)
 		}
 		pTmpPlayer = nullptr;
 	}
-	
+	// choose random dominating player
 	std::size_t pickedPlayer = Server()->Tick() % dominatingPlayers.size();
 	return dominatingPlayers.at(pickedPlayer);
 }
