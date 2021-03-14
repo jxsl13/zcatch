@@ -281,9 +281,12 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 	bool isTroll = false;
 
 	char aBuf[256];
-	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
+	if(0 <= ChatterClientID && ChatterClientID < MAX_CLIENTS)
 	{
-		isTroll = m_apPlayers[ChatterClientID]->IsTroll();
+		if (m_apPlayers[ChatterClientID])
+		{
+			isTroll = m_apPlayers[ChatterClientID]->IsTroll();
+		}
 
 		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, To, Server()->ClientName(ChatterClientID), pText);
 	} else
@@ -315,10 +318,12 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 			// pack one for the recording only
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
 			// send message to trolls only
-			for(int i : GetIngameTrolls())
+
+			for(int ID : GetIngameTrolls())
 			{
-				if(m_apPlayers[i])
-					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+				if(m_apPlayers[ID])
+					Msg.m_TargetID = ID;
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
 			}
 		}
 		else if(Mode == CHAT_TEAM)
@@ -329,20 +334,25 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 			To = m_apPlayers[ChatterClientID]->GetTeam();
 
 			// send to the troll clients
-			for(int i : GetIngameTrolls())
+			for(int ID : GetIngameTrolls())
 			{
-				if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() == To)
-					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+				if(m_apPlayers[ID] && m_apPlayers[ID]->GetTeam() == To)
+					Msg.m_TargetID = ID;
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
 			}
 		}
 		else if(Mode == CHAT_WHISPER)
 		{
 			// send to the clients
+			if (m_apPlayers[To] && m_apPlayers[To]->IsTroll()) {
+			
+			}
 			Msg.m_TargetID = To;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
 			
 			// send to troll client only, don't send to normal players.
 			if (m_apPlayers[To] && m_apPlayers[To]->IsTroll()) {
+				Msg.m_TargetID = To;
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 			}
 		}
