@@ -2124,11 +2124,19 @@ bool CGameContext::AddToTrollPit(const char* pIP, int Secs, std::string Nickname
 		CleanTrollPit();
 	}
 
+	// make ingame player a troll if there is an ingame player
 	for (int ID : PlayerIDs())
 	{
 		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
 		Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
-
+		if(!str_comp_num(pIP, aAddrStr, sizeof(aAddrStr)))
+		{
+			if (m_apPlayers[ID]) 
+			{
+				m_apPlayers[ID]->SetTroll();
+			}
+			return updated;
+		}
 	}
 	
 	return updated;
@@ -2189,6 +2197,22 @@ void CGameContext::CleanTrollPit()
 		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit, expired.", troll.m_Nickname.c_str(), troll.m_IP.c_str());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
 		m_TrollPit.erase(m_TrollPit.begin());
+
+
+		// make ingame player  not a troll anymore
+		for (int ID : PlayerIDs())
+		{
+			char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+			Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
+			if(!str_comp_num(troll.m_IP.c_str(), aAddrStr, sizeof(aAddrStr)))
+			{
+				if (m_apPlayers[ID]) 
+				{
+					m_apPlayers[ID]->RemoveTroll();
+				}
+				return;
+			}
+		}	
 	}
 }
 
