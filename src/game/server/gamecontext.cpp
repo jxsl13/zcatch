@@ -322,8 +322,10 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 			for(int ID : GetIngameTrolls())
 			{
 				if(m_apPlayers[ID])
+				{
 					Msg.m_TargetID = ID;
 					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
+				}
 			}
 		}
 		else if(Mode == CHAT_TEAM)
@@ -337,8 +339,10 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 			for(int ID : GetIngameTrolls())
 			{
 				if(m_apPlayers[ID] && m_apPlayers[ID]->GetTeam() == To)
+				{
 					Msg.m_TargetID = ID;
 					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
+				}
 			}
 		}
 		else if(Mode == CHAT_WHISPER)
