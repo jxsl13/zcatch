@@ -227,6 +227,20 @@ void CGameContext::SendServerMessage(int To, const char *pText)
 	}
 }
 
+void CGameContext::SendServerMessageToEveryoneExcept(std::vector<int> IDs, const char *pText)
+{
+	for (int ID : PlayerIDs())
+	{
+		for (int unwantedID : IDs)
+		{
+			if (ID != unwantedID)
+			{
+				SendChat(-1, CHAT_NONE, ID, pText);
+			}
+		}
+	}
+}
+
 void CGameContext::SendServerMessageText(int To, const char *pText)
 {
 	constexpr int LineMaxLength = 62 - 4; // line widths - '*** ' prefix
@@ -263,12 +277,21 @@ void CGameContext::SendServerMessageText(int To, const char *pText)
 
 void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *pText)
 {
+	// Troll pit handling
+	bool isTroll = false;
+
 	char aBuf[256];
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
-	else
-		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
+	{
+		isTroll = m_apPlayers[ChatterClientID]->IsTroll();
 
+		str_format(aBuf, sizeof(aBuf), "%d:%d:%s: %s", ChatterClientID, To, Server()->ClientName(ChatterClientID), pText);
+	} else
+	{
+		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
+	}
+
+	dbg_msg("DEBUG", "ID: %d, isTroll: %d", ChatterClientID, isTroll);
 	char aBufMode[32];
 	if(Mode == CHAT_WHISPER)
 		str_copy(aBufMode, "whisper", sizeof(aBufMode));
@@ -286,7 +309,51 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 	Msg.m_pMessage = pText;
 	Msg.m_TargetID = -1;
 
-	
+	if (isTroll) {
+		if(Mode == CHAT_ALL)
+		{
+			// pack one for the recording only
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
+			// send message to trolls only
+			for(int i : GetIngameTrolls())
+			{
+				if(m_apPlayers[i])
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+			}
+		}
+		else if(Mode == CHAT_TEAM)
+		{
+			// pack one for the recording only
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
+
+			To = m_apPlayers[ChatterClientID]->GetTeam();
+
+			// send to the troll clients
+			for(int i : GetIngameTrolls())
+			{
+				if(m_apPlayers[i] && m_apPlayers[i]->GetTeam() == To)
+					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i);
+			}
+		}
+		else if(Mode == CHAT_WHISPER)
+		{
+			// send to the clients
+			Msg.m_TargetID = To;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
+			
+			// send to troll client only, don't send to normal players.
+			if (m_apPlayers[To] && m_apPlayers[To]->IsTroll()) {
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
+			}
+		}
+		else // Mode == CHAT_NONE
+		{
+			// the server cannot be a troll, so ignore this case.
+		}
+		return;
+	}
+
+	// is not a troll
 	if(Mode == CHAT_ALL)
 	{
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
@@ -554,6 +621,13 @@ void CGameContext::OnTick()
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
+
+	// Clean troll pit every second, offset tick by one in oder not to collide with other 
+	// cleanup actions that happen in the 0th tick every second.
+	if (Server()->Tick() % SERVER_TICK_SPEED == 1)
+	{
+		CleanTrollPit();
+	}
 
 	for(int i : PlayerIDs())
 	{
@@ -1627,10 +1701,13 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("clear_votes", "", CFGFLAG_SERVER, ConClearVotes, this, "Clears the voting options");
 	Console()->Register("vote", "r", CFGFLAG_SERVER, ConVote, this, "Force a vote to yes/no");
 
-	
 	Console()->Register("mute", "ii?r", CFGFLAG_SERVER, ConMute, this, "Mutes a player ID for x seconds with reason.");
 	Console()->Register("unmute", "i", CFGFLAG_SERVER, ConUnmute, this, "Unmutes a player by #Index");
 	Console()->Register("mutes", "", CFGFLAG_SERVER, ConMutes, this, "Show all mutes");
+
+	Console()->Register("shadowmute", "ii?r", CFGFLAG_SERVER, ConShadowMute, this, "Add a player ID to the troll pit for x seconds and an optional reason,");
+	Console()->Register("shadowunmute", "i", CFGFLAG_SERVER, ConShadowUnmute, this, "Remove a player by #Index from the troll pit.");
+	Console()->Register("shadowmutes", "", CFGFLAG_SERVER, ConShadowMutes, this, "Show all trolls in the troll pit.");
 
 	Console()->Register("punish", "i?i", CFGFLAG_SERVER, ConPunishPlayer, this, "Punish player for cheating, prevents him from killing others.");
 	Console()->Register("unpunish", "i", CFGFLAG_SERVER, ConUnPunishPlayer, this, "Allow player to play normally again.");
@@ -1812,6 +1889,7 @@ bool CGameContext::UnmuteID(int ClientID)
 
 bool CGameContext::UnmuteIndex(int Index)
 {
+	// TODO: proper logging for mutes and votebans and troll pit
 	if(Index < 0 || static_cast<int>(m_Mutes.size()) - 1 < Index)
 		return false;
 
@@ -1838,7 +1916,7 @@ void CGameContext::AddMute(const char* pIP, int Secs, std::string Nickname, std:
 	{
 		str_format(aBuf, sizeof(aBuf), "%s has been %smuted for %d:%02d min.", Nickname.c_str(), Auto ? "auto-" : "", Secs/60, Secs%60);
 	}
-	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mute", aBuf);
 	SendServerMessage(-1, aBuf);
 		
 }
@@ -1894,7 +1972,7 @@ void CGameContext::ConMute(IConsole::IResult *pResult, void *pUserData)
 	const char *Reason = pResult->GetString(2);
 
 	if(CID < 0 || CID >= MAX_CLIENTS || !pSelf->m_apPlayers[CID])
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "invalid client id.");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mute", "invalid client id.");
 	else
 		pSelf->AddMute(CID, pResult->GetInteger(1), {pSelf->Server()->ClientName(CID)}, {Reason});
 }
@@ -1921,10 +1999,10 @@ void CGameContext::ConMutes(IConsole::IResult *pResult, void *pUserData)
 			str_format(aBuf, sizeof(aBuf), "#%d: %s for %d:%02d min; Nickname: '%s'", i, Mutes[i].m_IP.c_str(), Sec/60, Sec%60, Mutes[i].m_Nickname.c_str());
 		}
 
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mute", aBuf);
 	}
 	str_format(aBuf, sizeof(aBuf), "%d mute(s)", Size);
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);	
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mute", aBuf);	
 }
 
 
@@ -1935,7 +2013,7 @@ void CGameContext::ConUnmute(IConsole::IResult *pResult, void *pUserData)
 
 	if(Index < 0 ||  pSelf->m_Mutes.size() - 1 < static_cast<size_t>(Index))
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid index!");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "mute", "Invalid index!");
 	}
 	else
 	{
@@ -1972,10 +2050,235 @@ bool CGameContext::IsAllowedToChat(int ClientID)
 	return true;
 }
 
+int CGameContext::IsInTrollPit(const char *pIP) 
+{
+	// remove expired trolls
+	CleanTrollPit();
+	dbg_msg("IsInTrollPit", "%s: troll pit size %lu", pIP, m_TrollPit.size());
+	int pos = -1;
+	for (auto& troll : m_TrollPit)
+	{	
+		pos++;
+		const char* currentIP = troll.m_IP.c_str();
+		if(!str_comp_num(pIP, currentIP, sizeof(currentIP)))
+		{
+			dbg_msg("found troll", "found matching troll at pos %d", pos);
+			return pos;
+		}
+	}
+	return -1;
+}
+int CGameContext::IsInTrollPit(int ClientID)
+{
+	char aIP[NETADDR_MAXSTRSIZE] = {0};
+	Server()->GetClientAddr(ClientID, aIP, sizeof(aIP));
+	return IsInTrollPit(aIP);
+}
+
+std::vector<int> CGameContext::GetIngameTrolls() {
+	std::vector <int> trolls;
+	trolls.reserve(2);
+	for (auto ID : PlayerIDs())
+	{
+		// position must not be -1
+		if (IsInTrollPit(ID) != -1) {
+			trolls.push_back(ID);
+		}
+	}
+
+	return trolls;
+}
+
+bool CGameContext::AddToTrollPit(const char* pIP, int Secs, std::string Nickname, std::string Reason)
+{
+	int pos = IsInTrollPit(pIP);
+	long expiresAt = Server()->Tick() + Server()->TickSpeed() * Secs;
+	bool updated = false;
+	if(pos > -1)
+		// already in troll pit, update if new longer troll pit time was set.
+		updated = m_TrollPit[pos].UpdateIfExpiresLater(expiresAt);	// overwrite
+	else
+	{
+		m_TrollPit.emplace_back(pIP, expiresAt, Nickname, Reason);
+		updated = true;
+	}
+	// sort by expiration time, from smallest to biggest
+	std::sort(m_TrollPit.begin(), m_TrollPit.end());
+
+	if (updated && Secs <= 0) {
+		// 0 sec -> directly expires and can be removed
+		CleanTrollPit();
+	}
+
+	for (int ID : PlayerIDs())
+	{
+		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+		Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
+
+	}
+	
+	return updated;
+}
+bool CGameContext::AddToTrollPit(int ClientID, int Secs, std::string Nickname, std::string Reason)
+{
+	char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+	return AddToTrollPit(aAddrStr, Secs, Nickname, Reason);
+}
+
+bool CGameContext::RemoveFromTrollPitIndex(int Index)
+{
+	if(Index < 0 || static_cast<int>(m_TrollPit.size()) - 1 < Index)
+		return false;
+
+	m_TrollPit.erase(m_TrollPit.begin() + Index);
+
+	// sort by expiration time, from smallest to biggest
+	std::sort(m_TrollPit.begin(), m_TrollPit.end());
+
+	return true;
+}
+
+bool CGameContext::RemoveFromTrollPitID(int ClientID)
+{
+	char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+	std::string IP{aAddrStr};
+
+	bool success = false;
+	auto it = std::remove_if(m_TrollPit.begin(), m_TrollPit.end(), [&IP, &success](auto& troll) -> bool{
+		
+		bool foundIP = (IP == troll.m_IP);
+		if (foundIP)
+			success = true;
+
+		return foundIP;
+	});
+	m_TrollPit.erase(it, m_TrollPit.end());
+	
+	// sort by expiration time, from smallest to biggest
+	std::sort(m_TrollPit.begin(), m_TrollPit.end());
+	
+	return success;
+}
+
+void CGameContext::CleanTrollPit() 
+{
+	// the troll pit is sorted by expiration time, so we need to only 
+	// remove the first trolls until we hit a trol whose troll pit time has not expied, yet.
+	// the sorting happens when a new player is added to the troll pit.
+	long currentTick = Server()->Tick();
+	while (!m_TrollPit.empty() &&  m_TrollPit.front().IsExpired(currentTick)) {
+		// remove first element
+		CTroll& troll = m_TrollPit.front();
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit, expired.", troll.m_Nickname.c_str(), troll.m_IP.c_str());
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
+		m_TrollPit.erase(m_TrollPit.begin());
+	}
+}
+
+
+void CGameContext::ConShadowMute(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	int ID = pResult->GetInteger(0);
+	int Seconds = pResult->GetInteger(1);
+	const char *Reason = pResult->GetString(2);
+	CPlayer* pPlayer = pSelf->m_apPlayers[ID];
+
+	if(ID < 0 || ID >= MAX_CLIENTS || !pPlayer)
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", "invalid client id.");
+	}
+	else
+	{
+		std::string Nickname{pSelf->Server()->ClientName(ID)};
+		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+		pSelf->Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
+		std::string IP{aAddrStr};
+
+
+		bool added = pSelf->AddToTrollPit(ID, Seconds, Nickname, {Reason});
+		if (!added) {
+			return;
+		}
+		pPlayer->SetTroll();
+
+		char aBuf[128];
+		// logging
+		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was added to the troll pit for %d seconds.", Nickname.c_str(), IP.c_str(), Seconds);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
+
+		// server message
+		str_format(aBuf, sizeof(aBuf), "'%s' joined the troll pit for  %02d:%02d min.", Nickname.c_str(), Seconds/60, Seconds%60);
+		pSelf->SendServerMessageToEveryoneExcept(pSelf->GetIngameTrolls(), aBuf);
+	}
+}
+
+void CGameContext::ConShadowMutes(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	
+	// remove expired trolls
+	pSelf->CleanTrollPit();
+	
+	char aBuf[128];
+	auto& Trolls = pSelf->m_TrollPit;	
+	int Size = Trolls.size();
+
+	for(int i = 0; i < Size; i++)
+	{
+		int Sec = Trolls[i].ExpiresInSecs(pSelf->Server()->Tick());
+		std::string& IP = Trolls[i].m_IP;
+		std::string& Nickname = Trolls[i].m_Nickname;
+		std::string& Reason = Trolls[i].m_Reason;
+
+		if(Reason.size() > 0)
+		{
+			str_format(aBuf, sizeof(aBuf), "#%d: %s for %d:%02d min; Nickname: '%s' Reason: '%s'", i, IP.c_str(), Sec/60, Sec%60, Nickname.c_str(), Reason.c_str());
+		}
+		else
+		{
+			str_format(aBuf, sizeof(aBuf), "#%d: %s for %d:%02d min; Nickname: '%s'", i, IP.c_str(), Sec/60, Sec%60, Nickname.c_str());
+		}
+
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
+	}
+	str_format(aBuf, sizeof(aBuf), "%d troll(s)", Size);
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);	
+}
+
+
+void CGameContext::ConShadowUnmute(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext*)pUserData;
+	auto& Trolls = pSelf->m_TrollPit;	
+	int Index = pResult->GetInteger(0);
+
+	if(Index < 0 ||  Trolls.size() - 1 < static_cast<size_t>(Index))
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", "Invalid index!");
+		return;
+	}
+	
+	CTroll troll = Trolls.at(Index);
+	pSelf->RemoveFromTrollPitIndex(Index);
+	char aBuf[128];
+
+	str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit.", 
+	troll.m_Nickname.c_str(), troll.m_IP.c_str());
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
+
+	str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", 
+	troll.m_Nickname.c_str());
+	pSelf->SendServerMessageToEveryoneExcept(pSelf->GetIngameTrolls(), aBuf);
+}
+
+
 
 void CGameContext::AddPlayer(int ClientID) 
 {
-
 	m_PlayerIDs.insert(m_PlayerIDs.end(), ClientID); 
 	std::sort(m_PlayerIDs.begin(), m_PlayerIDs.end());
 }
@@ -1998,7 +2301,7 @@ void CGameContext::ConPunishPlayer(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() < 0 || 2 < pResult->NumArguments())
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "invalid usage, please pass one or two arguments");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "punish", "invalid usage, please pass one or two arguments");
 		return;
 	}
 		
@@ -2010,7 +2313,7 @@ void CGameContext::ConPunishPlayer(IConsole::IResult *pResult, void *pUserData)
 
 	if(!pSelf->m_apPlayers[ClientID])
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "punish", "Invalid ID!");
 		return;
 	}
 
@@ -2043,7 +2346,7 @@ void CGameContext::ConUnPunishPlayer(IConsole::IResult *pResult, void *pUserData
 
 	if(!pSelf->m_apPlayers[ClientID])
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "punish", "Invalid ID!");
 		return;
 	}
 
@@ -2064,7 +2367,7 @@ void CGameContext::ConPunishedPlayers(IConsole::IResult *pResult, void *pUserDat
 {
 	CGameContext *pSelf = (CGameContext*)pUserData;
 	
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Punished Players:");
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "punish", "Punished Players:");
 	char aBuf[128];
 
 	for (int ID : pSelf->PlayerIDs())
@@ -2076,6 +2379,7 @@ void CGameContext::ConPunishedPlayers(IConsole::IResult *pResult, void *pUserDat
 			if(Level > CPlayer::PunishmentLevel::NONE)
 			{
 				str_format(aBuf, sizeof(aBuf), "ID: %d Level: %d '%s' ", ID, Level, pSelf->Server()->ClientName(ID));
+				pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "punish", aBuf);
 			}
 		}	
 	}
@@ -2092,7 +2396,7 @@ void CGameContext::ConRankReset(IConsole::IResult *pResult, void *pUserData)
 
 	if(!pSelf->m_apPlayers[ClientID])
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ID!");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", "Invalid ID!");
 		return;
 	}
 
@@ -2106,9 +2410,9 @@ void CGameContext::ConRankReset(IConsole::IResult *pResult, void *pUserData)
 
 	std::stringstream ss;
 	ss << "Please 'confirm_reset' or 'abort_reset' the RESET of 'Score' and 'Wins' values of the player '" << Nickname << "'";
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", ss.str().c_str());
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", ss.str().c_str());
 	
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "You have 60 seconds to respond, this will be aborted automatically otherwise.");
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", "You have 60 seconds to respond, this will be aborted automatically otherwise.");
 }
 
 void CGameContext::ConConfirmReset(IConsole::IResult *pResult, void *pUserData)
@@ -2124,11 +2428,11 @@ void CGameContext::ConConfirmReset(IConsole::IResult *pResult, void *pUserData)
 		pControllerZCATCH->m_DeletionRequest.Confirm(pServer->Tick());
 		std::stringstream ss;
 		ss << "Successfully reset the 'Score' and 'Wins' of '" << Nickname << "'";
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", ss.str().c_str());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", ss.str().c_str());
 	}
 	catch(const std::exception& e)
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", e.what());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", e.what());
 	}
 }
 
@@ -2143,11 +2447,11 @@ void CGameContext::ConAbortReset(IConsole::IResult *pResult, void *pUserData)
 	try
 	{
 		pControllerZCATCH->m_DeletionRequest.Abort(pServer->Tick());
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Aborted rank reset!");
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", "Aborted rank reset!");
 	}
 	catch(const std::exception& e)
 	{
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", e.what());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "ranking", e.what());
 	}
 }
 
