@@ -315,17 +315,13 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 	if (isTroll) {
 		if(Mode == CHAT_ALL)
 		{
-			// pack one for the recording only
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, -1);
-			// send message to trolls only
+			// send to chatting troll client for visual confirmation and record message
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
 
+			// send message to trolls only
 			for(int ID : GetIngameTrolls())
 			{
-				if(m_apPlayers[ID])
-				{
-					Msg.m_TargetID = ID;
-					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
-				}
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
 			}
 		}
 		else if(Mode == CHAT_TEAM)
@@ -340,23 +336,18 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 			{
 				if(m_apPlayers[ID] && m_apPlayers[ID]->GetTeam() == To)
 				{
-					Msg.m_TargetID = ID;
 					Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
 				}
 			}
 		}
 		else if(Mode == CHAT_WHISPER)
 		{
-			// send to the clients
-			if (m_apPlayers[To] && m_apPlayers[To]->IsTroll()) {
-			
-			}
+			// Chatter client is troll, gets own message
 			Msg.m_TargetID = To;
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
 			
 			// send to troll client only, don't send to normal players.
 			if (m_apPlayers[To] && m_apPlayers[To]->IsTroll()) {
-				Msg.m_TargetID = To;
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, To);
 			}
 		}
