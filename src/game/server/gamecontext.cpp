@@ -2059,8 +2059,6 @@ bool CGameContext::IsAllowedToChat(int ClientID)
 int CGameContext::IsInTrollPit(const char *pIP) 
 {
 	// remove expired trolls
-	CleanTrollPit();
-	dbg_msg("IsInTrollPit", "%s: troll pit size %lu", pIP, m_TrollPit.size());
 	int pos = -1;
 	for (auto& troll : m_TrollPit)
 	{	
@@ -2068,7 +2066,6 @@ int CGameContext::IsInTrollPit(const char *pIP)
 		const char* currentIP = troll.m_IP.c_str();
 		if(!str_comp_num(pIP, currentIP, sizeof(currentIP)))
 		{
-			dbg_msg("found troll", "found matching troll at pos %d", pos);
 			return pos;
 		}
 	}
