@@ -296,8 +296,23 @@ public:
 
 	};
 	std::vector<CTroll> m_TrollPit;
+	std::vector<int> m_IngameTrolls;
 
-	std::vector<int> GetIngameTrolls();
+	// Iterates ovr all players and checks if the players are trolls, adds them to the m_IngameTrolls list
+	void UpdateIngameTrolls();
+
+	// Add trolls manually to the list where you
+	// e.g. OnPlayerConnect in order to avoid calls to a lot of heavy functions
+	void AddIngameTroll(int ID);
+
+	// remove a troll from the list 
+	// e.g. when they leave
+	void RemoveIngameTroll(int ID);
+
+	// get the list of trolls 
+	// that are targets of chat messages
+	// this whole construct makes this function call, that is often called more light weight.
+	const std::vector<int>& GetIngameTrolls();
 	int IsInTrollPit(const char *pIP);
 	int IsInTrollPit(int ClientID);
 

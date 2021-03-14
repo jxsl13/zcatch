@@ -878,10 +878,12 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client_enter", aBuf);
 
 	// TrollPit handling for joining players
+	// if player in troll pit, set troll status
 	int TrollPitPosition = GameServer()->IsInTrollPit(ID);
 	if (TrollPitPosition >= 0) 
 	{
 		player.SetTroll();
+		GameServer()->AddIngameTroll(ID);
 	}
 
 	// send chat commands
@@ -994,6 +996,13 @@ void CGameControllerZCATCH::OnPlayerDisconnect(class CPlayer *pPlayer, const cha
     if (player.m_LastVoteCall && Timeleft > 0)
     {
         Server()->AddVoteban(ID, Timeleft);
+	}
+
+	// remove player from troll list
+	// so that no messages are send to him.
+	if (player.IsTroll()) 
+	{
+		GameServer()->RemoveIngameTroll(ID);
 	}
 	
 	// save player's statistics to the database

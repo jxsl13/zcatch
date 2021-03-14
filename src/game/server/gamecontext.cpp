@@ -2086,18 +2086,33 @@ int CGameContext::IsInTrollPit(int ClientID)
 	return IsInTrollPit(aIP);
 }
 
-std::vector<int> CGameContext::GetIngameTrolls() {
-	std::vector <int> trolls;
-	trolls.reserve(2);
+const std::vector<int>& CGameContext::GetIngameTrolls() {
+	return m_IngameTrolls;
+}
+
+void CGameContext::UpdateIngameTrolls() {
+	
+	m_IngameTrolls.clear();
+
 	for (auto ID : PlayerIDs())
 	{
 		// position must not be -1
 		if (IsInTrollPit(ID) != -1) {
-			trolls.push_back(ID);
+			m_IngameTrolls.push_back(ID);
 		}
 	}
+}
 
-	return trolls;
+void CGameContext::AddIngameTroll(int ID) {
+	m_IngameTrolls.push_back(ID);
+}
+
+void CGameContext::RemoveIngameTroll(int ID) {
+	auto it = std::remove_if(m_IngameTrolls.begin(), m_IngameTrolls.end(), [&ID](int currentTrollID) -> bool{
+		return currentTrollID == ID;
+	});
+	m_IngameTrolls.erase(it, m_IngameTrolls.end());
+	// this vector has no sorting requirements
 }
 
 bool CGameContext::AddToTrollPit(const char* pIP, int Secs, std::string Nickname, std::string Reason)
@@ -2142,7 +2157,10 @@ bool CGameContext::RemoveFromTrollPitIndex(int Index)
 	// sort by expiration time, from smallest to biggest
 	std::sort(m_TrollPit.begin(), m_TrollPit.end());
 
+	// player has the property of being a troll
 	UpdateTrollStatus();
+	// internal list is updated that tracks ingame trolls
+	UpdateIngameTrolls();
 	return true;
 }
 
@@ -2176,6 +2194,7 @@ void CGameContext::CleanTrollPit()
 	// remove the first trolls until we hit a trol whose troll pit time has not expied, yet.
 	// the sorting happens when a new player is added to the troll pit.
 	long currentTick = Server()->Tick();
+	bool trollCountChanged = false;
 	while (!m_TrollPit.empty() &&  m_TrollPit.front().IsExpired(currentTick)) {
 		// remove first element
 		CTroll& troll = m_TrollPit.front();
@@ -2184,11 +2203,17 @@ void CGameContext::CleanTrollPit()
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
 		m_TrollPit.erase(m_TrollPit.begin());
 
-		str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", m_Nickname.c_str());
-
+		str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", troll.m_Nickname.c_str());
+		SendServerMessageToEveryoneExcept(GetIngameTrolls(), aBuf);
+		trollCountChanged = true;
 	}
-	UpdateTrollStatus();
-}
+
+	// less calls to this heavy function.
+	if (trollCountChanged)
+	{
+		UpdateTrollStatus();
+	}
+} 
 
 void CGameContext::UpdateTrollStatus()
 {
