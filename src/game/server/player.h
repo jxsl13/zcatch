@@ -157,6 +157,11 @@ public:
 	// Anti chat spam
 	int m_ChatTicks;
 
+	// Chat related troll pit (troll communication sphere)
+	inline void SetTroll() { m_Troll = true; }
+	inline void RemoveTroll() { m_Troll = false; }
+	inline bool IsTroll() { return m_Troll; }
+
 	//---------------------------------------------------------
 	// this is used for snapping so we know how we can clip the view for the player
 	vec2 m_ViewPos;
@@ -281,6 +286,11 @@ private:
 	int m_SpectatorID;
 	class CFlag *m_pSpecFlag;
 	bool m_ActiveSpecSwitch;
+
+	// This flag is used to put players out of the normal
+	// chat sphere and into another sphere where only trolls 
+	// can communicate with other trolls.
+	bool m_Troll;
 };
 
 #endif

@@ -2085,7 +2085,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 
 	if (pResult->NumArguments() == 0)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "voteban error: no arguments passed");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", "voteban error: no arguments passed");
 		return;
 	}
 
@@ -2110,7 +2110,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 		{
 			if(!std::isdigit(bannedIPStr[i])) 
 			{
-				pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "voteban error: invalid network address or client id");
+				pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", "voteban error: invalid network address or client id");
 				return;
 			}
 		}
@@ -2120,7 +2120,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 
 		if(ClientID < 0 || ClientID >= MAX_CLIENTS || pThis->m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 		{
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", "Invalid ClientID");
 			return;
 		}
 		// ID is a valid one and can be used to fetch IP and Name of the player as well as directly banned.
@@ -2136,7 +2136,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 
 		// console message with IP	
 		str_format(aBuf, sizeof(aBuf), "'%s'(addr=%s) has been banned from voting for %d:%02d min.", aName, aIP,  time/60, time%60);
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 
 		// server message without IP
 		str_format(aBuf, sizeof(aBuf), "'%s' has been banned from voting for %d:%02d min.", aName, time/60, time%60);
@@ -2171,7 +2171,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 			
 			// message to console
 			str_format(aBuf, sizeof(aBuf), "'%s'(addr=%s) has been banned from voting for %d:%02d min.", aName, currentIPStr,  time/60, time%60);
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 
 			// server message
 			str_format(aBuf, sizeof(aBuf), "'%s' has been banned from voting for %d:%02d min.", aName, time/60, time%60);
@@ -2186,7 +2186,7 @@ void CServer::ConVoteban(IConsole::IResult *pResult, void *pUser) {
 	{
 		// send only console message, no server message
 		str_format(aBuf, sizeof(aBuf), "'(unknown)'(addr=%s) has been banned from voting for %d:%02d min.", bannedIPStr,  time/60, time%60);
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 	}
 }
 
@@ -2207,7 +2207,7 @@ void CServer::ConUnvoteban(IConsole::IResult *pResult, void *pUser)
 			// print to console
 			net_addr_str(&(*v)->m_Addr, aAddrStr, sizeof(aAddrStr), false);
 			str_format(aBuf, sizeof(aBuf), "%s has been un-votebanned.", aAddrStr);
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 			// remove ban
 			pThis->RemoveVoteban(v);
 			// don't look any further
@@ -2217,7 +2217,7 @@ void CServer::ConUnvoteban(IConsole::IResult *pResult, void *pUser)
 	}
 	
 	// not found
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "index was not found, please use 'votebans' to obtain an index");
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", "index was not found, please use 'votebans' to obtain an index");
 }
 
 void CServer::ConUnvotebanClient(IConsole::IResult *pResult, void *pUser)
@@ -2226,14 +2226,14 @@ void CServer::ConUnvotebanClient(IConsole::IResult *pResult, void *pUser)
 	int ClientID = pResult->GetInteger(0);
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || pThis->m_aClients[ClientID].m_State == CServer::CClient::STATE_EMPTY)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", "Invalid ClientID");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", "Invalid ClientID");
 		return;
 	}
 	pThis->RemoveVotebanClient(ClientID);
 	// message to console
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "'%s' has been un-votebanned.", pThis->ClientName(ClientID));
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 }
 
 void CServer::ConVotebans(IConsole::IResult *pResult, void *pUser)
@@ -2254,11 +2254,11 @@ void CServer::ConVotebans(IConsole::IResult *pResult, void *pUser)
 		net_addr_str(&addr, aAddrStr, sizeof(aAddrStr), false);
 		time = (v->m_Expire - pThis->Tick()) / pThis->TickSpeed();
 		str_format(aBuf, sizeof(aBuf), "#%d addr=%s time=%d:%02d min", count++, aAddrStr, time/60, time%60);
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 		v = v->m_Next;
 	}
 	
 	str_format(aBuf, sizeof(aBuf), "%d votebanned ip(s)", count);
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Server", aBuf);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "voteban", aBuf);
 }
 

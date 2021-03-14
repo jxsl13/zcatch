@@ -75,6 +75,11 @@ class CGameContext : public IGameServer
 	static void ConUnmute(IConsole::IResult *pResult, void *pUserData);
 	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 
+	// shadowmutes, troll pit
+	static void ConShadowMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConShadowUnmute(IConsole::IResult *pResult, void *pUserData);
+	static void ConShadowMutes(IConsole::IResult *pResult, void *pUserData);
+
 	// players being punished
 	static void ConPunishPlayer(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnPunishPlayer(IConsole::IResult *pResult, void *pUserData);
@@ -174,6 +179,7 @@ public:
 	void SendChat(int ChatterClientID, int Mode, int To, const char *pText);
 	virtual void SendServerMessage(int To, const char *pText);
 	virtual void SendServerMessageText(int toID, const char *pText);
+	virtual void SendServerMessageToEveryoneExcept(std::vector<int> IDs, const char *pText);
 
 	void SendBroadcast(const char *pText, int ClientID);
 	void SendEmoticon(int ClientID, int Emoticon);
@@ -256,6 +262,52 @@ public:
 
 	// handles auto mute & checks whether a player is muted.
 	bool IsAllowedToChat(int ClientID);
+
+	struct CTroll
+	{
+		std::string m_IP;
+		long m_ExpiresAtTick;
+		std::string m_Nickname;
+		std::string m_Reason;
+		// constructor
+		CTroll(const char* pIP, int ExpirationTick, std::string Nickname = {}, std::string Reason = {}) : m_IP{pIP}, m_ExpiresAtTick{ExpirationTick}, m_Nickname{Nickname}, m_Reason{Reason}{};
+		inline constexpr bool operator< (const CTroll& rhs) const
+		{ 
+			return m_ExpiresAtTick < rhs.m_ExpiresAtTick; 
+		}
+		inline constexpr bool IsExpired(long currentTick) {
+			return m_ExpiresAtTick < currentTick;
+		}
+		inline constexpr long ExpiresInSecs(long currentTick, int tickSpeed=SERVER_TICK_SPEED) {
+			long diff = m_ExpiresAtTick - currentTick;
+			if (diff <= 0)
+				return 0;
+			
+			return diff / tickSpeed;
+		}
+		inline constexpr bool UpdateIfExpiresLater(long expiresAtTick) {
+			if (expiresAtTick <= m_ExpiresAtTick)
+			{	
+				return false;
+			}
+			m_ExpiresAtTick = expiresAtTick;
+			return true;
+		}
+
+	};
+	std::vector<CTroll> m_TrollPit;
+
+	std::vector<int> GetIngameTrolls();
+	int IsInTrollPit(const char *pIP);
+	int IsInTrollPit(int ClientID);
+
+	bool AddToTrollPit(const char* pIP, int Secs, std::string Nickname, std::string Reason = {});
+	bool AddToTrollPit(int ClientID, int Secs, std::string Nickname, std::string Reason = {});
+
+	bool RemoveFromTrollPitIndex(int Index);
+	bool RemoveFromTrollPitID(int ClientID);
+
+	void CleanTrollPit();
 
 
 	void AddPlayer(int ClientID);

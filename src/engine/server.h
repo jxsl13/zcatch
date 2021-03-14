@@ -4,6 +4,7 @@
 #define ENGINE_SERVER_H
 #include "kernel.h"
 #include "message.h"
+#include <vector>
 
 class IServer : public IInterface
 {
@@ -110,6 +111,7 @@ public:
 
 	virtual void SendServerMessage(int To, const char *pText) = 0;
 	virtual void SendServerMessageText(int To, const char *pText) = 0;
+	virtual void SendServerMessageToEveryoneExcept(std::vector<int> IDs, const char *pText) = 0;
 
 	virtual bool TimeScore() const { return false; }
 };

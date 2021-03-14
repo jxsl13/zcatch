@@ -877,6 +877,11 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	str_format(aBuf, sizeof(aBuf),"id=%d addr=%s version=%d name='%s' clan='%s' country=%d", ID, aClientAddr, ClientVersion, Name, Clan, Country);
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client_enter", aBuf);
 
+	// TrollPit handling for joining players
+	if (GameServer()->IsInTrollPit(ID)) 
+	{
+		player.SetTroll();
+	}
 
 	// send chat commands
 	ChatCommandsOnPlayerConnect(pPlayer);
