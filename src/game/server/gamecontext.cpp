@@ -302,7 +302,6 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 		str_format(aBuf, sizeof(aBuf), "*** %s", pText);
 	}
 
-	dbg_msg("DEBUG", "ID: %d, isTroll: %d", ChatterClientID, isTroll);
 	char aBufMode[32];
 	if(Mode == CHAT_WHISPER)
 		str_copy(aBufMode, "whisper", sizeof(aBufMode));
@@ -2090,19 +2089,6 @@ const std::vector<int>& CGameContext::GetIngameTrolls() {
 	return m_IngameTrolls;
 }
 
-void CGameContext::UpdateIngameTrolls() {
-	
-	m_IngameTrolls.clear();
-
-	for (auto ID : PlayerIDs())
-	{
-		// position must not be -1
-		if (IsInTrollPit(ID) != -1) {
-			m_IngameTrolls.push_back(ID);
-		}
-	}
-}
-
 void CGameContext::AddIngameTroll(int ID) {
 	m_IngameTrolls.push_back(ID);
 }
@@ -2113,6 +2099,11 @@ void CGameContext::RemoveIngameTroll(int ID) {
 	});
 	m_IngameTrolls.erase(it, m_IngameTrolls.end());
 	// this vector has no sorting requirements
+}
+
+void CGameContext::ClearIngameTrolls()
+{
+	m_IngameTrolls.clear();
 }
 
 bool CGameContext::AddToTrollPit(const char* pIP, int Secs, std::string Nickname, std::string Reason)
@@ -2159,8 +2150,6 @@ bool CGameContext::RemoveFromTrollPitIndex(int Index)
 
 	// player has the property of being a troll
 	UpdateTrollStatus();
-	// internal list is updated that tracks ingame trolls
-	UpdateIngameTrolls();
 	return true;
 }
 
@@ -2217,6 +2206,7 @@ void CGameContext::CleanTrollPit()
 
 void CGameContext::UpdateTrollStatus()
 {
+	ClearIngameTrolls();
 	for (int ID : PlayerIDs())
 	{
 		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
@@ -2236,6 +2226,11 @@ void CGameContext::UpdateTrollStatus()
 				// is troll
 				m_apPlayers[ID]->RemoveTroll();
 			}
+		}
+
+		if (m_apPlayers[ID] && m_apPlayers[ID]->IsTroll())
+		{
+			AddIngameTroll(ID);
 		}
 		
 	}	
