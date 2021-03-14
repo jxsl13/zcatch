@@ -878,7 +878,8 @@ void CGameControllerZCATCH::OnPlayerConnect(class CPlayer *pPlayer)
 	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client_enter", aBuf);
 
 	// TrollPit handling for joining players
-	if (GameServer()->IsInTrollPit(ID)) 
+	int TrollPitPosition = GameServer()->IsInTrollPit(ID);
+	if (TrollPitPosition >= 0) 
 	{
 		player.SetTroll();
 	}
