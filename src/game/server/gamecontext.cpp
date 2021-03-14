@@ -2183,7 +2183,6 @@ void CGameContext::CleanTrollPit()
 	// remove the first trolls until we hit a trol whose troll pit time has not expied, yet.
 	// the sorting happens when a new player is added to the troll pit.
 	long currentTick = Server()->Tick();
-	bool trollCountChanged = false;
 	while (!m_TrollPit.empty() &&  m_TrollPit.front().IsExpired(currentTick)) {
 		// remove first element
 		CTroll& troll = m_TrollPit.front();
@@ -2193,14 +2192,10 @@ void CGameContext::CleanTrollPit()
 		m_TrollPit.erase(m_TrollPit.begin());
 
 		str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", troll.m_Nickname.c_str());
-		SendServerMessageToEveryoneExcept(GetIngameTrolls(), aBuf);
-		trollCountChanged = true;
-	}
-
-	// less calls to this heavy function.
-	if (trollCountChanged)
-	{
+		
+		// we need to update the status before calling GetIngameTrolls()
 		UpdateTrollStatus();
+		SendServerMessageToEveryoneExcept(GetIngameTrolls(), aBuf);
 	}
 } 
 
