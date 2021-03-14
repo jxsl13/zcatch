@@ -231,12 +231,20 @@ void CGameContext::SendServerMessageToEveryoneExcept(std::vector<int> IDs, const
 {
 	for (int ID : PlayerIDs())
 	{
+		bool isUnwanted = false;
+		// check if player is unwanted target
 		for (int unwantedID : IDs)
 		{
-			if (ID != unwantedID)
+			if (ID == unwantedID)
 			{
-				SendChat(-1, CHAT_NONE, ID, pText);
+				isUnwanted = true;
+				break;
 			}
+		}
+		// if not unwanted, wanted, swnd message
+		if (!isUnwanted) 
+		{
+			SendChat(-1, CHAT_NONE, ID, pText);
 		}
 	}
 }
@@ -2175,6 +2183,9 @@ void CGameContext::CleanTrollPit()
 		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit, expired.", troll.m_Nickname.c_str(), troll.m_IP.c_str());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
 		m_TrollPit.erase(m_TrollPit.begin());
+
+		str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", m_Nickname.c_str());
+
 	}
 	UpdateTrollStatus();
 }
