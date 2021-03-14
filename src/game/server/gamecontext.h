@@ -298,8 +298,7 @@ public:
 	std::vector<CTroll> m_TrollPit;
 	std::vector<int> m_IngameTrolls;
 
-	// Iterates ovr all players and checks if the players are trolls, adds them to the m_IngameTrolls list
-	void UpdateIngameTrolls();
+	void ClearIngameTrolls();
 
 	// Add trolls manually to the list where you
 	// e.g. OnPlayerConnect in order to avoid calls to a lot of heavy functions
