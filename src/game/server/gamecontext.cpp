@@ -316,9 +316,10 @@ void CGameContext::SendChat(int ChatterClientID, int Mode, int To, const char *p
 		if(Mode == CHAT_ALL)
 		{
 			// send to chatting troll client for visual confirmation and record message
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ChatterClientID);
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NOSEND, ChatterClientID);
 
 			// send message to trolls only
+			// sends to me and everyone else that's a troll, so above sending is not needed.
 			for(int ID : GetIngameTrolls())
 			{
 				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ID);
@@ -2115,27 +2116,14 @@ bool CGameContext::AddToTrollPit(const char* pIP, int Secs, std::string Nickname
 		CleanTrollPit();
 	}
 
-	// make ingame player a troll if there is an ingame player
-	for (int ID : PlayerIDs())
-	{
-		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
-		Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
-		if(!str_comp_num(pIP, aAddrStr, sizeof(aAddrStr)))
-		{
-			if (m_apPlayers[ID]) 
-			{
-				m_apPlayers[ID]->SetTroll();
-			}
-			return updated;
-		}
-	}
-	
+	UpdateTrollStatus();
 	return updated;
 }
 bool CGameContext::AddToTrollPit(int ClientID, int Secs, std::string Nickname, std::string Reason)
 {
 	char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
+	// troll status is updated in sub function
 	return AddToTrollPit(aAddrStr, Secs, Nickname, Reason);
 }
 
@@ -2149,6 +2137,7 @@ bool CGameContext::RemoveFromTrollPitIndex(int Index)
 	// sort by expiration time, from smallest to biggest
 	std::sort(m_TrollPit.begin(), m_TrollPit.end());
 
+	UpdateTrollStatus();
 	return true;
 }
 
@@ -2172,6 +2161,7 @@ bool CGameContext::RemoveFromTrollPitID(int ClientID)
 	// sort by expiration time, from smallest to biggest
 	std::sort(m_TrollPit.begin(), m_TrollPit.end());
 	
+	UpdateTrollStatus();
 	return success;
 }
 
@@ -2188,23 +2178,34 @@ void CGameContext::CleanTrollPit()
 		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit, expired.", troll.m_Nickname.c_str(), troll.m_IP.c_str());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
 		m_TrollPit.erase(m_TrollPit.begin());
-
-
-		// make ingame player  not a troll anymore
-		for (int ID : PlayerIDs())
-		{
-			char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
-			Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
-			if(!str_comp_num(troll.m_IP.c_str(), aAddrStr, sizeof(aAddrStr)))
-			{
-				if (m_apPlayers[ID]) 
-				{
-					m_apPlayers[ID]->RemoveTroll();
-				}
-				return;
-			}
-		}	
 	}
+	UpdateTrollStatus();
+}
+
+void CGameContext::UpdateTrollStatus()
+{
+	for (int ID : PlayerIDs())
+	{
+		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
+		Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
+		
+		// Should be troll
+		if (IsInTrollPit(ID) >= 0)
+		{
+			// is not troll
+			if (m_apPlayers[ID] && !m_apPlayers[ID]->IsTroll()){
+				m_apPlayers[ID]->SetTroll();	
+			}
+		} else {
+			// should not be troll
+			if (m_apPlayers[ID] && m_apPlayers[ID]->IsTroll())
+			{
+				// is troll
+				m_apPlayers[ID]->RemoveTroll();
+			}
+		}
+		
+	}	
 }
 
 
@@ -2223,6 +2224,7 @@ void CGameContext::ConShadowMute(IConsole::IResult *pResult, void *pUserData)
 	else
 	{
 		std::string Nickname{pSelf->Server()->ClientName(ID)};
+		
 		char aAddrStr[NETADDR_MAXSTRSIZE] = {0};
 		pSelf->Server()->GetClientAddr(ID, aAddrStr, sizeof(aAddrStr));
 		std::string IP{aAddrStr};
@@ -2232,7 +2234,6 @@ void CGameContext::ConShadowMute(IConsole::IResult *pResult, void *pUserData)
 		if (!added) {
 			return;
 		}
-		pPlayer->SetTroll();
 
 		char aBuf[128];
 		// logging

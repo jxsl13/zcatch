@@ -309,6 +309,8 @@ public:
 
 	void CleanTrollPit();
 
+	void UpdateTrollStatus();
+
 
 	void AddPlayer(int ClientID);
 	void RemovePlayer(int ClientID);
