@@ -1283,7 +1283,7 @@ void CGameControllerZCATCH::DoTeamChange(class CPlayer *pPlayer, int Team, bool 
 			if (pDominatingPlayer) {
 				int caughtPlayers = pDominatingPlayer->GetNumTotalCaughtPlayers();
 				int playersLeftToCatch = pDominatingPlayer->GetPlayersLeftToCatch();
-				if (1 + caughtPlayers + playersLeftToCatch == MAX_PLAYERS) {
+				if (1 + caughtPlayers + playersLeftToCatch == MAX_PLAYERS && playersLeftToCatch <= 2) {
 					// edge case where leaving caught players allow spectators to join, 
 					// be caught, leave and allowing the next spectator to join.
 					// the exploit can be done until the player has caught up to 15 players in total
