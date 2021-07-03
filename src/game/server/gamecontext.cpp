@@ -2189,9 +2189,9 @@ void CGameContext::CleanTrollPit()
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "'%s' (addr=%s) was removed from the troll pit, expired.", troll.m_Nickname.c_str(), troll.m_IP.c_str());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "trollpit", aBuf);
-		m_TrollPit.erase(m_TrollPit.begin());
 
 		str_format(aBuf, sizeof(aBuf), "'%s' was removed from the troll pit.", troll.m_Nickname.c_str());
+		m_TrollPit.erase(m_TrollPit.begin());
 		
 		// we need to update the status before calling GetIngameTrolls()
 		UpdateTrollStatus();
