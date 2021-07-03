@@ -4,6 +4,7 @@
 #include <game/version.h>
 
 extern const char *GIT_SHORTREV_HASH;
+extern const char *GIT_VERSION;
 
 TEST(GitRevision, ExistsOrNull)
 {

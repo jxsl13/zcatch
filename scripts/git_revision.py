@@ -9,13 +9,22 @@ try:
 	FileNotFoundError
 except NameError:
 	FileNotFoundError = OSError
+	# default values = null pointer
+	git_hash = "0"
+	git_version = "0"
+
 try:
 	git_hash = subprocess.check_output(["git", "rev-parse", "--short=16", "HEAD"], stderr=DEVNULL).decode().strip()
-	definition = '"{}"'.format(git_hash)
+	git_hash = '"{}"'.format(git_hash)
+
+	git_version = subprocess.check_output(["git", "describe", "HEAD"], stderr=DEVNULL).decode().strip()
+	git_version = '"{}"'.format(git_version)
 except FileNotFoundError as e:
 	if e.errno != errno.ENOENT:
 		raise
-	definition = "0"
 except subprocess.CalledProcessError:
-	definition = "0";
-print("const char *GIT_SHORTREV_HASH = {};".format(definition))
+	pass
+print("""
+const char *GIT_SHORTREV_HASH = {};
+const char *GIT_VERSION = {};
+""".format(git_hash, git_version))

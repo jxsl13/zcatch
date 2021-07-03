@@ -13,6 +13,9 @@
 #include <sstream>
 #include <iomanip>
 
+extern const char *GIT_VERSION;
+extern const char *GIT_SHORTREV_HASH;
+
 
 CGameControllerZCATCH::CGameControllerZCATCH(CGameContext *pGameServer) : IGameController(pGameServer)
 {
@@ -189,6 +192,7 @@ void CGameControllerZCATCH::ChatCommandsOnInit()
 	Command commands[] = {
 		{"help", "See a list of commands to help you with you questions.", true},
 		{"info", "See some information about the zCatch mod.", true},
+		{"version", "See the current server version.", GIT_VERSION != 0},
 		{"rules", "A quick read about how zCatch is played.", true},
 		{"release", "Release player. See '/help release' for more info.", true},
 		{"allmessages", "Enable or disable extra messages.", true},
@@ -275,6 +279,7 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 				GameServer()->SendServerMessage(ofID, "========== Help ==========");
 				GameServer()->SendServerMessage(ofID, "/rules - If you want to know about zCatch's ruleset.");
 				GameServer()->SendServerMessage(ofID, "/info - If to know about this mod's creators.");
+				GameServer()->SendServerMessage(ofID, "/version - To see the server version.");
 				GameServer()->SendServerMessage(ofID, "/help list - To see a list of all the help screens.");
 
 			}
@@ -395,6 +400,18 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 			GameServer()->SendServerMessage(ofID, "========== Rules ==========");
 			GameServer()->SendServerMessageText(ofID, "zCatch is a Last Man Standing game mode. The last player to be alive will win the round. Each player killed by you is considered as caught. If you die, all of your caught players are released. If you catch all of them, you win the round. As a measure of fair play, you are able to release your caught players manually in reverse order. Releasing players is optional in zCatch. Type '/help release' for more information.");
 
+		}
+		else if (tokens[0] == "version") {
+			char aBuf[64];
+			if (GIT_VERSION != 0) {
+				str_format(aBuf, sizeof(aBuf), "zCatch %s", GIT_VERSION);
+				GameServer()->SendServerMessage(ofID, aBuf);
+			}
+
+			if (GIT_SHORTREV_HASH != 0) {
+				str_format(aBuf, sizeof(aBuf), "Hash %s", GIT_SHORTREV_HASH);
+				GameServer()->SendServerMessage(ofID, aBuf);
+			}		
 		}
 		else if(tokens[0] == "release" && size == 1)
 		{
