@@ -7,6 +7,7 @@
 #include <generated/protocol.h>
 #include "zcatch.h"
 #include <game/server/gamemodes/zcatch/playerstats.h>
+#include <game/version.h>
 #include <algorithm>
 #include <stdexcept>
 #include <string>
@@ -411,7 +412,12 @@ void CGameControllerZCATCH::OnPlayerCommandImpl(class CPlayer* pPlayer, const ch
 			if (GIT_SHORTREV_HASH != 0) {
 				str_format(aBuf, sizeof(aBuf), "Hash %s", GIT_SHORTREV_HASH);
 				GameServer()->SendServerMessage(ofID, aBuf);
-			}		
+			}	
+
+			if (GAME_RELEASE_VERSION != 0) {
+				str_format(aBuf, sizeof(aBuf), "Teeworlds %s", GAME_RELEASE_VERSION);
+				GameServer()->SendServerMessage(ofID, aBuf);
+			}	
 		}
 		else if(tokens[0] == "release" && size == 1)
 		{
