@@ -9,9 +9,10 @@ try:
 	FileNotFoundError
 except NameError:
 	FileNotFoundError = OSError
-	# default values = null pointer
-	git_hash = "0"
-	git_version = "0"
+
+# default values = null pointer
+git_hash = "0"
+git_version = "0"
 
 try:
 	git_hash = subprocess.check_output(["git", "rev-parse", "--short=16", "HEAD"], stderr=DEVNULL).decode().strip()
