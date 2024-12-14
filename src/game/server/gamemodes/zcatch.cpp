@@ -1151,6 +1151,7 @@ int CGameControllerZCATCH::OnCharacterDeath(class CCharacter *pVictim, class CPl
 		if (Weapon == WEAPON_WORLD || (Weapon == WEAPON_SELF && victim.GetNumCurrentlyCaughtPlayers() == 0))
 		{
 			victim.m_Deaths += g_Config.m_SvSuicidePenalty;
+            victim.m_Score -= g_Config.m_SvSuicidePenalty * g_Config.m_SvDeathScore;
 		}		
 	}
 		

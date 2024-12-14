@@ -144,6 +144,9 @@ MACRO_CONFIG_INT(SvKickvoteOnWarmup, sv_kickvote_on_warmup, 0, 0, 1, CFGFLAG_SAV
 
 MACRO_CONFIG_INT(SvSuicidePenalty, sv_suicide_penalty, 5, 0, 50, CFGFLAG_SERVER, "How many deaths does one suicide cause.")
 MACRO_CONFIG_INT(SvSuicideCooldown, sv_suicide_cooldown, 15, 3, 60, CFGFLAG_SERVER, "How long a player needs to wait before it is able to do anoter suicide.")
+MACRO_CONFIG_INT(SvKillScore, sv_kill_score, 1, 0, 50, CFGFLAG_SERVER, "How much a kill worth")
+MACRO_CONFIG_INT(SvDeathScore, sv_death_score, 1, 0, 50, CFGFLAG_SERVER, "How much a death cost")
+MACRO_CONFIG_INT(SvKillIncreasing, sv_kill_increasing, 1, 0,1, CFGFLAG_SERVER, "How important a kill is")
 
 MACRO_CONFIG_INT(SvGrenadeHitbox, sv_grenade_hitbox, 3, 1, 6, CFGFLAG_SERVER, "How large is the grenade hitbox(explosion radius).")
 MACRO_CONFIG_INT(SvSprayProtectionRadius, sv_spray_protection_radius, 1000, 0, 10000, CFGFLAG_SERVER, "When a projectile is shot, this radius is checked, which players can take damage by the projectile.")
